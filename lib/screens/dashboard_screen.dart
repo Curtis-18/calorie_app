@@ -70,7 +70,7 @@ class DashboardScreen extends ConsumerWidget {
 
     try {
       final bytes = await photo.readAsBytes();
-      final service = PhotoEstimationService(FoodSearchService());
+      final service = PhotoEstimationService();
       final detected = await service.analyzePhoto(bytes);
 
       if (!context.mounted) return;
