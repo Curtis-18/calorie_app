@@ -44,6 +44,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       }
     });
   }
+
   void _selectFood(FoodItem item) async {
     final grams = await showDialog<double>(
       context: context,
@@ -52,6 +53,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     if (grams == null || !mounted) return;
 
     final calories = ((item.caloriesPer100g ?? 0) / 100 * grams).round();
+    final protein = (item.proteinPer100g ?? 0) / 100 * grams;
+    final carbs = (item.carbsPer100g ?? 0) / 100 * grams;
+    final fat = (item.fatPer100g ?? 0) / 100 * grams;
 
     Navigator.pop(
       context,
@@ -59,6 +63,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         id: DateTime.now().microsecondsSinceEpoch.toString(),
         name: '${item.description} (${grams.round()}g)',
         calories: calories,
+        proteinG: protein,
+        carbsG: carbs,
+        fatG: fat,
         mealType: widget.mealType,
         source: FoodSource.manual,
         timestamp: DateTime.now(),

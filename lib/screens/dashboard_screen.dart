@@ -73,6 +73,10 @@ class DashboardScreen extends ConsumerWidget {
       final service = PhotoEstimationService();
       final detected = await service.analyzePhoto(bytes);
 
+      // Cross-reference each detected food against USDA to fill in
+      // macros, since Gemini only returns name + estimated grams now.
+      await FoodSearchService().enrichDetectedFoods(detected);
+
       if (!context.mounted) return;
       Navigator.pop(context);
 
