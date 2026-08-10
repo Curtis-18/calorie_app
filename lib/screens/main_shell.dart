@@ -38,7 +38,7 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(
             icon: Icon(Icons.menu_book_outlined),
             selectedIcon: Icon(Icons.menu_book, color: TrackerColors.primary),
-            label: 'Library',
+            label: 'Recipes',
           ),
         ],
       ),

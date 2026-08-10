@@ -27,6 +27,23 @@ class RecipeService {
     return meals.map(RecipeSummary.fromJson).toList();
   }
 
+  Future<List<RecipeSummary>> browseDefault() async {
+    // TheMealDB's free tier has no single "list many recipes" endpoint,
+    // so pull a broad set by combining a few reliable categories.
+    const categories = ['Chicken', 'Beef', 'Vegetarian', 'Dessert', 'Seafood'];
+    final results = <RecipeSummary>[];
+
+    for (final category in categories) {
+      try {
+        final meals = await _getMeals('filter.php?c=$category');
+        results.addAll(meals.map(RecipeSummary.fromJson));
+      } catch (_) {
+        continue; // one category failing shouldn't blank the whole screen
+      }
+    }
+    return results;
+  }
+
   Future<RecipeDetail?> getRandom() async {
     final meals = await _getMeals('random.php');
     if (meals.isEmpty) return null;

@@ -36,13 +36,24 @@ class FoodSearchService {
         .toList();
   }
 
+  FoodItem _bestMatch(List<FoodItem> results) {
+    // Prefer whole/raw-food entries over branded or processed ones, since
+    // a plain search term like "avocado" can just as easily match "Avocado
+    // oil" or a branded snack as it can match the actual whole fruit, and
+    // those have very different calorie densities for the same weight.
+    return results.firstWhere(
+      (r) => r.dataType == 'Foundation' || r.dataType == 'SR Legacy',
+      orElse: () => results.first,
+    );
+  }
+
   Future<void> enrichDetectedFoods(List<DetectedFood> items) async {
     await Future.wait(items.map((item) async {
       try {
         final results = await search(item.name);
         if (results.isEmpty) return;
 
-        final match = results.first;
+        final match = _bestMatch(results);
         item
           ..caloriesPer100g = match.caloriesPer100g
           ..proteinPer100g = match.proteinPer100g

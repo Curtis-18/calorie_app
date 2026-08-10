@@ -1,6 +1,7 @@
 class FoodItem {
   final int fdcId;
   final String description;
+  final String? dataType;
   final double? caloriesPer100g;
   final double? proteinPer100g;
   final double? carbsPer100g;
@@ -9,6 +10,7 @@ class FoodItem {
   FoodItem({
     required this.fdcId,
     required this.description,
+    this.dataType,
     this.caloriesPer100g,
     this.proteinPer100g,
     this.carbsPer100g,
@@ -46,6 +48,7 @@ class FoodItem {
     return FoodItem(
       fdcId: json['fdcId'],
       description: json['description'] ?? 'Unknown food',
+      dataType: json['dataType'] as String?,
       caloriesPer100g: calories,
       proteinPer100g: protein,
       carbsPer100g: carbs,

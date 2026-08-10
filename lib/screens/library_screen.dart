@@ -16,9 +16,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   final _service = RecipeService();
   final _controller = TextEditingController();
 
-  RecipeDetail? _featured;
-  List<RecipeSummary> _results = [];
-  bool _loadingFeatured = true;
+  List<RecipeSummary> _browseResults = [];
+  List<RecipeSummary> _searchResults = [];
+  bool _loadingBrowse = true;
   bool _searching = false;
   bool _hasSearched = false;
   String? _error;
@@ -26,20 +26,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFeatured();
+    _loadBrowse();
   }
 
-  Future<void> _loadFeatured() async {
+  Future<void> _loadBrowse() async {
     try {
-      final recipe = await _service.getRandom();
+      final recipes = await _service.browseDefault();
       if (!mounted) return;
       setState(() {
-        _featured = recipe;
-        _loadingFeatured = false;
+        _browseResults = recipes;
+        _loadingBrowse = false;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loadingFeatured = false);
+      setState(() => _loadingBrowse = false);
     }
   }
 
@@ -48,7 +48,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (trimmed.isEmpty) {
       setState(() {
         _hasSearched = false;
-        _results = [];
+        _searchResults = [];
       });
       return;
     }
@@ -61,7 +61,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       final results = await _service.search(trimmed);
       if (!mounted) return;
       setState(() {
-        _results = results;
+        _searchResults = results;
         _searching = false;
       });
     } catch (_) {
@@ -88,10 +88,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final showingSearch = _hasSearched;
+    final list = showingSearch ? _searchResults : _browseResults;
+    final isLoading = showingSearch ? _searching : _loadingBrowse;
+
     return Scaffold(
       backgroundColor: TrackerColors.background,
       appBar: AppBar(
-        title: const Text('Library'),
+        title: const Text('Recipes'),
         backgroundColor: TrackerColors.background,
       ),
       body: ListView(
@@ -102,7 +106,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
             onSubmitted: _search,
             onChanged: (value) {
               if (value.trim().isEmpty && _hasSearched) {
-                setState(() => _hasSearched = false);
+                setState(() {
+                  _hasSearched = false;
+                  _searchResults = [];
+                });
               }
             },
             style: Theme.of(context).textTheme.bodyLarge,
@@ -111,6 +118,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               filled: true,
               fillColor: TrackerColors.surface,
               prefixIcon: const Icon(Icons.search, color: TrackerColors.textSecondary),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.arrow_forward, color: TrackerColors.textSecondary),
+                onPressed: () => _search(_controller.text),
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide.none,
@@ -118,69 +129,31 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          if (!_hasSearched) ...[
+          if (!showingSearch)
             Text(
-              'FEATURED',
+              'BROWSE',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     letterSpacing: 1.5,
                     fontWeight: FontWeight.w800,
                     color: TrackerColors.textSecondary,
                   ),
             ),
-            const SizedBox(height: 10),
-            if (_loadingFeatured)
-              const Center(child: CircularProgressIndicator(color: TrackerColors.primary))
-            else if (_featured != null)
-              _FeaturedCard(recipe: _featured!, onTap: () => _openRecipe(_featured!.id)),
-          ] else ...[
-            if (_searching)
-              const Center(child: CircularProgressIndicator(color: TrackerColors.primary))
-            else if (_error != null)
-              Text(_error!, style: Theme.of(context).textTheme.bodyMedium)
-            else if (_results.isEmpty)
-              Text('No recipes found.', style: Theme.of(context).textTheme.bodyMedium)
-            else
-              ..._results.map((r) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _RecipeRow(recipe: r, onTap: () => _openRecipe(r.id)),
-                  )),
-          ],
+          const SizedBox(height: 10),
+          if (isLoading)
+            const Center(child: CircularProgressIndicator(color: TrackerColors.primary))
+          else if (_error != null)
+            Text(_error!, style: Theme.of(context).textTheme.bodyMedium)
+          else if (list.isEmpty)
+            Text(
+              showingSearch ? 'No recipes found.' : 'Could not load recipes right now.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            )
+          else
+            ...list.map((r) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _RecipeRow(recipe: r, onTap: () => _openRecipe(r.id)),
+                )),
         ],
-      ),
-    );
-  }
-}
-
-class _FeaturedCard extends StatelessWidget {
-  final RecipeDetail recipe;
-  final VoidCallback onTap;
-
-  const _FeaturedCard({required this.recipe, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AppCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              child: Image.network(
-                recipe.thumbnailUrl,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(recipe.name, style: Theme.of(context).textTheme.titleMedium),
-            ),
-          ],
-        ),
       ),
     );
   }
