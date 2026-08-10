@@ -9,6 +9,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_card.dart';
 import '../widgets/calorie_ring.dart';
 import '../widgets/meal_section.dart';
+import 'auth_gate.dart';
 import 'food_search_screen.dart';
 import 'photo_review_screen.dart';
 import '../services/photo_estimation.dart';
@@ -108,6 +109,11 @@ class DashboardScreen extends ConsumerWidget {
 
   Future<void> _logout(BuildContext context) async {
     await Supabase.instance.client.auth.signOut();
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthGate()),
+      (route) => false,
+    );
   }
 
   @override

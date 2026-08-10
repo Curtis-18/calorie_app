@@ -5,13 +5,29 @@ import '../models/detected_food.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PhotoEstimationService {
-  PhotoEstimationService( );
+  PhotoEstimationService();
+
+  Future<String?> _getFreshToken() async {
+    final auth = Supabase.instance.client.auth;
+    var session = auth.currentSession;
+    if (session == null) return null;
+
+    final expiresAt = session.expiresAt;
+    final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    if (expiresAt != null && expiresAt < nowSeconds + 60) {
+      final response = await auth.refreshSession();
+      session = response.session;
+    }
+    return session?.accessToken;
+  }
 
   Future<List<DetectedFood>> analyzePhoto(List<int> imageBytes) async {
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
-    
+    final token = await _getFreshToken();
+    if (token == null) throw Exception('Not signed in');
+
     final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/estimate-photo' ),
+      Uri.parse('${ApiConfig.baseUrl}/estimate-photo'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -26,15 +42,11 @@ class PhotoEstimationService {
     }
 
     final List<dynamic> data = jsonDecode(response.body);
-    
-    // FIXED: Using the constructor directly since fromMap wasn't found
+
     return data.map((item) {
       return DetectedFood(
         name: item['name'] as String,
-        estimatedGrams: (item['estimatedGrams'] as num).toDouble(),
-        caloriesPer100g: item['caloriesPer100g'] != null 
-            ? (item['caloriesPer100g'] as num).toDouble() 
-            : null,
+        estimatedGrams: (item['estimated_grams'] as num).toDouble(),
       );
     }).toList();
   }

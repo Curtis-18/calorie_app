@@ -26,7 +26,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_step == 0) SplitText(key: ValueKey(0), text: "Hello, you!", style: Theme.of(context).textTheme.headlineMedium, onComplete: _next),
+            if (_step == 0) SplitText(key: ValueKey(0), text: "Hello, you!", style: Theme.of(context).textTheme.headlineSmall, onComplete: _next),
             if (_step == 1) SplitText(key: ValueKey(1), text: "Welcome to Calorie Tracker", style: Theme.of(context).textTheme.headlineSmall, onComplete: _next),
             if (_step == 2) SplitText(key: ValueKey(2), text: "Let's get you started.", style: Theme.of(context).textTheme.bodyLarge, onComplete: _next),
           ],
