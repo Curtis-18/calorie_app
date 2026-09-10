@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/food_entry.dart';
@@ -9,6 +10,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_card.dart';
 import '../widgets/calorie_ring.dart';
 import '../widgets/meal_section.dart';
+import '../widgets/save_toast.dart';
 import 'auth_gate.dart';
 import 'food_search_screen.dart';
 import 'photo_review_screen.dart';
@@ -26,6 +28,7 @@ class DashboardScreen extends ConsumerWidget {
         actions: [
           ...MealType.values.map((meal) => CupertinoActionSheetAction(
             onPressed: () {
+              HapticFeedback.lightImpact();
               Navigator.pop(sheetContext);
               _captureAndAnalyze(context, ref, meal);
             },
@@ -45,6 +48,7 @@ class DashboardScreen extends ConsumerWidget {
     final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
     if (photo == null || !context.mounted) return;
 
+    var progressDialogVisible = true;
     showCupertinoDialog(
       context: context,
       barrierDismissible: false,
@@ -62,20 +66,57 @@ class DashboardScreen extends ConsumerWidget {
 
       if (!context.mounted) return;
       Navigator.pop(context);
+      progressDialogVisible = false;
 
       final entries = await Navigator.push<List<FoodEntry>>(
         context,
         CupertinoPageRoute(builder: (context) => PhotoReviewScreen(items: detected, mealType: meal)),
       );
 
-      if (entries != null) {
-        for (final entry in entries) {
-          await ref.read(foodLogProvider.notifier).addEntry(entry);
+      if (!context.mounted) return;
+      if (entries != null && entries.isNotEmpty) {
+        final saveState = ValueNotifier(SaveToastState.loading);
+        final overlay = Overlay.of(context);
+        late final OverlayEntry saveToastEntry;
+        saveToastEntry = OverlayEntry(
+          builder: (context) => Positioned(
+            left: 24,
+            right: 24,
+            bottom: 32,
+            child: IgnorePointer(
+              child: Center(
+                child: ValueListenableBuilder<SaveToastState>(
+                  valueListenable: saveState,
+                  builder: (context, state, child) => SaveToast(state: state),
+                ),
+              ),
+            ),
+          ),
+        );
+        overlay.insert(saveToastEntry);
+
+        void dismissSaveToast() {
+          if (saveToastEntry.mounted) saveToastEntry.remove();
+          saveState.dispose();
+        }
+
+        try {
+          await Future.wait(
+            entries.map((entry) => ref.read(foodLogProvider.notifier).addEntry(entry)),
+          );
+          saveState.value = SaveToastState.success;
+          await Future<void>.delayed(const Duration(milliseconds: 1200));
+          dismissSaveToast();
+        } catch (_) {
+          dismissSaveToast();
+          rethrow;
+        } finally {
+          progressDialogVisible = false;
         }
       }
     } catch (e) {
       if (!context.mounted) return;
-      Navigator.pop(context);
+      if (progressDialogVisible) Navigator.pop(context);
       showCupertinoDialog<void>(
         context: context,
         builder: (dialogContext) => CupertinoAlertDialog(
@@ -113,18 +154,19 @@ class DashboardScreen extends ConsumerWidget {
     final consumed = foodLog.totalCalories;
 
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Welcome Back'),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => _logout(context),
-          child: const Icon(CupertinoIcons.square_arrow_right),
-        ),
-      ),
       child: Stack(
         children: [
           CustomScrollView(
         slivers: [
+          CupertinoSliverNavigationBar(
+            largeTitle: const Text('Welcome Back'),
+            backgroundColor: CupertinoColors.systemGroupedBackground,
+            trailing: CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => _logout(context),
+              child: const Icon(CupertinoIcons.square_arrow_right),
+            ),
+          ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             sliver: SliverList(

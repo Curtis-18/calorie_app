@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import '../theme/tracker_colors.dart';
 import '../models/food_entry.dart';
 
@@ -53,16 +54,39 @@ class MealSection extends StatelessWidget {
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   child: const Icon(CupertinoIcons.add_circled, color: TrackerColors.primary),
-                  onPressed: onAdd,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    onAdd();
+                  },
                 ),
               ],
             ),
           ),
           if (entries.isNotEmpty) const SizedBox(height: 1, child: ColoredBox(color: TrackerColors.divider)),
-          ...entries.map((entry) => _FoodRow(
-                entry: entry,
-                onRemove: () => onRemove(entry.id),
-              )),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: Column(
+              key: ValueKey(entries.map((entry) => entry.id).join('|')),
+              children: entries.map((entry) => Dismissible(
+                key: ValueKey(entry.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemRed,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(CupertinoIcons.delete, color: CupertinoColors.white),
+                ),
+                onDismissed: (_) {
+                  HapticFeedback.lightImpact();
+                  onRemove(entry.id);
+                },
+                child: _FoodRow(entry: entry),
+              )).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -71,15 +95,12 @@ class MealSection extends StatelessWidget {
 
 class _FoodRow extends StatelessWidget {
   final FoodEntry entry;
-  final VoidCallback onRemove;
 
-  const _FoodRow({required this.entry, required this.onRemove});
+  const _FoodRow({required this.entry});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onLongPress: onRemove,
-      child: CupertinoListTile(
+    return CupertinoListTile(
         title: Text(entry.name, style: CupertinoTheme.of(context).textTheme.textStyle),
         subtitle: Text(
           '${entry.carbsG.round()}c • ${entry.fatG.round()}f • ${entry.proteinG.round()}p',
@@ -92,7 +113,6 @@ class _FoodRow extends StatelessWidget {
                 color: TrackerColors.textPrimary,
               ),
         ),
-      ),
     );
   }
 }

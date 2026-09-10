@@ -35,6 +35,11 @@ class PhotoEstimationService {
       body: jsonEncode({
         'image': base64Encode(imageBytes),
       }),
+    ).timeout(
+      const Duration(seconds: 25),
+      onTimeout: () => throw Exception(
+        'Photo analysis timed out, the server may be waking up. Try again.',
+      ),
     );
 
     if (response.statusCode != 200) {

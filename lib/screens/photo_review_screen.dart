@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import '../models/detected_food.dart';
 import '../models/food_entry.dart';
 
@@ -27,7 +28,10 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
     setState(() => _items[index].estimatedGrams = grams);
   }
 
-  void _removeItem(int index) => setState(() => _items.removeAt(index));
+  void _removeItem(int index) {
+    HapticFeedback.lightImpact();
+    setState(() => _items.removeAt(index));
+  }
 
   void _confirm() {
     final entries = _items
@@ -44,6 +48,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
             ))
         .toList();
 
+    HapticFeedback.mediumImpact();
     Navigator.pop(context, entries);
   }
 
@@ -61,38 +66,42 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _items.length,
-              itemBuilder: (context, index) {
-                final item = _items[index];
-                return CupertinoListTile(
-                  title: Text(item.name),
-                  subtitle: Row(
-                    children: [
-                      SizedBox(
-                        width: 60,
-                        child: CupertinoTextField(
-                          controller: TextEditingController(text: item.estimatedGrams.round().toString()),
-                          keyboardType: TextInputType.number,
-                          decoration: const BoxDecoration(
-                            color: CupertinoColors.tertiarySystemFill,
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              child: ListView.builder(
+                key: ValueKey(_items.map((item) => item.name).join('|')),
+                itemCount: _items.length,
+                itemBuilder: (context, index) {
+                  final item = _items[index];
+                  return CupertinoListTile(
+                    title: Text(item.name),
+                    subtitle: Row(
+                      children: [
+                        SizedBox(
+                          width: 60,
+                          child: CupertinoTextField(
+                            controller: TextEditingController(text: item.estimatedGrams.round().toString()),
+                            keyboardType: TextInputType.number,
+                            decoration: const BoxDecoration(
+                              color: CupertinoColors.tertiarySystemFill,
+                              borderRadius: BorderRadius.all(Radius.circular(8)),
+                            ),
+                            suffix: const Text('g'),
+                            onChanged: (v) => _updateGrams(index, v),
                           ),
-                          suffix: const Text('g'),
-                          onChanged: (v) => _updateGrams(index, v),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text('~${item.estimatedCalories} kcal'),
-                    ],
-                  ),
-                  trailing: CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Icon(CupertinoIcons.delete),
-                    onPressed: () => _removeItem(index),
-                  ),
-                );
-              },
+                        const SizedBox(width: 12),
+                        Text('~${item.estimatedCalories} kcal'),
+                      ],
+                    ),
+                    trailing: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Icon(CupertinoIcons.delete),
+                      onPressed: () => _removeItem(index),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           Padding(
