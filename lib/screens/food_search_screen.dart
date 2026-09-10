@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/food_entry.dart';
 import '../models/food_item.dart';
 import '../services/food_search_service.dart';
@@ -46,7 +46,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   void _selectFood(FoodItem item) async {
-    final grams = await showDialog<double>(
+    final grams = await showCupertinoDialog<double>(
       context: context,
       builder: (context) => _QuantityDialog(food: item),
     );
@@ -82,32 +82,30 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: TextField(
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: CupertinoSearchTextField(
           controller: _controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Search foods...',
-            border: InputBorder.none,
-          ),
+          placeholder: 'Search foods...',
           onChanged: _onQueryChanged,
         ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
+      child: _loading
+          ? const Center(child: CupertinoActivityIndicator())
           : _error != null
               ? Center(child: Text('Error: $_error'))
-              : ListView.builder(
-                  itemCount: _results.length,
-                  itemBuilder: (context, index) {
-                    final item = _results[index];
-                    return ListTile(
-                      title: Text(item.description),
-                      subtitle: Text('${item.caloriesPer100g?.round()} kcal / 100g'),
-                      onTap: () => _selectFood(item),
-                    );
-                  },
+              : ListView(
+                  children: [
+                    CupertinoListSection.insetGrouped(
+                      children: _results.map((item) => CupertinoListTile(
+                        title: Text(item.description),
+                        subtitle: Text('${item.caloriesPer100g?.round()} kcal / 100g'),
+                        trailing: const CupertinoListTileChevron(),
+                        onTap: () => _selectFood(item),
+                      )).toList(),
+                    ),
+                  ],
                 ),
     );
   }
@@ -126,19 +124,19 @@ class _QuantityDialogState extends State<_QuantityDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return CupertinoAlertDialog(
       title: Text(widget.food.description),
-      content: TextField(
+      content: CupertinoTextField(
         controller: _gramsController,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: 'Quantity (grams)'),
+        placeholder: 'Quantity (grams)',
       ),
       actions: [
-        TextButton(
+        CupertinoDialogAction(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        CupertinoDialogAction(
           onPressed: () {
             final grams = double.tryParse(_gramsController.text) ?? 100;
             Navigator.pop(context, grams);

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../theme/tracker_colors.dart';
 
 enum SaveToastState { initial, loading, success }
@@ -28,21 +28,20 @@ class SaveToast extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (state == SaveToastState.loading)
-            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+            const CupertinoActivityIndicator(),
           if (state == SaveToastState.success)
-            const Icon(Icons.check, color: TrackerColors.success, size: 18),
+            const Icon(CupertinoIcons.check_mark, color: TrackerColors.success, size: 18),
           const SizedBox(width: 8),
           Text(
             state == SaveToastState.loading ? 'Saving...' : 
             state == SaveToastState.success ? 'Saved!' : 'Unsaved changes',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: CupertinoTheme.of(context).textTheme.textStyle,
           ),
           if (state == SaveToastState.initial) ...[
             const SizedBox(width: 12),
-            TextButton(onPressed: onReset, child: const Text('Reset')),
-            ElevatedButton(
+            CupertinoButton(onPressed: onReset, child: const Text('Reset')),
+            CupertinoButton.filled(
               onPressed: onSave,
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0)),
               child: const Text('Save'),
             ),
           ]

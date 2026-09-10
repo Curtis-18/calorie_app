@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/onboarding_screen.dart';
@@ -22,9 +22,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Calorie Tracker',
-      theme: AppTheme.dark,
+      theme: AppTheme.cupertino,
       home: const AuthGate(),
       routes: {
         '/onboarding': (context) => const OnboardingScreen(),

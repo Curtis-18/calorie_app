@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_profile.dart';
@@ -58,8 +59,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     switch (step) {
       case 0:
         if (_dateOfBirth == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select your date of birth')),
+          showCupertinoDialog<void>(
+            context: context,
+            builder: (dialogContext) => CupertinoAlertDialog(
+              content: const Text('Please select your date of birth'),
+              actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(dialogContext), child: const Text('OK'))],
+            ),
           );
           return false;
         }
@@ -112,8 +117,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _saveState = SaveToastState.initial);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save your profile: $e')),
+        showCupertinoDialog<void>(
+          context: context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            content: Text('Could not save your profile: $e'),
+            actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(dialogContext), child: const Text('OK'))],
+          ),
         );
       }
     }
@@ -132,7 +141,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(width: 8),
-        Text(label, style: Theme.of(context).textTheme.headlineSmall),
+        Text(label, style: CupertinoTheme.of(context).textTheme.navTitleTextStyle),
       ],
     );
   }
@@ -147,11 +156,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           InkWell(
             borderRadius: BorderRadius.circular(_borderRadius),
             onTap: () async {
-              final picked = await showDatePicker(
+              final picked = await showCupertinoModalPopup<DateTime>(
                 context: context,
-                initialDate: DateTime(2000, 1, 1),
-                firstDate: DateTime(1920),
-                lastDate: DateTime.now(),
+                builder: (context) => Container(
+                  height: 280,
+                  color: CupertinoColors.systemBackground,
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.date,
+                    initialDateTime: _dateOfBirth ?? DateTime(2000, 1, 1),
+                    minimumDate: DateTime(1920),
+                    maximumDate: DateTime.now(),
+                    onDateTimeChanged: (date) => _dateOfBirth = date,
+                  ),
+                ),
               );
               if (picked != null) setState(() => _dateOfBirth = picked);
             },
@@ -297,9 +314,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (_currentStep > 0)
-            OutlinedButton(onPressed: _prev, child: const Text('Back')),
+            CupertinoButton(onPressed: _prev, child: const Text('Back')),
           if (_currentStep == 0) const SizedBox.shrink(),
-          ElevatedButton(
+          CupertinoButton.filled(
             onPressed: _next,
             child: Text(_currentStep == 2 ? 'Finish' : 'Next'),
           ),
@@ -323,9 +340,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop && _currentStep > 0) _prev();
       },
-      child: Scaffold(
-        backgroundColor: TrackerColors.background,
-        body: SafeArea(
+      child: CupertinoPageScaffold(
+        child: SafeArea(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 800),
             child: showingWelcome

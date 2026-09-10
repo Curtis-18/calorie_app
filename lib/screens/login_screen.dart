@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
 import '../services/auth_service.dart';
@@ -48,13 +48,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: TrackerColors.background, // FIXED: fog -> background
-      appBar: AppBar(
-        title: const Text('Log in'),
-        backgroundColor: TrackerColors.background,
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Log in'),
       ),
-      body: Center(
+      child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: AppCard(
@@ -64,26 +62,18 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Text(
                   'Welcome back', 
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: TrackerColors.textPrimary)
+                  style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(color: TrackerColors.textPrimary)
                 ),
                 const SizedBox(height: 24),
-                TextField(
+                CupertinoTextField(
                   controller: _emailController,
-                  style: const TextStyle(color: TrackerColors.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: TextStyle(color: TrackerColors.textSecondary),
-                  ),
+                  placeholder: 'Email',
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                CupertinoTextField(
                   controller: _passwordController,
-                  style: const TextStyle(color: TrackerColors.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: TextStyle(color: TrackerColors.textSecondary),
-                  ),
+                  placeholder: 'Password',
                   obscureText: true,
                 ),
                 if (_errorMessage != null) ...[
@@ -96,14 +86,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 SizedBox(
                   height: 52,
-                  child: ElevatedButton(
+                  child: CupertinoButton.filled(
+                    padding: EdgeInsets.zero,
                     onPressed: _isLoading ? null : _logIn,
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                            child: CupertinoActivityIndicator(
                               color: TrackerColors.background,
                             ),
                           )
@@ -113,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    const Expanded(child: Divider(color: TrackerColors.divider, thickness: 1.5)),
+                    const Expanded(child: ColoredBox(color: TrackerColors.divider, child: SizedBox(height: 1.5))),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
@@ -121,25 +111,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(color: TrackerColors.textSecondary),
                       ),
                     ),
-                    const Expanded(child: Divider(color: TrackerColors.divider, thickness: 1.5)),
+                    const Expanded(child: ColoredBox(color: TrackerColors.divider, child: SizedBox(height: 1.5))),
                   ],
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
                   height: 52,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.login, color: TrackerColors.textPrimary),
-                    label: const Text('Continue with Google', style: TextStyle(color: TrackerColors.textPrimary)),
+                  child: CupertinoButton(
                     onPressed: () async {
                       // Google sign-in logic
                     },
+                    child: const Text('Continue with Google'),
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                      CupertinoPageRoute(builder: (context) => const SignUpScreen()),
                     );
                   },
                   child: const Text(

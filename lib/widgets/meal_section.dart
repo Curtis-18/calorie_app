@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../theme/tracker_colors.dart';
 import '../models/food_entry.dart';
 
@@ -20,10 +20,11 @@ class MealSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final mealTotal = entries.totalCalories;
 
-    return Material(
-      color: TrackerColors.surface,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
+    return Container(
+      decoration: BoxDecoration(
+        color: CupertinoColors.secondarySystemGroupedBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -37,26 +38,27 @@ class MealSection extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                               color: TrackerColors.primary,
                               letterSpacing: 1.2,
                             ),
                       ),
                       Text(
                         '$mealTotal kcal',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        style: CupertinoTheme.of(context).textTheme.textStyle,
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, color: TrackerColors.primary),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child: const Icon(CupertinoIcons.add_circled, color: TrackerColors.primary),
                   onPressed: onAdd,
                 ),
               ],
             ),
           ),
-          if (entries.isNotEmpty) const Divider(height: 1, color: TrackerColors.divider),
+          if (entries.isNotEmpty) const SizedBox(height: 1, child: ColoredBox(color: TrackerColors.divider)),
           ...entries.map((entry) => _FoodRow(
                 entry: entry,
                 onRemove: () => onRemove(entry.id),
@@ -75,21 +77,17 @@ class _FoodRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        dense: true,
-        visualDensity: VisualDensity.compact,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-        onLongPress: onRemove,
-        title: Text(entry.name, style: Theme.of(context).textTheme.bodyLarge),
+    return GestureDetector(
+      onLongPress: onRemove,
+      child: CupertinoListTile(
+        title: Text(entry.name, style: CupertinoTheme.of(context).textTheme.textStyle),
         subtitle: Text(
           '${entry.carbsG.round()}c • ${entry.fatG.round()}f • ${entry.proteinG.round()}p',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: CupertinoTheme.of(context).textTheme.textStyle,
         ),
         trailing: Text(
           '${entry.calories} kcal',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                 fontWeight: FontWeight.bold,
                 color: TrackerColors.textPrimary,
               ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../theme/tracker_colors.dart';
 
 class MacroGoalCard extends StatelessWidget {
@@ -24,7 +24,6 @@ class MacroGoalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final remaining = target - consumed;
-    final ratio = target <= 0 ? 0.0 : (consumed / target).clamp(0.0, 1.0);
     final isOver = remaining < 0;
 
     final String statusText = consumed == 0
@@ -33,9 +32,8 @@ class MacroGoalCard extends StatelessWidget {
         ? '${remaining.abs().round()}$unit over'
         : '${remaining.round()}$unit left';
 
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
@@ -52,14 +50,7 @@ class MacroGoalCard extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  CircularProgressIndicator(
-                    value: ratio,
-                    strokeWidth: 3.5,
-                    strokeCap: StrokeCap.round,
-                    backgroundColor: TrackerColors.divider,
-                    valueColor: AlwaysStoppedAnimation(
-                      isOver ? TrackerColors.error : color,
-                    ),
+                  CupertinoActivityIndicator(
                   ),
                   Icon(icon, size: 16, color: color),
                 ],
@@ -70,7 +61,7 @@ class MacroGoalCard extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                 fontWeight: FontWeight.w700,
                 color: TrackerColors.textPrimary,
               ),
@@ -81,7 +72,7 @@ class MacroGoalCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                 color: TrackerColors.textSecondary,
               ),
             ),

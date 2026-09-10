@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/detected_food.dart';
 import '../models/food_entry.dart';
 
@@ -49,15 +49,15 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Review detected foods')),
-      body: Column(
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(middle: Text('Review detected foods')),
+      child: Column(
         children: [
           const Padding(
             padding: EdgeInsets.all(12),
             child: Text(
               'These are estimates. Adjust quantity or remove anything that looks wrong before saving.',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: CupertinoColors.secondaryLabel),
             ),
           ),
           Expanded(
@@ -65,16 +65,20 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               itemCount: _items.length,
               itemBuilder: (context, index) {
                 final item = _items[index];
-                return ListTile(
+                return CupertinoListTile(
                   title: Text(item.name),
                   subtitle: Row(
                     children: [
                       SizedBox(
                         width: 60,
-                        child: TextFormField(
-                          initialValue: item.estimatedGrams.round().toString(),
+                        child: CupertinoTextField(
+                          controller: TextEditingController(text: item.estimatedGrams.round().toString()),
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(suffixText: 'g'),
+                          decoration: const BoxDecoration(
+                            color: CupertinoColors.tertiarySystemFill,
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
+                          suffix: const Text('g'),
                           onChanged: (v) => _updateGrams(index, v),
                         ),
                       ),
@@ -82,8 +86,9 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                       Text('~${item.estimatedCalories} kcal'),
                     ],
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
+                  trailing: CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    child: const Icon(CupertinoIcons.delete),
                     onPressed: () => _removeItem(index),
                   ),
                 );
@@ -92,7 +97,8 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
+            child: CupertinoButton.filled(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               onPressed: _items.isEmpty ? null : _confirm,
               child: Text('Add ${_items.length} item${_items.length == 1 ? '' : 's'}'),
             ),

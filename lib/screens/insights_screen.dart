@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/insights_provider.dart';
 import '../providers/user_provider.dart';
@@ -15,24 +15,20 @@ class InsightsScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider);
     final target = profile?.calorieTarget ?? 2000;
 
-    return Scaffold(
-      backgroundColor: TrackerColors.background,
-      appBar: AppBar(
-        title: const Text('Insights'),
-        backgroundColor: TrackerColors.background,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Insights'),
+        trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            child: const Icon(CupertinoIcons.refresh),
             onPressed: insightsAsync.isLoading
                 ? null
                 : () => ref.read(insightsProvider.notifier).load(refresh: true),
-          ),
-          const SizedBox(width: 8),
-        ],
+            ),
       ),
-      body: insightsAsync.when(
+      child: insightsAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(color: TrackerColors.primary),
+          child: CupertinoActivityIndicator(color: TrackerColors.primary),
         ),
         error: (err, _) => Center(
           child: Padding(
@@ -40,7 +36,7 @@ class InsightsScreen extends ConsumerWidget {
             child: Text(
               'Could not load insights.\n$err',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: CupertinoTheme.of(context).textTheme.textStyle,
             ),
           ),
         ),
@@ -51,9 +47,9 @@ class InsightsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.auto_awesome, color: TrackerColors.primary, size: 28),
+                  const Icon(CupertinoIcons.sparkles, color: TrackerColors.primary, size: 28),
                   const SizedBox(height: 12),
-                  Text(insights.narrative, style: Theme.of(context).textTheme.bodyLarge),
+                  Text(insights.narrative, style: CupertinoTheme.of(context).textTheme.textStyle),
                 ],
               ),
             ),
@@ -64,7 +60,7 @@ class InsightsScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'THIS WEEK',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           letterSpacing: 1.5,
                           fontWeight: FontWeight.w800,
                         ),
@@ -81,7 +77,7 @@ class InsightsScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'TIPS',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           letterSpacing: 1.5,
                           fontWeight: FontWeight.w800,
                         ),
@@ -92,11 +88,11 @@ class InsightsScreen extends ConsumerWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.check_circle_outline,
+                            const Icon(CupertinoIcons.check_mark_circled,
                                 color: TrackerColors.secondary, size: 18),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(tip, style: Theme.of(context).textTheme.bodyMedium),
+                              child: Text(tip, style: CupertinoTheme.of(context).textTheme.textStyle),
                             ),
                           ],
                         ),

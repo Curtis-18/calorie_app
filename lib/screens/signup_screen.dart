@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login_screen.dart';
 import '../theme/tracker_colors.dart';
@@ -34,9 +34,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (response.session != null) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Check your email to confirm your account, then log in.'),
+        showCupertinoDialog<void>(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            content: const Text('Check your email to confirm your account, then log in.'),
+            actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: Text('OK'))],
           ),
         );
       }
@@ -56,13 +58,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: TrackerColors.background, // FIXED: fog -> background
-      appBar: AppBar(
-        title: const Text('Sign up'),
-        backgroundColor: TrackerColors.background,
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Sign up'),
       ),
-      body: Center(
+      child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: AppCard(
@@ -72,26 +72,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
               children: [
                 Text(
                   'Create your account', 
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: TrackerColors.textPrimary)
+                  style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(color: TrackerColors.textPrimary)
                 ),
                 const SizedBox(height: 24),
-                TextField(
+                CupertinoTextField(
                   controller: _emailController,
-                  style: const TextStyle(color: TrackerColors.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: TextStyle(color: TrackerColors.textSecondary),
-                  ),
+                  placeholder: 'Email',
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                CupertinoTextField(
                   controller: _passwordController,
-                  style: const TextStyle(color: TrackerColors.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: TextStyle(color: TrackerColors.textSecondary),
-                  ),
+                  placeholder: 'Password',
                   obscureText: true,
                 ),
                 if (_errorMessage != null) ...[
@@ -104,14 +96,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 24),
                 SizedBox(
                   height: 52,
-                  child: ElevatedButton(
+                  child: CupertinoButton.filled(
+                    padding: EdgeInsets.zero,
                     onPressed: _isLoading ? null : _signUp,
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                            child: CupertinoActivityIndicator(
                               color: TrackerColors.background,
                             ),
                           )
@@ -119,10 +111,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      CupertinoPageRoute(builder: (context) => const LoginScreen()),
                     );
                   },
                   child: const Text(

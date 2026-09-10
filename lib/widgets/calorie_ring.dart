@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../theme/tracker_colors.dart';
 
 class CalorieRing extends StatelessWidget {
@@ -41,11 +41,11 @@ class CalorieRing extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           remaining >= 0 ? remaining.toString() : '0',
-          style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 36),
+          style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(fontSize: 36),
         ),
         Text(
           'KCAL LEFT',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                 letterSpacing: 2,
                 fontWeight: FontWeight.w800,
                 color: TrackerColors.textSecondary,

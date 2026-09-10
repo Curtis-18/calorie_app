@@ -1,18 +1,18 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class TrackerColors {
   TrackerColors._();
 
   // Primary Palette
-  static const Color background = Color(0xFF0D1B1E); // Deep Midnight Emerald
-  static const Color surface = Color(0xFF1A2E32);    // Lighter Emerald for cards
-  static const Color primary = Color(0xFFA3E635);    // Electric Lime (Action color)
-  static const Color secondary = Color(0xFF2DD4BF);  // Soft Teal (Balance color)
+  static const Color background = CupertinoColors.systemGroupedBackground;
+  static const Color surface = CupertinoColors.secondarySystemGroupedBackground;
+  static const Color primary = CupertinoColors.activeBlue;
+  static const Color secondary = CupertinoColors.activeGreen;
   
   // Neutral / Text
-  static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color divider = Color(0xFF263D42);
+  static const Color textPrimary = CupertinoColors.label;
+  static const Color textSecondary = CupertinoColors.secondaryLabel;
+  static const Color divider = CupertinoColors.separator;
   
   // Functional Colors
   static const Color error = Color(0xFFFB7185);     // Soft Rose

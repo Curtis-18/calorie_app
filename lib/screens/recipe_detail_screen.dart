@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import '../theme/tracker_colors.dart';
@@ -44,16 +44,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: TrackerColors.background,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: TrackerColors.primary))
+    return CupertinoPageScaffold(
+      child: _loading
+        ? const Center(child: CupertinoActivityIndicator(color: TrackerColors.primary))
           : _error != null
-              ? Center(child: Text(_error!, style: Theme.of(context).textTheme.bodyMedium))
+          ? Center(child: Text(_error!, style: CupertinoTheme.of(context).textTheme.textStyle))
               : _recipe == null
                   ? Center(
                       child: Text('Recipe not found.',
-                          style: Theme.of(context).textTheme.bodyMedium))
+                style: CupertinoTheme.of(context).textTheme.textStyle))
                   : _RecipeContent(recipe: _recipe!),
     );
   }
@@ -68,28 +67,24 @@ class _RecipeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverAppBar(
-          expandedHeight: 240,
-          pinned: true,
-          backgroundColor: TrackerColors.background,
-          flexibleSpace: FlexibleSpaceBar(
-            background: Image.network(recipe.thumbnailUrl, fit: BoxFit.cover),
-          ),
+        CupertinoSliverNavigationBar(
+          largeTitle: Text(recipe.name),
+          backgroundColor: CupertinoColors.systemGroupedBackground,
         ),
         SliverPadding(
           padding: const EdgeInsets.all(24),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              Text(recipe.name, style: Theme.of(context).textTheme.headlineSmall),
+              Text(recipe.name, style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle),
               const SizedBox(height: 4),
               Text(
                 [recipe.category, recipe.area].where((s) => s.isNotEmpty).join(' • '),
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: CupertinoTheme.of(context).textTheme.textStyle,
               ),
               const SizedBox(height: 20),
               Text(
                 'INGREDIENTS',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                       letterSpacing: 1.5,
                       fontWeight: FontWeight.w800,
                       color: TrackerColors.textSecondary,
@@ -105,10 +100,10 @@ class _RecipeContent extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(ing.name,
-                                      style: Theme.of(context).textTheme.bodyLarge),
+                                      style: CupertinoTheme.of(context).textTheme.textStyle),
                                 ),
                                 Text(ing.measure,
-                                    style: Theme.of(context).textTheme.bodyMedium),
+                                    style: CupertinoTheme.of(context).textTheme.textStyle),
                               ],
                             ),
                           ))
@@ -118,14 +113,14 @@ class _RecipeContent extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 'INSTRUCTIONS',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                       letterSpacing: 1.5,
                       fontWeight: FontWeight.w800,
                       color: TrackerColors.textSecondary,
                     ),
               ),
               const SizedBox(height: 10),
-              Text(recipe.instructions, style: Theme.of(context).textTheme.bodyLarge),
+              Text(recipe.instructions, style: CupertinoTheme.of(context).textTheme.textStyle),
               const SizedBox(height: 40),
             ]),
           ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
@@ -65,9 +65,8 @@ class _AuthGateState extends State<AuthGate> {
           future: _onboardingFuture,
           builder: (context, snap) {
             if (!snap.hasData) {
-              return const Scaffold(
-                backgroundColor: TrackerColors.background, // FIXED: paperWhite -> background
-                body: Center(child: CircularProgressIndicator(color: TrackerColors.primary)), // FIXED: emberOrange -> primary
+              return const CupertinoPageScaffold(
+                child: Center(child: CupertinoActivityIndicator(color: TrackerColors.primary)),
               );
             }
             switch (snap.data!) {
@@ -91,22 +90,21 @@ class _RetryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: TrackerColors.background, // FIXED: paperWhite -> background
-      body: Center(
+    return CupertinoPageScaffold(
+      child: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.wifi_off_rounded, size: 48, color: TrackerColors.error), // FIXED: signalRedOrange -> error
+              const Icon(CupertinoIcons.wifi_exclamationmark, size: 48, color: TrackerColors.error),
               const SizedBox(height: 16),
               Text(
                 'Could not reach the server', 
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: TrackerColors.textPrimary)
+                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(color: TrackerColors.textPrimary)
               ),
               const SizedBox(height: 24),
-              ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+              CupertinoButton.filled(onPressed: onRetry, child: const Text('Retry')),
             ],
           ),
         ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'split_text.dart';
 
 class WelcomeOverlay extends StatefulWidget {
@@ -26,9 +26,9 @@ class _WelcomeOverlayState extends State<WelcomeOverlay> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_step == 0) SplitText(key: ValueKey(0), text: "Hello, you!", style: Theme.of(context).textTheme.headlineSmall, onComplete: _next),
-            if (_step == 1) SplitText(key: ValueKey(1), text: "Welcome to Calorie Tracker", style: Theme.of(context).textTheme.headlineSmall, onComplete: _next),
-            if (_step == 2) SplitText(key: ValueKey(2), text: "Let's get you started.", style: Theme.of(context).textTheme.bodyLarge, onComplete: _next),
+            if (_step == 0) SplitText(key: ValueKey(0), text: "Hello, you!", style: CupertinoTheme.of(context).textTheme.navTitleTextStyle, onComplete: _next),
+            if (_step == 1) SplitText(key: ValueKey(1), text: "Welcome to Calorie Tracker", style: CupertinoTheme.of(context).textTheme.navTitleTextStyle, onComplete: _next),
+            if (_step == 2) SplitText(key: ValueKey(2), text: "Let's get you started.", style: CupertinoTheme.of(context).textTheme.textStyle, onComplete: _next),
           ],
         ),
       ),

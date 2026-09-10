@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,40 +19,22 @@ class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   void _showMealPicker(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
+    showCupertinoModalPopup(
       context: context,
-      backgroundColor: TrackerColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: TrackerColors.divider,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Log a Meal', style: Theme.of(sheetContext).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            ...MealType.values.map((meal) {
-              return ListTile(
-                leading: const Icon(Icons.camera_alt_outlined, color: TrackerColors.primary),
-                title: Text(meal.name.toUpperCase(), style: Theme.of(sheetContext).textTheme.bodyLarge),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _captureAndAnalyze(context, ref, meal);
-                },
-              );
-            }),
-            const SizedBox(height: 16),
-          ],
+      builder: (sheetContext) => CupertinoActionSheet(
+        title: const Text('Log a Meal'),
+        actions: [
+          ...MealType.values.map((meal) => CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(sheetContext);
+              _captureAndAnalyze(context, ref, meal);
+            },
+            child: Text(meal.name.toUpperCase()),
+          )),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(sheetContext),
+          child: const Text('Cancel'),
         ),
       ),
     );
@@ -63,10 +45,10 @@ class DashboardScreen extends ConsumerWidget {
     final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
     if (photo == null || !context.mounted) return;
 
-    showDialog(
+    showCupertinoDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: TrackerColors.primary)),
+      builder: (context) => const Center(child: CupertinoActivityIndicator(color: TrackerColors.primary)),
     );
 
     try {
@@ -83,7 +65,7 @@ class DashboardScreen extends ConsumerWidget {
 
       final entries = await Navigator.push<List<FoodEntry>>(
         context,
-        MaterialPageRoute(builder: (context) => PhotoReviewScreen(items: detected, mealType: meal)),
+        CupertinoPageRoute(builder: (context) => PhotoReviewScreen(items: detected, mealType: meal)),
       );
 
       if (entries != null) {
@@ -94,14 +76,20 @@ class DashboardScreen extends ConsumerWidget {
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      showCupertinoDialog<void>(
+        context: context,
+        builder: (dialogContext) => CupertinoAlertDialog(
+          content: Text('Error: $e'),
+          actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(dialogContext), child: const Text('OK'))],
+        ),
+      );
     }
   }
 
   void _openFoodSearch(BuildContext context, WidgetRef ref, MealType meal) async {
     final entry = await Navigator.push<FoodEntry>(
       context,
-      MaterialPageRoute(builder: (context) => FoodSearchScreen(mealType: meal)),
+      CupertinoPageRoute(builder: (context) => FoodSearchScreen(mealType: meal)),
     );
     if (entry == null) return;
     await ref.read(foodLogProvider.notifier).addEntry(entry);
@@ -111,7 +99,7 @@ class DashboardScreen extends ConsumerWidget {
     await Supabase.instance.client.auth.signOut();
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AuthGate()),
+      CupertinoPageRoute(builder: (_) => const AuthGate()),
       (route) => false,
     );
   }
@@ -124,31 +112,19 @@ class DashboardScreen extends ConsumerWidget {
     final target = profile?.calorieTarget ?? 2000;
     final consumed = foodLog.totalCalories;
 
-    return Scaffold(
-      body: CustomScrollView(
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Welcome Back'),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => _logout(context),
+          child: const Icon(CupertinoIcons.square_arrow_right),
+        ),
+      ),
+      child: Stack(
+        children: [
+          CustomScrollView(
         slivers: [
-          SliverAppBar(
-            expandedHeight: 70,
-            floating: true,
-            pinned: true,
-            backgroundColor: TrackerColors.background,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              centerTitle: false,
-              title: Text(
-                'Welcome Back 👋',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout_outlined),
-                onPressed: () => _logout(context),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
-
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             sliver: SliverList(
@@ -176,7 +152,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 18),
                 Text(
                   'TODAY\'S MEALS',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                         letterSpacing: 1.5,
                         fontWeight: FontWeight.w800,
                         color: TrackerColors.textSecondary,
@@ -197,13 +173,21 @@ class DashboardScreen extends ConsumerWidget {
               ]),
             ),
           ),
+            ],
+          ),
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 16,
+            child: CupertinoButton.filled(
+              onPressed: () => _showMealPicker(context, ref),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [Icon(CupertinoIcons.camera), SizedBox(width: 8), Text('Scan meal')],
+              ),
+            ),
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showMealPicker(context, ref),
-        icon: const Icon(Icons.camera_alt),
-        label: const Text('SCAN MEAL'),
-        shape: const StadiumBorder(),
       ),
     );
   }
@@ -213,12 +197,12 @@ class DashboardScreen extends ConsumerWidget {
       children: [
         Text(
           '${current.round()}g',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color),
+          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(color: color, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         Text(
           label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                 fontSize: 10,
                 color: TrackerColors.textSecondary,
               ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/insights.dart';
 import '../theme/tracker_colors.dart';
 
@@ -26,7 +26,7 @@ class WeeklyTrendChart extends StatelessWidget {
                 children: [
                   Text(
                     day.calories > 0 ? day.calories.toString() : '',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 9),
+                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(fontSize: 9),
                   ),
                   const SizedBox(height: 4),
                   Expanded(
@@ -48,7 +48,7 @@ class WeeklyTrendChart extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     _weekdayLabel(day.date),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontSize: 9,
                           color: TrackerColors.textSecondary,
                         ),

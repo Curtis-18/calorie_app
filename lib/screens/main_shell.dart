@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import '../theme/tracker_colors.dart';
+import 'package:flutter/cupertino.dart';
 import 'dashboard_screen.dart';
 import 'insights_screen.dart';
 import 'library_screen.dart';
@@ -17,31 +16,17 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _index, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        backgroundColor: TrackerColors.background,
-        indicatorColor: TrackerColors.primary.withOpacity(0.2),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.restaurant_menu_outlined),
-            selectedIcon: Icon(Icons.restaurant_menu, color: TrackerColors.primary),
-            label: 'Log',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights, color: TrackerColors.primary),
-            label: 'Insights',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book, color: TrackerColors.primary),
-            label: 'Recipes',
-          ),
+    return CupertinoTabScaffold(
+      tabBar: CupertinoTabBar(
+        currentIndex: _index,
+        onTap: (i) => setState(() => _index = i),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(CupertinoIcons.square_list), label: 'Log'),
+          BottomNavigationBarItem(icon: Icon(CupertinoIcons.chart_bar), label: 'Insights'),
+          BottomNavigationBarItem(icon: Icon(CupertinoIcons.book), label: 'Recipes'),
         ],
       ),
+      tabBuilder: (context, index) => CupertinoTabView(builder: (_) => _screens[index]),
     );
   }
 }

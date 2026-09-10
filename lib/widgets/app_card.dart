@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import '../theme/tracker_colors.dart';
+import 'package:flutter/cupertino.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -19,8 +18,8 @@ class AppCard extends StatelessWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? TrackerColors.surface,
-        borderRadius: BorderRadius.circular(28),
+        color: color ?? CupertinoColors.secondarySystemGroupedBackground,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: child,
     );

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import '../theme/tracker_colors.dart';
@@ -76,7 +76,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void _openRecipe(String id) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipeId: id)),
+      CupertinoPageRoute(builder: (_) => RecipeDetailScreen(recipeId: id)),
     );
   }
 
@@ -92,16 +92,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final list = showingSearch ? _searchResults : _browseResults;
     final isLoading = showingSearch ? _searching : _loadingBrowse;
 
-    return Scaffold(
-      backgroundColor: TrackerColors.background,
-      appBar: AppBar(
-        title: const Text('Recipes'),
-        backgroundColor: TrackerColors.background,
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Recipes'),
       ),
-      body: ListView(
+      child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          TextField(
+          CupertinoSearchTextField(
             controller: _controller,
             onSubmitted: _search,
             onChanged: (value) {
@@ -112,27 +110,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 });
               }
             },
-            style: Theme.of(context).textTheme.bodyLarge,
-            decoration: InputDecoration(
-              hintText: 'Search recipes...',
-              filled: true,
-              fillColor: TrackerColors.surface,
-              prefixIcon: const Icon(Icons.search, color: TrackerColors.textSecondary),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.arrow_forward, color: TrackerColors.textSecondary),
-                onPressed: () => _search(_controller.text),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-            ),
+            placeholder: 'Search recipes...',
           ),
           const SizedBox(height: 20),
           if (!showingSearch)
             Text(
               'BROWSE',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                     letterSpacing: 1.5,
                     fontWeight: FontWeight.w800,
                     color: TrackerColors.textSecondary,
@@ -140,13 +124,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
           const SizedBox(height: 10),
           if (isLoading)
-            const Center(child: CircularProgressIndicator(color: TrackerColors.primary))
+            const Center(child: CupertinoActivityIndicator(color: TrackerColors.primary))
           else if (_error != null)
-            Text(_error!, style: Theme.of(context).textTheme.bodyMedium)
+            Text(_error!, style: CupertinoTheme.of(context).textTheme.textStyle)
           else if (list.isEmpty)
             Text(
               showingSearch ? 'No recipes found.' : 'Could not load recipes right now.',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: CupertinoTheme.of(context).textTheme.textStyle,
             )
           else
             ...list.map((r) => Padding(
@@ -178,8 +162,8 @@ class _RecipeRow extends StatelessWidget {
               child: Image.network(recipe.thumbnailUrl, width: 64, height: 64, fit: BoxFit.cover),
             ),
             const SizedBox(width: 12),
-            Expanded(child: Text(recipe.name, style: Theme.of(context).textTheme.bodyLarge)),
-            const Icon(Icons.chevron_right, color: TrackerColors.textSecondary),
+            Expanded(child: Text(recipe.name, style: CupertinoTheme.of(context).textTheme.textStyle)),
+            const Icon(CupertinoIcons.chevron_right, color: TrackerColors.textSecondary),
           ],
         ),
       ),

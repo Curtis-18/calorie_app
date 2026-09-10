@@ -12,11 +12,13 @@ class FoodSearchService {
     final trimmedQuery = query.trim();
     if (trimmedQuery.isEmpty) return [];
 
-    final uri = Uri.parse(_baseUrl).replace(queryParameters: {
-      'query': trimmedQuery,
-      'api_key': _apiKey,
-      'pageSize': '20',
-    });
+    final uri = Uri.parse(_baseUrl).replace(
+      queryParameters: {
+        'query': trimmedQuery,
+        'api_key': _apiKey,
+        'pageSize': '20',
+      },
+    );
 
     final response = await http.get(uri).timeout(_timeout);
     if (response.statusCode != 200) {
@@ -36,33 +38,82 @@ class FoodSearchService {
         .toList();
   }
 
-  FoodItem _bestMatch(List<FoodItem> results) {
-    // Prefer whole/raw-food entries over branded or processed ones, since
-    // a plain search term like "avocado" can just as easily match "Avocado
-    // oil" or a branded snack as it can match the actual whole fruit, and
-    // those have very different calorie densities for the same weight.
-    return results.firstWhere(
-      (r) => r.dataType == 'Foundation' || r.dataType == 'SR Legacy',
-      orElse: () => results.first,
-    );
+  FoodItem _bestMatch(List<FoodItem> results, String query) {
+    final queryWords = query
+        .toLowerCase()
+        .split(RegExp(r'[\s,]+'))
+        .where((w) => w.isNotEmpty)
+        .toSet();
+
+    const dataTypeRank = {
+      'Foundation': 0,
+      'SR Legacy': 1,
+      'Survey (FNDDS)': 2,
+      'Branded': 3,
+    };
+
+    const penalizedWords = {
+      'oil',
+      'powder',
+      'extract',
+      'dried',
+      'juice',
+      'sauce',
+      'syrup',
+      'flour',
+      'concentrate',
+      'flavored',
+      'flavor',
+      'seasoning',
+      'dressing',
+      'chips',
+      'flakes',
+      'paste',
+      'butter',
+      'dehydrated',
+      'canned',
+      'frozen',
+      'candied',
+      'imitation',
+      'substitute',
+    };
+
+    int score(FoodItem item) {
+      final descWords = item.description
+          .toLowerCase()
+          .split(RegExp(r'[\s,]+'))
+          .where((w) => w.isNotEmpty)
+          .toSet();
+
+      final typeRank = dataTypeRank[item.dataType] ?? 4;
+      final extraWords = descWords.difference(queryWords);
+      final penalizedCount = extraWords.where(penalizedWords.contains).length;
+
+      return (penalizedCount * 1000) + (typeRank * 10) + extraWords.length;
+    }
+
+    final ranked = [...results]..sort((a, b) => score(a).compareTo(score(b)));
+    return ranked.first;
   }
 
   Future<void> enrichDetectedFoods(List<DetectedFood> items) async {
-    await Future.wait(items.map((item) async {
-      try {
-        final results = await search(item.name);
-        if (results.isEmpty) return;
+    await Future.wait(
+      items.map((item) async {
+        try {
+          final results = await search(item.name);
+          if (results.isEmpty) return;
 
-        final match = _bestMatch(results);
-        item
-          ..caloriesPer100g = match.caloriesPer100g
-          ..proteinPer100g = match.proteinPer100g
-          ..carbsPer100g = match.carbsPer100g
-          ..fatPer100g = match.fatPer100g
-          ..matched = true;
-      } catch (_) {
-        // leave unmatched, don't let one bad lookup kill the others
-      }
-    }));
+          final match = _bestMatch(results, item.name);
+          item
+            ..caloriesPer100g = match.caloriesPer100g
+            ..proteinPer100g = match.proteinPer100g
+            ..carbsPer100g = match.carbsPer100g
+            ..fatPer100g = match.fatPer100g
+            ..matched = true;
+        } catch (_) {
+          // leave unmatched, don't let one bad lookup kill the others
+        }
+      }),
+    );
   }
 }

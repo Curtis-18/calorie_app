@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../theme/tracker_colors.dart';
 
 class StepProgress extends StatelessWidget {
@@ -40,7 +40,7 @@ class StepProgress extends StatelessWidget {
           ),
           child: Center(
             child: isCompleted
-                ? const Icon(Icons.check, size: 16, color: TrackerColors.background)
+                ? const Icon(CupertinoIcons.check_mark, size: 16, color: TrackerColors.background)
                 : Text(
                     '${step + 1}',
                     style: TextStyle(
