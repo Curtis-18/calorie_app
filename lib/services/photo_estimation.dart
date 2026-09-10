@@ -4,6 +4,12 @@ import '../config/api_config.dart';
 import '../models/detected_food.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class PhotoAnalysisException implements Exception {
+  final String message;
+
+  const PhotoAnalysisException(this.message);
+}
+
 class PhotoEstimationService {
   PhotoEstimationService();
 

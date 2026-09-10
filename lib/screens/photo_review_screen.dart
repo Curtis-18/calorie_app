@@ -65,45 +65,58 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               style: TextStyle(color: CupertinoColors.secondaryLabel),
             ),
           ),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              child: ListView.builder(
-                key: ValueKey(_items.map((item) => item.name).join('|')),
-                itemCount: _items.length,
-                itemBuilder: (context, index) {
-                  final item = _items[index];
-                  return CupertinoListTile(
-                    title: Text(item.name),
-                    subtitle: Row(
-                      children: [
-                        SizedBox(
-                          width: 60,
-                          child: CupertinoTextField(
-                            controller: TextEditingController(text: item.estimatedGrams.round().toString()),
-                            keyboardType: TextInputType.number,
-                            decoration: const BoxDecoration(
-                              color: CupertinoColors.tertiarySystemFill,
-                              borderRadius: BorderRadius.all(Radius.circular(8)),
+          if (_items.isEmpty)
+            const Expanded(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'No items left to add.',
+                    style: TextStyle(color: CupertinoColors.secondaryLabel),
+                  ),
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: ListView.builder(
+                  key: ValueKey(_items.map((item) => item.name).join('|')),
+                  itemCount: _items.length,
+                  itemBuilder: (context, index) {
+                    final item = _items[index];
+                    return CupertinoListTile(
+                      title: Text(item.name),
+                      subtitle: Row(
+                        children: [
+                          SizedBox(
+                            width: 60,
+                            child: CupertinoTextField(
+                              controller: TextEditingController(text: item.estimatedGrams.round().toString()),
+                              keyboardType: TextInputType.number,
+                              decoration: const BoxDecoration(
+                                color: CupertinoColors.tertiarySystemFill,
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                              ),
+                              suffix: const Text('g'),
+                              onChanged: (v) => _updateGrams(index, v),
                             ),
-                            suffix: const Text('g'),
-                            onChanged: (v) => _updateGrams(index, v),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text('~${item.estimatedCalories} kcal'),
-                      ],
-                    ),
-                    trailing: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      child: const Icon(CupertinoIcons.delete),
-                      onPressed: () => _removeItem(index),
-                    ),
-                  );
-                },
+                          const SizedBox(width: 12),
+                          Text('~${item.estimatedCalories} kcal'),
+                        ],
+                      ),
+                      trailing: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        child: const Icon(CupertinoIcons.delete),
+                        onPressed: () => _removeItem(index),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: CupertinoButton.filled(

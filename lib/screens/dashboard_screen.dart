@@ -60,6 +60,28 @@ class DashboardScreen extends ConsumerWidget {
       final service = PhotoEstimationService();
       final detected = await service.analyzePhoto(bytes);
 
+      if (detected.isEmpty) {
+        if (!context.mounted) return;
+        Navigator.pop(context);
+        progressDialogVisible = false;
+        showCupertinoDialog<void>(
+          context: context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            title: const Text('No food detected'),
+            content: const Text(
+              "We couldn't identify any food in that photo. Try getting closer or improving the lighting.",
+            ),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
       // Cross-reference each detected food against USDA to fill in
       // macros, since Gemini only returns name + estimated grams now.
       await FoodSearchService().enrichDetectedFoods(detected);
@@ -117,11 +139,22 @@ class DashboardScreen extends ConsumerWidget {
     } catch (e) {
       if (!context.mounted) return;
       if (progressDialogVisible) Navigator.pop(context);
+
+      final message = e is PhotoAnalysisException
+          ? e.message
+          : "Something went wrong while saving your meal. Please try again.";
+
       showCupertinoDialog<void>(
         context: context,
         builder: (dialogContext) => CupertinoAlertDialog(
-          content: Text('Error: $e'),
-          actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(dialogContext), child: const Text('OK'))],
+          title: const Text('Couldn\'t scan meal'),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
