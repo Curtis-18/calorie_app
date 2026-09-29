@@ -1,36 +1,129 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/main_shell.dart';
+import 'config/supabase_config.dart';
 import 'screens/auth_gate.dart';
+import 'screens/main_shell.dart';
+import 'screens/onboarding_screen.dart';
+import 'theme/app_shapes.dart';
 import 'theme/app_theme.dart';
+import 'theme/tracker_colors.dart';
+import 'widgets/glass.dart';
 import 'widgets/splash.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: 'https://pbancnuceteomuyybrlb.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiYW5jbnVjZXRlb251eXlicmxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzOTE3MDEsImV4cCI6MjEwMDk2NzcwMX0.m-mD_QzfoYtCPkJzt6TSW4ulXQps82y1T3G3Dy3E1yk',
-  );
+  final configError = SupabaseConfig.validate();
+  if (configError == null) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
+  }
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(ProviderScope(child: MyApp(configError: configError)));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.configError});
+
+  final String? configError;
 
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
       title: 'Calorie Tracker',
       theme: AppTheme.cupertino,
-      home: const SplashGate(child: AuthGate()),
+      home: SplashGate(
+        child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError!),
+      ),
       routes: {
         '/onboarding': (context) => const OnboardingScreen(),
         '/dashboard': (context) => const MainShell(),
       },
+    );
+  }
+}
+
+/// Shown instead of the auth flow when the build is missing a usable Supabase
+/// key, so a misconfiguration reports itself rather than surfacing later as
+/// an opaque "Invalid API key" on the login screen.
+class ConfigErrorScreen extends StatelessWidget {
+  const ConfigErrorScreen({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPageScaffold(
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: TrackerColors.background),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.gutter),
+              child: FrostedGlass(
+                opacity: 0.07,
+                borderRadius: BorderRadius.circular(AppRadii.container),
+                border: Border.all(color: TrackerColors.borderStrong, width: 1),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: TrackerColors.alpha(TrackerColors.error, 0.14),
+                              borderRadius: BorderRadius.circular(AppRadii.button),
+                              border: Border.all(
+                                color: TrackerColors.alpha(TrackerColors.error, 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.exclamationmark_triangle_fill,
+                              size: 18,
+                              color: TrackerColors.error,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          const Expanded(
+                            child: Text(
+                              'Supabase not configured',
+                              style: TextStyle(
+                                color: TrackerColors.textPrimary,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        message,
+                        style: const TextStyle(
+                          color: TrackerColors.textSecondary,
+                          fontSize: 13,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

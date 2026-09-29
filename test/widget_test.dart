@@ -1,3 +1,4 @@
+import 'package:calorie_app/config/supabase_config.dart';
 import 'package:calorie_app/models/insights.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:calorie_app/theme/tracker_colors.dart';
@@ -8,6 +9,8 @@ import 'package:calorie_app/widgets/macro_breakdown.dart';
 import 'package:calorie_app/widgets/pressable.dart';
 import 'package:calorie_app/widgets/save_toast.dart';
 import 'package:calorie_app/widgets/weekly_trend_chart.dart';
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -142,6 +145,8 @@ void main() {
     expect(find.byType(CustomPaint), findsWidgets);
   });
 
+  mainConfigTests();
+
   testWidgets('SaveToast walks from unsaved to saving to saved', (tester) async {
     var saved = 0;
     await tester.pumpWidget(
@@ -162,5 +167,72 @@ void main() {
     await tester.pumpWidget(host(const SaveToast(state: SaveToastState.success)));
     await tester.pumpAndSettle();
     expect(find.text('Saved'), findsOneWidget);
+  });
+}
+
+// The anon key is a build-time input now. These pin the exact mismatch that
+// broke login: a key issued for one project paired with another project's URL,
+// which Supabase answers with a bare "Invalid API key".
+void mainConfigTests() {
+  String jwtFor(String ref) {
+    final payload = base64Url
+        .encode(utf8.encode(jsonEncode({'iss': 'supabase', 'ref': ref, 'role': 'anon'})))
+        .replaceAll('=', '');
+    return 'eyJhbGciOiJIUzI1NiJ9.$payload.sig';
+  }
+
+  group('SupabaseConfig key/URL pairing', () {
+    test('reads the ref claim out of the key', () {
+      expect(projectRefFromKey(jwtFor('pbancnuceteomuyybrlb')), 'pbancnuceteomuyybrlb');
+    });
+
+    test('reads the ref out of the url', () {
+      expect(
+        projectRefFromUrl('https://pbancnuceteomuyybrlb.supabase.co'),
+        'pbancnuceteomuyybrlb',
+      );
+    });
+
+    test('matching key and url validate', () {
+      expect(
+        validateKeyPair(
+          url: 'https://pbancnuceteomuyybrlb.supabase.co',
+          anonKey: jwtFor('pbancnuceteomuyybrlb'),
+        ),
+        isNull,
+      );
+    });
+
+    test('the real broken pairing names both projects', () {
+      // The committed key was issued for ...teonuyybrlb while the app pointed
+      // at ...teomuyybrlb. That is what produced "Invalid API key".
+      final error = validateKeyPair(
+        url: 'https://pbancnuceteomuyybrlb.supabase.co',
+        anonKey: jwtFor('pbancnuceteonuyybrlb'),
+      );
+      expect(error, isNotNull);
+      expect(error, contains('pbancnuceteonuyybrlb'));
+      expect(error, contains('pbancnuceteomuyybrlb'));
+    });
+
+    test('a missing key explains how to supply one', () {
+      final error = validateKeyPair(url: 'https://x.supabase.co', anonKey: '');
+      expect(error, contains('SUPABASE_ANON_KEY'));
+      expect(error, contains('--dart-define'));
+    });
+
+    test('a malformed key is rejected', () {
+      expect(
+        validateKeyPair(url: 'https://x.supabase.co', anonKey: 'not-a-jwt'),
+        contains('does not look like a Supabase JWT'),
+      );
+    });
+
+    test('a malformed url is rejected', () {
+      expect(
+        validateKeyPair(url: 'not a url', anonKey: jwtFor('x')),
+        contains('not a valid URL'),
+      );
+    });
   });
 }
