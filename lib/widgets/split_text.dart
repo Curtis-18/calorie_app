@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class SplitText extends StatefulWidget {
   final String text;
   final TextStyle? style;
   final TextAlign textAlign;
-  final int delay; // milliseconds between characters
-  final double duration; // seconds for each character's animation
+  final int delay;
+  final double duration;
   final Offset fromOffset;
   final Curve curve;
   final VoidCallback? onComplete;
@@ -15,9 +15,9 @@ class SplitText extends StatefulWidget {
     required this.text,
     this.style,
     this.textAlign = TextAlign.center,
-    this.delay = 50,
-    this.duration = 1.25,
-    this.fromOffset = const Offset(0, 40),
+    this.delay = 26,
+    this.duration = 0.42,
+    this.fromOffset = const Offset(0, 24),
     this.curve = Curves.easeOutQuart,
     this.onComplete,
   });
@@ -35,7 +35,7 @@ class _SplitTextState extends State<SplitText> with SingleTickerProviderStateMix
   void initState() {
     super.initState();
     _chars = widget.text.split('');
-    
+
     final staggerTotal = (widget.delay * _chars.length) / 1000.0;
     final totalDuration = Duration(milliseconds: ((widget.duration + staggerTotal) * 1000).toInt());
 

@@ -1,9 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'signup_screen.dart';
-import '../services/auth_service.dart';
+import '../theme/app_shapes.dart';
+import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_field.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,95 +52,97 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Log in'),
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: TrackerColors.navFill,
+        border: AppDecor.hairlineTop,
+        middle: const Text('Log in'),
       ),
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: AppCard(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Welcome back', 
-                  style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(color: TrackerColors.textPrimary)
-                ),
-                const SizedBox(height: 24),
-                CupertinoTextField(
-                  controller: _emailController,
-                  placeholder: 'Email',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                CupertinoTextField(
-                  controller: _passwordController,
-                  placeholder: 'Password',
-                  obscureText: true,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: TrackerColors.error, fontWeight: FontWeight.w600),
+      child: AppBackdrop(
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.gutter),
+            child: AppCard(
+              glow: TrackerColors.accentStart,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Welcome back', style: AppType.title()),
+                  const SizedBox(height: 6),
+                  Text('Sign in to keep your streak alive.', style: AppType.callout()),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppField(
+                    controller: _emailController,
+                    placeholder: 'Email',
+                    icon: CupertinoIcons.mail,
+                    keyboardType: TextInputType.emailAddress,
                   ),
-                ],
-                const SizedBox(height: 24),
-                SizedBox(
-                  height: 52,
-                  child: CupertinoButton.filled(
-                    padding: EdgeInsets.zero,
-                    onPressed: _isLoading ? null : _logIn,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CupertinoActivityIndicator(
-                              color: TrackerColors.background,
-                            ),
-                          )
-                        : const Text('Log in'),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppField(
+                    controller: _passwordController,
+                    placeholder: 'Password',
+                    icon: CupertinoIcons.lock,
+                    obscure: true,
                   ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    const Expanded(child: ColoredBox(color: TrackerColors.divider, child: SizedBox(height: 1.5))),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: TrackerColors.alpha(TrackerColors.error, 0.12),
+                        borderRadius: AppRadii.smallAll,
+                        border: Border.all(
+                          color: TrackerColors.alpha(TrackerColors.error, 0.28),
+                          width: 1,
+                        ),
+                      ),
                       child: Text(
-                        'or',
-                        style: TextStyle(color: TrackerColors.textSecondary),
+                        _errorMessage!,
+                        style: AppType.caption(color: TrackerColors.error, size: 12),
                       ),
                     ),
-                    const Expanded(child: ColoredBox(color: TrackerColors.divider, child: SizedBox(height: 1.5))),
                   ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  height: 52,
-                  child: CupertinoButton(
+                  const SizedBox(height: AppSpacing.xl),
+                  AppButton(
+                    label: 'Log in',
+                    loading: _isLoading,
+                    onPressed: _isLoading ? null : _logIn,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: AppDivider(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('or', style: AppType.caption(size: 12)),
+                      ),
+                      const Expanded(child: AppDivider()),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppButton.glass(
+                    label: 'Continue with Google',
+                    icon: CupertinoIcons.globe,
                     onPressed: () async {
                       // Google sign-in logic
                     },
-                    child: const Text('Continue with Google'),
                   ),
-                ),
-                const SizedBox(height: 16),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      CupertinoPageRoute(builder: (context) => const SignUpScreen()),
-                    );
-                  },
-                  child: const Text(
-                    "Don't have an account? Sign up",
-                    style: TextStyle(color: TrackerColors.primary),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppButton(
+                    label: "Don't have an account? Sign up",
+                    style: AppButtonStyle.quiet,
+                    height: 44,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(builder: (context) => const SignUpScreen()),
+                      );
+                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

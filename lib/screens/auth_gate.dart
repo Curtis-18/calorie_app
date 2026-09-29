@@ -3,6 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../theme/tracker_colors.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_dialog.dart';
+import '../widgets/app_field.dart';
+import '../widgets/empty_state.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'signup_screen.dart';
@@ -10,7 +14,7 @@ import 'signup_screen.dart';
 enum _OnboardingStatus { done, notDone, error }
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key} );
+  const AuthGate({super.key});
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -23,7 +27,7 @@ class _AuthGateState extends State<AuthGate> {
   Future<_OnboardingStatus> _checkOnboarding(String accessToken) async {
     try {
       final response = await http
-          .get(Uri.parse('${ApiConfig.baseUrl}/targets' ), headers: {'Authorization': 'Bearer $accessToken'})
+          .get(Uri.parse('${ApiConfig.baseUrl}/targets'), headers: {'Authorization': 'Bearer $accessToken'})
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) return _OnboardingStatus.done;
@@ -66,7 +70,10 @@ class _AuthGateState extends State<AuthGate> {
           builder: (context, snap) {
             if (!snap.hasData) {
               return const CupertinoPageScaffold(
-                child: Center(child: CupertinoActivityIndicator(color: TrackerColors.primary)),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: TrackerColors.background),
+                  child: Center(child: PulsingRing()),
+                ),
               );
             }
             switch (snap.data!) {
@@ -85,28 +92,32 @@ class _AuthGateState extends State<AuthGate> {
 }
 
 class _RetryScreen extends StatelessWidget {
-  final VoidCallback onRetry;
   const _RetryScreen({required this.onRetry});
+
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(CupertinoIcons.wifi_exclamationmark, size: 48, color: TrackerColors.error),
-              const SizedBox(height: 16),
-              Text(
-                'Could not reach the server', 
-                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(color: TrackerColors.textPrimary)
+      child: AppBackdrop(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const AppEmptyState(
+              icon: CupertinoIcons.wifi_exclamationmark,
+              title: 'Could not reach the server',
+              message: 'Check your connection and try again.',
+              accent: TrackerColors.error,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(40, 0, 40, 40),
+              child: AppButton(
+                label: 'Retry',
+                icon: CupertinoIcons.refresh,
+                onPressed: onRetry,
               ),
-              const SizedBox(height: 24),
-              CupertinoButton.filled(onPressed: onRetry, child: const Text('Retry')),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

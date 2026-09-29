@@ -1,58 +1,150 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/food_entry.dart';
 import '../providers/food_log_provider.dart';
 import '../providers/user_provider.dart';
+import '../services/log_cache_reader.dart';
+import '../services/photo_estimation.dart';
+import '../services/food_search_service.dart';
+import '../theme/app_motion.dart';
+import '../theme/app_shapes.dart';
+import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/calorie_ring.dart';
+import '../widgets/dashboard_header.dart';
+import '../widgets/glass.dart';
+import '../widgets/macro_breakdown.dart';
 import '../widgets/meal_section.dart';
 import '../widgets/save_toast.dart';
+import '../widgets/shimmer.dart';
 import 'auth_gate.dart';
 import 'food_search_screen.dart';
 import 'photo_review_screen.dart';
-import '../services/photo_estimation.dart';
-import '../services/food_search_service.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
-  void _showMealPicker(BuildContext context, WidgetRef ref) {
-    showCupertinoModalPopup(
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  DateTime _selectedDay = DateTime.now();
+  List<FoodEntry> _pastEntries = const [];
+  bool _loadingPast = false;
+  int _streak = 0;
+
+  bool get _isToday => LogCacheReader.isSameDay(_selectedDay, DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshStreak();
+  }
+
+  Future<void> _refreshStreak() async {
+    final streak = await LogCacheReader.currentStreak();
+    if (!mounted) return;
+    if (streak == _streak) return;
+    setState(() => _streak = streak);
+  }
+
+  Future<void> _selectDay(DateTime day) async {
+    final isToday = LogCacheReader.isSameDay(day, DateTime.now());
+    if (isToday) {
+      setState(() {
+        _selectedDay = day;
+        _pastEntries = const [];
+      });
+      return;
+    }
+
+    setState(() {
+      _selectedDay = day;
+      _loadingPast = true;
+    });
+    final entries = await LogCacheReader.entriesFor(day);
+    if (!mounted) return;
+    setState(() {
+      _pastEntries = entries;
+      _loadingPast = false;
+    });
+  }
+
+  Future<MealType?> _showMealPicker(BuildContext context) {
+    return showAppSheet<MealType>(
       context: context,
-      builder: (sheetContext) => CupertinoActionSheet(
-        title: const Text('Log a Meal'),
-        actions: [
-          ...MealType.values.map((meal) => CupertinoActionSheetAction(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.pop(sheetContext);
-              _captureAndAnalyze(context, ref, meal);
-            },
-            child: Text(meal.name.toUpperCase()),
-          )),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(sheetContext),
-          child: const Text('Cancel'),
+      builder: (sheetContext) => AppSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Log a Meal', style: AppType.title(), textAlign: TextAlign.center),
+            const SizedBox(height: 4),
+            Text('Which meal are we adding to?', style: AppType.callout(), textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.lg),
+            ...MealType.values.map(
+              (meal) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: AppButton.glass(
+                  label: meal.name,
+                  icon: _iconFor(meal),
+                  height: 50,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.of(sheetContext).pop(meal);
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _captureAndAnalyze(BuildContext context, WidgetRef ref, MealType meal) async {
+  static IconData _iconFor(MealType meal) {
+    switch (meal) {
+      case MealType.breakfast:
+        return CupertinoIcons.sun_max_fill;
+      case MealType.lunch:
+        return CupertinoIcons.sun_max;
+      case MealType.dinner:
+        return CupertinoIcons.moon_stars_fill;
+      case MealType.snack:
+        return CupertinoIcons.circle_grid_hex_fill;
+    }
+  }
+
+  Future<void> _startScan(BuildContext context) async {
+    final meal = await _showMealPicker(context);
+    if (meal == null || !context.mounted) return;
+    await _captureAndAnalyze(context, meal);
+  }
+
+  Future<void> _startManualAdd(BuildContext context) async {
+    final meal = await _showMealPicker(context);
+    if (meal == null || !context.mounted) return;
+    await _openFoodSearch(context, meal);
+  }
+
+  Future<void> _captureAndAnalyze(BuildContext context, MealType meal) async {
     final picker = ImagePicker();
     final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
     if (photo == null || !context.mounted) return;
 
     var progressDialogVisible = true;
-    showCupertinoDialog(
+    showCupertinoDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CupertinoActivityIndicator(color: TrackerColors.primary)),
+      barrierColor: const Color(0x99000000),
+      builder: (context) => const AppLoadingDialog(label: 'Analysing your meal…'),
     );
 
     try {
@@ -64,20 +156,11 @@ class DashboardScreen extends ConsumerWidget {
         if (!context.mounted) return;
         Navigator.pop(context);
         progressDialogVisible = false;
-        showCupertinoDialog<void>(
+        await showAppDialog(
           context: context,
-          builder: (dialogContext) => CupertinoAlertDialog(
-            title: const Text('No food detected'),
-            content: const Text(
-              "We couldn't identify any food in that photo. Try getting closer or improving the lighting.",
-            ),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+          title: 'No food detected',
+          message: "We couldn't identify any food in that photo. Try getting closer or improving the lighting.",
+          confirmLabel: 'OK',
         );
         return;
       }
@@ -127,6 +210,7 @@ class DashboardScreen extends ConsumerWidget {
             entries.map((entry) => ref.read(foodLogProvider.notifier).addEntry(entry)),
           );
           saveState.value = SaveToastState.success;
+          _refreshStreak();
           await Future<void>.delayed(const Duration(milliseconds: 1200));
           dismissSaveToast();
         } catch (_) {
@@ -144,29 +228,23 @@ class DashboardScreen extends ConsumerWidget {
           ? e.message
           : "Something went wrong while saving your meal. Please try again.";
 
-      showCupertinoDialog<void>(
+      await showAppDialog(
         context: context,
-        builder: (dialogContext) => CupertinoAlertDialog(
-          title: const Text('Couldn\'t scan meal'),
-          content: Text(message),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+        title: 'Couldn\'t scan meal',
+        message: message,
+        confirmLabel: 'OK',
       );
     }
   }
 
-  void _openFoodSearch(BuildContext context, WidgetRef ref, MealType meal) async {
+  Future<void> _openFoodSearch(BuildContext context, MealType meal) async {
     final entry = await Navigator.push<FoodEntry>(
       context,
       CupertinoPageRoute(builder: (context) => FoodSearchScreen(mealType: meal)),
     );
     if (entry == null) return;
     await ref.read(foodLogProvider.notifier).addEntry(entry);
+    _refreshStreak();
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -178,111 +256,225 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  String get _dateLabel {
+    final now = DateTime.now();
+    if (LogCacheReader.isSameDay(_selectedDay, now)) return 'Today';
+    if (LogCacheReader.isSameDay(_selectedDay, now.subtract(const Duration(days: 1)))) {
+      return 'Yesterday';
+    }
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[_selectedDay.month - 1]} ${_selectedDay.day}';
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    ref.listen<List<FoodEntry>>(foodLogProvider, (previous, next) => _refreshStreak());
+
     final profile = ref.watch(userProfileProvider);
     final foodLog = ref.watch(foodLogProvider);
 
+    final entries = _isToday ? foodLog : _pastEntries;
     final target = profile?.calorieTarget ?? 2000;
-    final consumed = foodLog.totalCalories;
+    final consumed = entries.totalCalories;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return CupertinoPageScaffold(
       child: Stack(
         children: [
-          CustomScrollView(
-        slivers: [
-          CupertinoSliverNavigationBar(
-            largeTitle: const Text('Welcome Back'),
-            backgroundColor: CupertinoColors.systemGroupedBackground,
-            trailing: CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () => _logout(context),
-              child: const Icon(CupertinoIcons.square_arrow_right),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: CalorieRing(consumed: consumed, target: target, width: 200),
+          DecoratedBox(
+            decoration: const BoxDecoration(color: TrackerColors.background),
+            child: Column(
+              children: [
+                SafeArea(
+                  bottom: false,
+                  child: FrostedGlass(
+                    opacity: 0.9,
+                    tint: TrackerColors.navFill,
+                    blur: 24,
+                    borderRadius: BorderRadius.zero,
+                    border: AppDecor.hairlineTop,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: DashboardHeader(
+                            streakDays: _streak,
+                            dateLabel: _dateLabel,
+                            canGoNext: !_isToday,
+                            onPreviousDay: () => _selectDay(
+                              _selectedDay.subtract(const Duration(days: 1)),
+                            ),
+                            onNextDay: () =>
+                                _selectDay(_selectedDay.add(const Duration(days: 1))),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 20, top: 6, bottom: 6),
+                          child: AppIconButton(
+                            icon: CupertinoIcons.square_arrow_right,
+                            size: 38,
+                            iconSize: 17,
+                            color: TrackerColors.textSecondary,
+                            onPressed: () => _logout(context),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 14),
-
-                AppCard(
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _macroPill(context, 'Carbs', foodLog.totalCarbs, profile?.carbsTargetG ?? 0, TrackerColors.macroCarbs),
-                      _macroPill(context, 'Protein', foodLog.totalProtein, profile?.proteinTargetG ?? 0, TrackerColors.macroProtein),
-                      _macroPill(context, 'Fat', foodLog.totalFat, profile?.fatTargetG ?? 0, TrackerColors.macroFat),
+                Expanded(
+                  child: CustomScrollView(
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+                        sliver: SliverList(
+                          delegate: SliverChildListDelegate([
+                            _RingCard(
+                              consumed: consumed,
+                              target: target,
+                              isToday: _isToday,
+                              loading: _loadingPast,
+                            ),
+                            const SizedBox(height: 14),
+                            MacroBreakdownCard(
+                              protein: entries.totalProtein,
+                              proteinTarget: profile?.proteinTargetG ?? 0,
+                              carbs: entries.totalCarbs,
+                              carbsTarget: profile?.carbsTargetG ?? 0,
+                              fat: entries.totalFat,
+                              fatTarget: profile?.fatTargetG ?? 0,
+                            ),
+                            const SizedBox(height: 22),
+                            SectionHeader(
+                              label: _isToday ? "Today's meals" : 'Meals',
+                              trailing: _isToday
+                                  ? Text(
+                                      entries.isEmpty
+                                          ? 'Nothing yet'
+                                          : '${entries.length} item${entries.length == 1 ? '' : 's'}',
+                                      style: AppType.caption(
+                                        color: TrackerColors.textTertiary,
+                                        size: 11,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(height: 12),
+                            ...MealType.values.map(
+                              (meal) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: MealSection(
+                                  title: meal.name,
+                                  entries: entries.forMeal(meal),
+                                  onAdd: () => _openFoodSearch(context, meal),
+                                  onRemove: (id) =>
+                                      ref.read(foodLogProvider.notifier).removeEntry(id),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            Center(
+                              child: Text(
+                                _isToday
+                                    ? 'Swipe a food left to delete it'
+                                    : 'Viewing a cached day — logging resumes on Today',
+                                style: AppType.caption(
+                                  color: TrackerColors.textTertiary,
+                                  size: 11,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: AppSpacing.tabBarClearance + bottomInset),
+                          ]),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 18),
-                Text(
-                  'TODAY\'S MEALS',
-                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                        letterSpacing: 1.5,
-                        fontWeight: FontWeight.w800,
-                        color: TrackerColors.textSecondary,
-                      ),
-                ),
-                const SizedBox(height: 10),
-
-                ...MealType.values.map((meal) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: MealSection(
-                        title: meal.name.toUpperCase(),
-                        entries: foodLog.forMeal(meal),
-                        onAdd: () => _openFoodSearch(context, ref, meal),
-                        onRemove: (id) => ref.read(foodLogProvider.notifier).removeEntry(id),
-                      ),
-                    )),
-                const SizedBox(height: 80),
-              ]),
+              ],
             ),
           ),
-            ],
-          ),
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 16,
-            child: CupertinoButton.filled(
-              onPressed: () => _showMealPicker(context, ref),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [Icon(CupertinoIcons.camera), SizedBox(width: 8), Text('Scan meal')],
+          if (_isToday)
+            Positioned(
+              right: 24,
+              bottom: bottomInset + 18,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  AppFab(
+                    icon: CupertinoIcons.search,
+                    size: 50,
+                    iconSize: 21,
+                    onPressed: () => _startManualAdd(context),
+                  ),
+                  const SizedBox(width: 12),
+                  AppFab(
+                    icon: CupertinoIcons.add,
+                    gradient: TrackerColors.calorieGradient,
+                    onPressed: () => _startScan(context),
+                  ),
+                ],
               ),
             ),
-          ),
         ],
       ),
     );
   }
+}
 
-  Widget _macroPill(BuildContext context, String label, double current, int target, Color color) {
-    return Column(
-      children: [
-        Text(
-          '${current.round()}g',
-          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(color: color, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label.toUpperCase(),
-          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                fontSize: 10,
-                color: TrackerColors.textSecondary,
+class _RingCard extends StatelessWidget {
+  const _RingCard({
+    required this.consumed,
+    required this.target,
+    required this.isToday,
+    required this.loading,
+  });
+
+  final int consumed;
+  final int target;
+  final bool isToday;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const AppCard(
+        padding: EdgeInsets.symmetric(vertical: 34),
+        child: Center(child: SkeletonRing(size: 190, strokeWidth: 16)),
+      );
+    }
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: AppMotion.medium,
+      curve: AppMotion.standard,
+      builder: (context, t, child) => Opacity(opacity: t, child: child),
+      child: AppCard(
+        padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+        glow: TrackerColors.accentStart,
+        child: Column(
+          children: [
+            CalorieRing(consumed: consumed, target: target),
+            if (!isToday) ...[
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(CupertinoIcons.clock, size: 13, color: TrackerColors.textTertiary),
+                  const SizedBox(width: 6),
+                  Text('Cached day', style: AppType.caption(size: 11)),
+                ],
               ),
+            ],
+          ],
         ),
-      ],
+      ),
     );
   }
 }

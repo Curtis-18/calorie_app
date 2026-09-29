@@ -1,8 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'login_screen.dart';
+import '../theme/app_shapes.dart';
+import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_dialog.dart';
+import '../widgets/app_field.dart';
+import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -34,12 +39,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (response.session != null) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else {
-        showCupertinoDialog<void>(
+        await showAppDialog(
           context: context,
-          builder: (context) => CupertinoAlertDialog(
-            content: const Text('Check your email to confirm your account, then log in.'),
-            actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: Text('OK'))],
-          ),
+          title: 'Almost there',
+          message: 'Check your email to confirm your account, then log in.',
+          confirmLabel: 'OK',
         );
       }
     } on AuthException catch (e) {
@@ -59,71 +63,76 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Sign up'),
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: TrackerColors.navFill,
+        border: AppDecor.hairlineTop,
+        middle: const Text('Sign up'),
       ),
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: AppCard(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Create your account', 
-                  style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(color: TrackerColors.textPrimary)
-                ),
-                const SizedBox(height: 24),
-                CupertinoTextField(
-                  controller: _emailController,
-                  placeholder: 'Email',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                CupertinoTextField(
-                  controller: _passwordController,
-                  placeholder: 'Password',
-                  obscureText: true,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: TrackerColors.error, fontWeight: FontWeight.w600),
+      child: AppBackdrop(
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.gutter),
+            child: AppCard(
+              glow: TrackerColors.accentStart,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Create your account', style: AppType.title()),
+                  const SizedBox(height: 6),
+                  Text('Start tracking in under a minute.', style: AppType.callout()),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppField(
+                    controller: _emailController,
+                    placeholder: 'Email',
+                    icon: CupertinoIcons.mail,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppField(
+                    controller: _passwordController,
+                    placeholder: 'Password',
+                    icon: CupertinoIcons.lock,
+                    obscure: true,
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: TrackerColors.alpha(TrackerColors.error, 0.12),
+                        borderRadius: AppRadii.smallAll,
+                        border: Border.all(
+                          color: TrackerColors.alpha(TrackerColors.error, 0.28),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: AppType.caption(color: TrackerColors.error, size: 12),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.xl),
+                  AppButton(
+                    label: 'Sign up',
+                    loading: _isLoading,
+                    onPressed: _isLoading ? null : _signUp,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppButton(
+                    label: 'Already have an account? Log in',
+                    style: AppButtonStyle.quiet,
+                    height: 44,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(builder: (context) => const LoginScreen()),
+                      );
+                    },
                   ),
                 ],
-                const SizedBox(height: 24),
-                SizedBox(
-                  height: 52,
-                  child: CupertinoButton.filled(
-                    padding: EdgeInsets.zero,
-                    onPressed: _isLoading ? null : _signUp,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CupertinoActivityIndicator(
-                              color: TrackerColors.background,
-                            ),
-                          )
-                        : const Text('Sign up'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      CupertinoPageRoute(builder: (context) => const LoginScreen()),
-                    );
-                  },
-                  child: const Text(
-                    'Already have an account? Log in',
-                    style: TextStyle(color: TrackerColors.primary),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
