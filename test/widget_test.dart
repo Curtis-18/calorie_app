@@ -234,5 +234,53 @@ void mainConfigTests() {
         contains('not a valid URL'),
       );
     });
+
+    // The dashboard now issues sb_publishable_ keys, which carry no `ref`
+    // claim. Rejecting them as malformed would break a correctly configured
+    // build.
+    test('a publishable key is accepted even though it has no ref', () {
+      expect(
+        validateKeyPair(
+          url: 'https://pbancnuceteomuyybrlb.supabase.co',
+          anonKey: 'sb_publishable_abcdefghijklmnop',
+        ),
+        isNull,
+      );
+    });
+
+    test('a malformed url is rejected before the key format', () {
+      expect(
+        validateKeyPair(url: '', anonKey: 'sb_publishable_abcdefghijklmnop'),
+        contains('not a valid URL'),
+      );
+    });
+  });
+
+  // A CI variable that is unset expands to `--dart-define=SUPABASE_URL=`, and
+  // an empty define overrides a `defaultValue` rather than deferring to it.
+  // That is how the live bundle ended up configured for nothing.
+  group('SupabaseConfig url fallback', () {
+    test('an unset define keeps the built-in url', () {
+      expect(
+        resolveUrl('', fallback: SupabaseConfig.defaultUrl),
+        'https://pbancnuceteomuyybrlb.supabase.co',
+      );
+    });
+
+    test('a whitespace-only define keeps the built-in url', () {
+      expect(resolveUrl('  \n', fallback: SupabaseConfig.defaultUrl), SupabaseConfig.defaultUrl);
+    });
+
+    test('a real define wins', () {
+      expect(
+        resolveUrl('https://abc.supabase.co', fallback: SupabaseConfig.defaultUrl),
+        'https://abc.supabase.co',
+      );
+    });
+
+    test('the resolved url is a real project', () {
+      expect(SupabaseConfig.url, SupabaseConfig.defaultUrl);
+      expect(SupabaseConfig.urlProjectRef, 'pbancnuceteomuyybrlb');
+    });
   });
 }

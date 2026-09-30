@@ -22,9 +22,22 @@ String? projectRefFromUrl(String url) {
   return parts.length >= 2 && parts.first.isNotEmpty ? parts.first : null;
 }
 
+/// The newer key format the dashboard hands out instead of an anon JWT.
+bool isPublishableKey(String key) => key.startsWith('sb_publishable_');
+
+/// Falls back to [fallback] when the build passed no define.
+///
+/// An explicitly empty define still overrides a `defaultValue`, so a CI
+/// variable that is unset (`--dart-define=SUPABASE_URL=`) silently blanks the
+/// URL rather than leaving the default in place.
+String resolveUrl(String define, {required String fallback}) =>
+    define.trim().isEmpty ? fallback : define.trim();
+
 /// The one thing that breaks login: a key and a URL for different projects.
 String? validateKeyPair({required String url, required String anonKey}) {
-  if (anonKey.trim().isEmpty) {
+  final key = anonKey.trim();
+
+  if (key.isEmpty) {
     return 'SUPABASE_ANON_KEY was not supplied at build time.\n\n'
         'Rebuild with:\n'
         '--dart-define=SUPABASE_URL=$url\n'
@@ -32,11 +45,18 @@ String? validateKeyPair({required String url, required String anonKey}) {
         'Project Settings > API Keys in the Supabase dashboard.';
   }
 
-  final keyRef = projectRefFromKey(anonKey);
   final urlRef = projectRefFromUrl(url);
-
-  if (keyRef == null) return 'The anon key does not look like a Supabase JWT.';
   if (urlRef == null) return 'SUPABASE_URL is not a valid URL: $url';
+
+  final keyRef = projectRefFromKey(key);
+
+  // Publishable keys are opaque: no `ref` claim to compare against, so the
+  // mismatch check below cannot run for them.
+  if (keyRef == null) {
+    if (isPublishableKey(key)) return null;
+    return 'The anon key does not look like a Supabase JWT.';
+  }
+
   if (keyRef != urlRef) {
     return 'The anon key belongs to project "$keyRef" but SUPABASE_URL points '
         'at "$urlRef".\n\n'
@@ -56,10 +76,11 @@ String? validateKeyPair({required String url, required String anonKey}) {
 class SupabaseConfig {
   const SupabaseConfig._();
 
-  static const String url = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://pbancnuceteomuyybrlb.supabase.co',
-  );
+  static const String defaultUrl = 'https://pbancnuceteomuyybrlb.supabase.co';
+
+  static const String _urlDefine = String.fromEnvironment('SUPABASE_URL');
+
+  static final String url = resolveUrl(_urlDefine, fallback: defaultUrl);
 
   static const String anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 

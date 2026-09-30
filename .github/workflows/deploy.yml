@@ -15,11 +15,23 @@ jobs:
           channel: 'stable'
           
       - name: Build Web
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          flutter build web --release \
-            --dart-define=BACKEND_URL=${{ secrets.BACKEND_URL }} \
-            --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_ANON_KEY secret is not set on this repo. A build without it still succeeds, it just ships a bundle that can only render the 'Supabase not configured' screen. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          args=(--release --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY")
+          if [ -n "$BACKEND_URL" ]; then
+            args+=(--dart-define=BACKEND_URL="$BACKEND_URL")
+          fi
+          if [ -n "$SUPABASE_URL" ]; then
+            args+=(--dart-define=SUPABASE_URL="$SUPABASE_URL")
+          fi
+          flutter build web "${args[@]}"
           
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
