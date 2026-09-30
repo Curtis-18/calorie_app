@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show DefaultMaterialLocalizations;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
@@ -10,6 +11,21 @@ import 'theme/app_theme.dart';
 import 'theme/tracker_colors.dart';
 import 'widgets/glass.dart';
 import 'widgets/splash.dart';
+
+/// The onboarding steps are built from Material inputs (`TextFormField`,
+/// `DropdownButtonFormField`) inside a `CupertinoApp`, which ships no
+/// `MaterialLocalizations`.
+///
+/// `TextField` dereferences it while building rather than only in its debug
+/// assertions — `_getEffectiveDecoration` calls `MaterialLocalizations.of`,
+/// which null-asserts — so without this the Body Metrics step rendered as a
+/// blank grey `ErrorWidget` in release. Steps built from `InputDecorator`
+/// alone got away with it, which is why only step 2 broke, and why no test
+/// caught it: the framework asserts are debug-only, and the app is deployed
+/// as a release build.
+const appLocalizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  DefaultMaterialLocalizations.delegate,
+];
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +51,7 @@ class MyApp extends StatelessWidget {
     return CupertinoApp(
       title: 'Calorie Tracker',
       theme: AppTheme.cupertino,
+      localizationsDelegates: appLocalizationsDelegates,
       home: SplashGate(
         child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError!),
       ),
