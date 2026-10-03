@@ -154,7 +154,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
       if (detected.isEmpty) {
         if (!context.mounted) return;
-        Navigator.pop(context);
+        Navigator.of(context, rootNavigator: true).pop();
         progressDialogVisible = false;
         await showAppDialog(
           context: context,
@@ -170,7 +170,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       await FoodSearchService().enrichDetectedFoods(detected);
 
       if (!context.mounted) return;
-      Navigator.pop(context);
+      Navigator.of(context, rootNavigator: true).pop();
       progressDialogVisible = false;
 
       final entries = await Navigator.push<List<FoodEntry>>(
@@ -222,7 +222,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     } catch (e) {
       if (!context.mounted) return;
-      if (progressDialogVisible) Navigator.pop(context);
+      if (progressDialogVisible) Navigator.of(context, rootNavigator: true).pop();
 
       final message = e is PhotoAnalysisException
           ? e.message
