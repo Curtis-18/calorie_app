@@ -28,7 +28,7 @@ class _AuthGateState extends State<AuthGate> {
     try {
       final response = await http
           .get(Uri.parse('${ApiConfig.baseUrl}/targets'), headers: {'Authorization': 'Bearer $accessToken'})
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) return _OnboardingStatus.done;
       if (response.statusCode == 404) return _OnboardingStatus.notDone;
