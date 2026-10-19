@@ -415,7 +415,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   const SizedBox(width: 12),
                   AppFab(
-                    icon: CupertinoIcons.add,
+                    icon: CupertinoIcons.camera,
                     gradient: TrackerColors.calorieGradient,
                     onPressed: () => _startScan(context),
                   ),
