@@ -1,5 +1,23 @@
 enum Gender { male, female }
-enum ActivityLevel { sedentary, light, moderate, active, veryActive }
+enum ActivityLevel {
+  sedentary('sedentary'),
+  light('light'),
+  moderate('moderate'),
+  active('active'),
+  veryActive('very_active');
+
+  const ActivityLevel(this.apiName);
+
+  /// The backend's spelling (`very_active` rather than `veryActive`).
+  final String apiName;
+
+  static ActivityLevel? fromApi(String? value) {
+    for (final level in values) {
+      if (level.apiName == value) return level;
+    }
+    return null;
+  }
+}
 enum Goal { lose, maintain, gain }
 
 class UserProfile {
@@ -111,4 +129,37 @@ class UserProfile {
         fatTargetG: json['fatTargetG'] as int?,
         carbsTargetG: json['carbsTargetG'] as int?,
       );
+
+  /// Rebuild a full profile from `GET /targets`, or null if the response
+  /// lacks the onboarding answers (an older backend) or has unknown values.
+  ///
+  /// This is what restores a profile on a new device or browser, where the
+  /// local cache is empty.
+  static UserProfile? fromTargetsJson(Map<String, dynamic> json) {
+    try {
+      final dob = DateTime.tryParse(json['date_of_birth'] as String? ?? '');
+      final gender = Gender.values.asNameMap()[json['sex']];
+      final activity = ActivityLevel.fromApi(json['activity_level'] as String?);
+      final goal = Goal.values.asNameMap()[json['goal']];
+      if (dob == null || gender == null || activity == null || goal == null) return null;
+
+      return UserProfile(
+        weightKg: (json['weight_kg'] as num).toDouble(),
+        heightCm: (json['height_cm'] as num).toDouble(),
+        dateOfBirth: dob,
+        gender: gender,
+        activityLevel: activity,
+        goal: goal,
+        bmr: (json['bmr'] as num?)?.toDouble(),
+        tdee: (json['tdee'] as num?)?.toDouble(),
+        calorieTarget: (json['calorie_target'] as num?)?.toInt(),
+        bmi: (json['bmi'] as num?)?.toDouble(),
+        proteinTargetG: (json['protein_g'] as num?)?.toInt(),
+        fatTargetG: (json['fat_g'] as num?)?.toInt(),
+        carbsTargetG: (json['carbs_g'] as num?)?.toInt(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }

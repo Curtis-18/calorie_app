@@ -123,7 +123,11 @@ void main() {
       final auth = StreamController<String?>.broadcast();
       addTearDown(auth.close);
 
-      final n = UserProfileNotifier(currentUserId: () => _a, userIdChanges: auth.stream);
+      final n = UserProfileNotifier(
+        currentUserId: () => _a,
+        authToken: () => null, // cache-only: no server refresh
+        userIdChanges: auth.stream,
+      );
       await _settle();
       expect(n.state?.calorieTarget, 1800);
 
@@ -144,7 +148,11 @@ void main() {
       final auth = StreamController<String?>.broadcast();
       addTearDown(auth.close);
 
-      final n = UserProfileNotifier(currentUserId: () => _a, userIdChanges: auth.stream);
+      final n = UserProfileNotifier(
+        currentUserId: () => _a,
+        authToken: () => null, // cache-only: no server refresh
+        userIdChanges: auth.stream,
+      );
       await _settle();
       expect(n.state?.calorieTarget, 1800);
 

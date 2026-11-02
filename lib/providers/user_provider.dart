@@ -8,39 +8,42 @@ import '../models/user_profile.dart';
 import '../config/api_config.dart';
 import '../services/user_cache.dart';
 
-String _activityLevelToApi(ActivityLevel level) {
-  switch (level) {
-    case ActivityLevel.sedentary: return 'sedentary';
-    case ActivityLevel.light: return 'light';
-    case ActivityLevel.moderate: return 'moderate';
-    case ActivityLevel.active: return 'active';
-    case ActivityLevel.veryActive: return 'very_active';
-  }
-}
-
 /// The signed-in user's profile and targets.
 ///
 /// Global and long-lived like the other providers, so it follows the signed-in
-/// user: cleared on sign-out and reloaded from that user's own cache when a
-/// different user signs in. It used to read one device-wide `user_profile`
-/// key once, so a second account on the same device inherited the first
-/// account's targets.
+/// user: cleared on sign-out and reloaded when a different user signs in.
+///
+/// Loads that user's cached copy first for an instant dashboard, then
+/// refreshes from `GET /targets`. Reading only the cache meant a fresh
+/// install, a new browser or cleared storage showed default targets and "Set
+/// up profile" even though the profile was saved on the server. The server
+/// copy also wins over a stale cache after an edit on another device.
 class UserProfileNotifier extends StateNotifier<UserProfile?> {
   UserProfileNotifier({
+    this._client,
     String? Function()? currentUserId,
+    String? Function()? authToken,
     Stream<String?>? userIdChanges,
-  }) : super(null) {
+  })  : _authToken = authToken ?? _supabaseToken,
+        super(null) {
     _authSubscription = (userIdChanges ?? UserCache.userIdChanges()).listen(_onUser);
     _onUser((currentUserId ?? UserCache.currentUserId)());
   }
 
   static String get _baseUrl => ApiConfig.baseUrl;
 
+  final http.Client? _client;
+  final String? Function() _authToken;
   StreamSubscription<String?>? _authSubscription;
   String? _userId;
 
-  /// Bumped on every user change so a slow cache read for a previous user
-  /// can't land after someone else has signed in.
+  static String? _supabaseToken() => Supabase.instance.client.auth.currentSession?.accessToken;
+
+  http.Client get _http => _client ?? _sharedClient;
+  static final _sharedClient = http.Client();
+
+  /// Bumped on every user change so a slow load for a previous user can't
+  /// land after someone else has signed in.
   int _generation = 0;
 
   void _onUser(String? userId) {
@@ -52,14 +55,40 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   }
 
   Future<void> _loadProfile(String userId, int generation) async {
+    bool stillCurrent() => mounted && generation == _generation;
+
     await UserCache.migrateLegacy(userId);
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(UserCache.profileKey(userId));
-    if (!mounted || generation != _generation || saved == null) return;
+    if (!stillCurrent()) return;
+    if (saved != null) {
+      try {
+        state = UserProfile.fromJson(jsonDecode(saved) as Map<String, dynamic>);
+      } catch (_) {
+        // A corrupt cache entry: behave as if there were none.
+      }
+    }
+
+    final remote = await _fetchRemote();
+    if (remote == null || !stillCurrent()) return;
+    state = remote;
+    await prefs.setString(UserCache.profileKey(userId), jsonEncode(remote.toJson()));
+  }
+
+  /// The profile from the server, or null when offline, not onboarded yet
+  /// (404), or the backend predates the onboarding fields. Never throws: the
+  /// cached copy, if any, stays on screen.
+  Future<UserProfile?> _fetchRemote() async {
     try {
-      state = UserProfile.fromJson(jsonDecode(saved) as Map<String, dynamic>);
+      final token = _authToken();
+      if (token == null) return null;
+      final response = await _http
+          .get(Uri.parse('$_baseUrl/targets'), headers: {'Authorization': 'Bearer $token'})
+          .timeout(const Duration(seconds: 60)); // Render cold start
+      if (response.statusCode != 200) return null;
+      return UserProfile.fromTargetsJson(jsonDecode(response.body) as Map<String, dynamic>);
     } catch (_) {
-      // A corrupt cache entry: behave as if there were none.
+      return null;
     }
   }
 
@@ -77,7 +106,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     }
     final userId = session.user.id;
 
-    final response = await http.post(
+    final response = await _http.post(
       Uri.parse('$_baseUrl/targets'),
       headers: {
         'Content-Type': 'application/json',
@@ -90,7 +119,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
         'height_inches': (profile.heightCm / 2.54) % 12,
         'weight_value': profile.weightKg,
         'weight_unit': 'kg',
-        'activity_level': _activityLevelToApi(profile.activityLevel),
+        'activity_level': profile.activityLevel.apiName,
         'goal': profile.goal.name,
       }),
     ).timeout(const Duration(seconds: 15));
