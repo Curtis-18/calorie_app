@@ -116,6 +116,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           );
           return false;
         }
+        if (_dateOfBirth!.isAfter(_latestAdultBirthday)) {
+          // Mifflin-St Jeor is an adult equation, and paediatric guidance
+          // advises against calorie counting for teens.
+          showAppDialog(
+            context: context,
+            title: 'Adults only',
+            message: 'Calorie targets are designed for adults. You need to be 18 or older to use them.',
+            confirmLabel: 'OK',
+          );
+          return false;
+        }
         return true;
       case 1:
         return _formKey.currentState?.validate() ?? false;
@@ -135,6 +146,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _prev() {
     if (_currentStep > 0) setState(() => _currentStep--);
+  }
+
+  static DateTime get _latestAdultBirthday {
+    final now = DateTime.now();
+    return DateTime(now.year - 18, now.month, now.day);
   }
 
   Future<void> _submit() async {
@@ -161,14 +177,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!mounted) return;
       setState(() => _saveState = SaveToastState.success);
       await Future.delayed(const Duration(milliseconds: 900));
-      if (mounted) Navigator.pushReplacementNamed(context, '/dashboard');
+      if (!mounted) return;
+
+      // A weight-loss goal can land on maintenance when daily burn is already
+      // at the safe minimum (1200 kcal women / 1500 men). Say so, rather
+      // than silently showing a "lose" target that isn't a deficit.
+      final saved = ref.read(userProfileProvider);
+      final target = saved?.calorieTarget;
+      final tdee = saved?.tdee;
+      if (_goal == Goal.lose && target != null && tdee != null && target >= tdee.round()) {
+        await showAppDialog(
+          context: context,
+          title: 'Your target is maintenance',
+          message: 'Your daily burn is already close to the minimum we recommend eating '
+              'without medical supervision, so your target is $target kcal. '
+              'Moving more is the safest way to make progress, and a doctor or '
+              'dietitian can help with a plan that goes further.',
+          confirmLabel: 'Got it',
+        );
+        if (!mounted) return;
+      }
+      Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       if (mounted) {
         setState(() => _saveState = SaveToastState.initial);
         await showAppDialog(
           context: context,
           title: 'Could not save',
-          message: 'Could not save your profile: $e',
+          message: e is ProfileSaveException ? e.message : "We couldn't save your profile. Please try again.",
           confirmLabel: 'OK',
         );
       }
@@ -204,7 +240,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _pickDateOfBirth() async {
+    final latest = _latestAdultBirthday;
     var selected = _dateOfBirth ?? DateTime(2000, 1, 1);
+    if (selected.isAfter(latest)) selected = latest;
 
     final picked = await showAppSheet<DateTime>(
       context: context,
@@ -220,7 +258,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 mode: CupertinoDatePickerMode.date,
                 initialDateTime: selected,
                 minimumDate: DateTime(1920),
-                maximumDate: DateTime.now(),
+                maximumDate: latest, // adults only
                 onDateTimeChanged: (date) => selected = date,
               ),
             ),

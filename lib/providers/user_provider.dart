@@ -125,7 +125,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     ).timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to save profile: ${response.body}');
+      throw ProfileSaveException.fromResponse(response.statusCode, response.body);
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -144,6 +144,27 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     // Only publish if the same user is still signed in.
     if (mounted && userId == _userId) state = updated;
   }
+}
+
+/// A profile save the server refused, with a message safe to show the user
+/// (e.g. under 18, or a weight-loss goal below a healthy BMI).
+class ProfileSaveException implements Exception {
+  const ProfileSaveException(this.message);
+
+  final String message;
+
+  factory ProfileSaveException.fromResponse(int status, String body) {
+    try {
+      final detail = (jsonDecode(body) as Map<String, dynamic>)['detail'];
+      if (status == 422 && detail is String && detail.isNotEmpty) {
+        return ProfileSaveException(detail);
+      }
+    } catch (_) {}
+    return const ProfileSaveException("We couldn't save your profile. Please try again.");
+  }
+
+  @override
+  String toString() => message;
 }
 
 final userProfileProvider =

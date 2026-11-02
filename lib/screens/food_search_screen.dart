@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../models/food_entry.dart';
 import '../models/food_item.dart';
+import '../models/portion.dart';
 import '../services/food_search_service.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -17,7 +18,14 @@ import '../widgets/shimmer.dart';
 class FoodSearchScreen extends StatefulWidget {
   final MealType mealType;
 
-  const FoodSearchScreen({super.key, required this.mealType});
+  /// Pre-filled search, e.g. the name of a food the photo scan couldn't match.
+  final String? initialQuery;
+
+  /// Return the chosen [FoodItem] without asking for a quantity. Used by the
+  /// photo review screen, which already has the gram estimate.
+  final bool pickOnly;
+
+  const FoodSearchScreen({super.key, required this.mealType, this.initialQuery, this.pickOnly = false});
 
   @override
   State<FoodSearchScreen> createState() => _FoodSearchScreenState();
@@ -34,6 +42,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   /// Bumped per search. A slower, older response (more likely now that search
   /// goes through the backend) must not overwrite the results of a newer one.
   int _latestRequest = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialQuery?.trim();
+    if (initial != null && initial.isNotEmpty) {
+      _controller.text = initial;
+      _onQueryChanged(initial);
+    }
+  }
 
   void _onQueryChanged(String query) {
     _debounce?.cancel();
@@ -61,13 +79,17 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   void _selectFood(FoodItem item) async {
+    if (widget.pickOnly) {
+      Navigator.pop(context, item);
+      return;
+    }
     final grams = await showCupertinoDialog<double>(
       context: context,
       builder: (context) => _QuantityDialog(food: item),
     );
     if (grams == null || !mounted) return;
 
-    final calories = ((item.caloriesPer100g ?? 0) / 100 * grams).round();
+    final calories = caloriesFor(item.caloriesPer100g, grams);
     final protein = (item.proteinPer100g ?? 0) / 100 * grams;
     final carbs = (item.carbsPer100g ?? 0) / 100 * grams;
     final fat = (item.fatPer100g ?? 0) / 100 * grams;
@@ -75,7 +97,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     Navigator.pop(
       context,
       FoodEntry(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        id: '${DateTime.now().microsecondsSinceEpoch}_${item.fdcId}',
         name: '${item.description} (${grams.round()}g)',
         calories: calories,
         proteinG: protein,
@@ -202,6 +224,7 @@ class _QuantityDialog extends StatefulWidget {
 
 class _QuantityDialogState extends State<_QuantityDialog> {
   final _gramsController = TextEditingController(text: '100');
+  double? _grams = 100;
 
   @override
   void dispose() {
@@ -236,6 +259,12 @@ class _QuantityDialogState extends State<_QuantityDialog> {
                 const SizedBox(height: AppSpacing.lg),
                 CupertinoTextField(
                   controller: _gramsController,
+                  autofocus: true,
+                  onChanged: (value) => setState(() => _grams = parseGrams(value)),
+                  suffix: const Padding(
+                    padding: EdgeInsets.only(right: 14),
+                    child: Text('g', style: TextStyle(color: TrackerColors.textTertiary, fontSize: 15)),
+                  ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   placeholder: 'Quantity (grams)',
                   placeholderStyle: AppType.body(size: 15, color: TrackerColors.textTertiary),
@@ -247,6 +276,19 @@ class _QuantityDialogState extends State<_QuantityDialog> {
                     borderRadius: AppRadii.buttonAll,
                     border: Border.all(color: TrackerColors.border, width: 1),
                   ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // Live preview, so a typo (1500 instead of 150) is obvious
+                // before it lands in the day's total.
+                Text(
+                  _grams == null
+                      ? 'Enter an amount between 1 and ${maxPortionGrams.round()} g'
+                      : '≈ ${caloriesFor(widget.food.caloriesPer100g, _grams!)} kcal',
+                  textAlign: TextAlign.center,
+                  style: AppType.caption(
+                    color: _grams == null ? TrackerColors.error : TrackerColors.accentEnd,
+                    size: 13,
+                  ).copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Row(
@@ -263,10 +305,7 @@ class _QuantityDialogState extends State<_QuantityDialog> {
                       child: AppButton(
                         label: 'Add',
                         height: 46,
-                        onPressed: () {
-                          final grams = double.tryParse(_gramsController.text) ?? 100;
-                          Navigator.pop(context, grams);
-                        },
+                        onPressed: _grams == null ? null : () => Navigator.pop(context, _grams),
                       ),
                     ),
                   ],

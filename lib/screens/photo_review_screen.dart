@@ -2,12 +2,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../models/detected_food.dart';
 import '../models/food_entry.dart';
+import '../models/food_item.dart';
+import '../models/portion.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/pressable.dart';
+import 'food_search_screen.dart';
 
 class PhotoReviewScreen extends StatefulWidget {
   final List<DetectedFood> items;
@@ -28,10 +32,34 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
     _items = List.from(widget.items);
   }
 
+  List<DetectedFood> get _matched => _items.where((i) => i.matched).toList();
+  int get _unmatchedCount => _items.length - _matched.length;
+
   void _updateGrams(int index, String value) {
-    final grams = double.tryParse(value);
-    if (grams == null) return;
+    final grams = parseGrams(value);
+    if (grams == null) return; // keep the last valid amount
     setState(() => _items[index].estimatedGrams = grams);
+  }
+
+  /// Let the user pick the right food for something the scan couldn't match,
+  /// keeping the estimated grams.
+  Future<void> _findMatch(int index) async {
+    final item = _items[index];
+    final picked = await Navigator.push<FoodItem>(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => FoodSearchScreen(mealType: widget.mealType, initialQuery: item.name, pickOnly: true),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      item
+        ..caloriesPer100g = picked.caloriesPer100g
+        ..proteinPer100g = picked.proteinPer100g
+        ..carbsPer100g = picked.carbsPer100g
+        ..fatPer100g = picked.fatPer100g
+        ..matched = true;
+    });
   }
 
   void _removeItem(int index) {
@@ -40,9 +68,16 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
   }
 
   void _confirm() {
-    final entries = _items
+    // Only foods with nutrition data. An unmatched food used to be saved as
+    // 0 kcal, which undercounted the day (and the server rejected it, so the
+    // whole scan showed an error).
+    final stamp = DateTime.now().microsecondsSinceEpoch;
+    var n = 0;
+    final entries = _matched
         .map((item) => FoodEntry(
-              id: '${DateTime.now().microsecondsSinceEpoch}_${item.name}',
+              // Index included: on web, microseconds have millisecond
+              // resolution, so two same-name items could share an id.
+              id: '${stamp}_${n++}_${item.name}',
               name: item.name,
               calories: item.estimatedCalories,
               proteinG: item.estimatedProtein,
@@ -136,32 +171,18 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                               onChanged: (value) => _updateGrams(index, value),
                                             ),
                                             const SizedBox(width: AppSpacing.md),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 9,
-                                                vertical: 5,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: TrackerColors.alpha(
-                                                  TrackerColors.accentStart,
-                                                  0.14,
-                                                ),
-                                                borderRadius: BorderRadius.circular(AppRadii.pill),
-                                                border: Border.all(
-                                                  color: TrackerColors.alpha(
-                                                    TrackerColors.accentStart,
-                                                    0.28,
-                                                  ),
-                                                  width: 1,
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '~${item.estimatedCalories} kcal',
-                                                style: AppType.caption(
-                                                  color: TrackerColors.accentStart,
-                                                  size: 11,
-                                                ).copyWith(fontWeight: FontWeight.w800),
-                                              ),
+                                            Flexible(
+                                              child: item.matched
+                                                  ? _Chip(
+                                                      label: '~${item.estimatedCalories} kcal',
+                                                      color: TrackerColors.accentStart,
+                                                    )
+                                                  : _Chip(
+                                                      label: 'No match · Find',
+                                                      color: TrackerColors.warning,
+                                                      icon: CupertinoIcons.search,
+                                                      onTap: () => _findMatch(index),
+                                                    ),
                                             ),
                                           ],
                                         ),
@@ -184,11 +205,21 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                       ),
                     ),
             ),
+            if (_unmatchedCount > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                child: Text(
+                  "$_unmatchedCount item${_unmatchedCount == 1 ? '' : 's'} without nutrition data "
+                  "won't be saved. Tap Find to choose the right food.",
+                  textAlign: TextAlign.center,
+                  style: AppType.caption(color: TrackerColors.warning, size: 12),
+                ),
+              ),
             Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 20, 16 + bottomInset),
               child: AppButton(
-                label: 'Add ${_items.length} item${_items.length == 1 ? '' : 's'}',
-                onPressed: _items.isEmpty ? null : _confirm,
+                label: 'Add ${_matched.length} item${_matched.length == 1 ? '' : 's'}',
+                onPressed: _matched.isEmpty ? null : _confirm,
               ),
             ),
           ],
@@ -242,5 +273,45 @@ class _GramFieldState extends State<_GramField> {
         onChanged: widget.onChanged,
       ),
     );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({required this.label, required this.color, this.icon, this.onTap});
+
+  final String label;
+  final Color color;
+  final IconData? icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: TrackerColors.alpha(color, 0.14),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(color: TrackerColors.alpha(color, 0.28), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 11, color: color),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(color: color, size: 11).copyWith(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (onTap == null) return chip;
+    return Pressable(onTap: onTap, borderRadius: BorderRadius.circular(AppRadii.pill), child: chip);
   }
 }
