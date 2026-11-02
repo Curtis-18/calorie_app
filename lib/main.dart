@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'screens/auth_gate.dart';
 import 'screens/main_shell.dart';
+import 'services/server_handshake.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_shapes.dart';
 import 'theme/app_theme.dart';
@@ -29,6 +30,9 @@ const appLocalizationsDelegates = <LocalizationsDelegate<dynamic>>[
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Start waking a sleeping backend now, so it boots while the splash and
+  // login screens are up instead of after the user has signed in.
+  ServerWarmup.ping();
 
   final configError = SupabaseConfig.validate();
   if (configError == null) {

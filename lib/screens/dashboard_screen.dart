@@ -8,7 +8,7 @@ import '../providers/food_log_provider.dart';
 import '../providers/user_provider.dart';
 import '../services/log_cache_reader.dart';
 import '../services/photo_estimation.dart';
-import '../services/food_search_service.dart';
+import '../services/server_handshake.dart';
 import '../services/tour_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
@@ -38,8 +38,13 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  DateTime _selectedDay = DateTime.now();
+  /// A past day being browsed, or null for "today", which follows the clock.
+  /// This used to be a date fixed when the screen was created, so after
+  /// midnight the dashboard showed "Yesterday" with an empty list and no add
+  /// buttons until the app was restarted.
+  DateTime? _pastDay;
   List<FoodEntry> _pastEntries = const [];
+  late final AppLifecycleListener _lifecycle;
   bool _loadingPast = false;
   int _streak = 0;
 
@@ -54,13 +59,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// frame spotlighted targets mid-animation, in the wrong place.
   static const _tourDelay = Duration(milliseconds: 1400);
 
-  bool get _isToday => LogCacheReader.isSameDay(_selectedDay, DateTime.now());
+  DateTime get _viewDay => _pastDay ?? DateTime.now();
+
+  bool get _isToday => _pastDay == null || LogCacheReader.isSameDay(_pastDay!, DateTime.now());
 
   @override
   void initState() {
     super.initState();
     _refreshStreak();
+    _lifecycle = AppLifecycleListener(onResume: _onResume);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeStartTour());
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  /// Back in the foreground, possibly on a new day (timers don't run while a
+  /// phone app is suspended): roll the log over and refresh the date label
+  /// and streak.
+  void _onResume() {
+    // The server may have gone to sleep while the app was in the background;
+    // start waking it before the user's next action needs it.
+    ServerWarmup.ping();
+    ref.read(foodLogProvider.notifier).ensureCurrentDay();
+    _refreshStreak();
+    if (mounted) setState(() {});
   }
 
   Future<void> _maybeStartTour() async {
@@ -137,14 +163,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final isToday = LogCacheReader.isSameDay(day, DateTime.now());
     if (isToday) {
       setState(() {
-        _selectedDay = day;
+        _pastDay = null;
         _pastEntries = const [];
       });
       return;
     }
 
     setState(() {
-      _selectedDay = day;
+      _pastDay = day;
       _loadingPast = true;
     });
     final entries = await LogCacheReader.entriesFor(day);
@@ -243,10 +269,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return;
       }
 
-      // Cross-reference each detected food against USDA to fill in
-      // macros, since Gemini only returns name + estimated grams now.
-      await FoodSearchService().enrichDetectedFoods(detected);
-
+      // Macros arrive with the detection: the backend matches each food in
+      // USDA in the same request.
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       progressDialogVisible = false;
@@ -336,15 +360,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   String get _dateLabel {
     final now = DateTime.now();
-    if (LogCacheReader.isSameDay(_selectedDay, now)) return 'Today';
-    if (LogCacheReader.isSameDay(_selectedDay, now.subtract(const Duration(days: 1)))) {
+    final day = _viewDay;
+    if (LogCacheReader.isSameDay(day, now)) return 'Today';
+    if (LogCacheReader.isSameDay(day, now.subtract(const Duration(days: 1)))) {
       return 'Yesterday';
     }
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
-    return '${months[_selectedDay.month - 1]} ${_selectedDay.day}';
+    return '${months[day.month - 1]} ${day.day}';
   }
 
   @override
@@ -383,10 +408,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             dateLabel: _dateLabel,
                             canGoNext: !_isToday,
                             onPreviousDay: () => _selectDay(
-                              _selectedDay.subtract(const Duration(days: 1)),
+                              _viewDay.subtract(const Duration(days: 1)),
                             ),
                             onNextDay: () =>
-                                _selectDay(_selectedDay.add(const Duration(days: 1))),
+                                _selectDay(_viewDay.add(const Duration(days: 1))),
                           ),
                         ),
                         Padding(
