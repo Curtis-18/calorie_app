@@ -75,6 +75,18 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     await prefs.setString(UserCache.profileKey(userId), jsonEncode(remote.toJson()));
   }
 
+  /// Re-read targets from the server, e.g. after a weigh-in changed them.
+  Future<void> refreshFromServer() async {
+    final userId = _userId;
+    if (userId == null) return;
+    final generation = _generation;
+    final remote = await _fetchRemote();
+    if (remote == null || !mounted || generation != _generation) return;
+    state = remote;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(UserCache.profileKey(userId), jsonEncode(remote.toJson()));
+  }
+
   /// The profile from the server, or null when offline, not onboarded yet
   /// (404), or the backend predates the onboarding fields. Never throws: the
   /// cached copy, if any, stays on screen.
@@ -107,7 +119,9 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     final userId = session.user.id;
 
     final response = await _http.post(
-      Uri.parse('$_baseUrl/targets'),
+      Uri.parse('$_baseUrl/targets').replace(
+        queryParameters: {'date': DateTime.now().toIso8601String().substring(0, 10)},
+      ),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

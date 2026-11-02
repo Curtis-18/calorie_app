@@ -13,6 +13,7 @@ import '../widgets/glass.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 import '../widgets/weekly_trend_chart.dart';
+import '../widgets/weight/weight_card.dart';
 
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
@@ -85,6 +86,8 @@ class InsightsScreen extends ConsumerWidget {
                 loading: () => ListView(
                   padding: const EdgeInsets.all(AppSpacing.gutter),
                   children: const [
+                    WeightProgressCard(),
+                    SizedBox(height: AppSpacing.lg),
                     SkeletonCard(height: 170),
                     SizedBox(height: AppSpacing.lg),
                     SkeletonCard(height: 220),
@@ -92,11 +95,20 @@ class InsightsScreen extends ConsumerWidget {
                     SkeletonCard(height: 150),
                   ],
                 ),
-                error: (err, _) => AppEmptyState(
-                  icon: CupertinoIcons.wifi_exclamationmark,
-                  title: 'Could not load insights',
-                  message: '$err',
-                  accent: TrackerColors.error,
+                // Weight progress is independent of the AI coach, so it
+                // stays available when insights fail.
+                error: (err, _) => ListView(
+                  padding: EdgeInsets.fromLTRB(24, 18, 24, AppSpacing.tabBarClearance + bottomInset),
+                  children: [
+                    const WeightProgressCard(),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppEmptyState(
+                      icon: CupertinoIcons.wifi_exclamationmark,
+                      title: 'Could not load insights',
+                      message: '$err',
+                      accent: TrackerColors.error,
+                    ),
+                  ],
                 ),
                 data: (insights) => ListView(
                   physics: const BouncingScrollPhysics(
@@ -104,6 +116,8 @@ class InsightsScreen extends ConsumerWidget {
                   ),
                   padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                   children: [
+                    const WeightProgressCard(),
+                    const SizedBox(height: AppSpacing.lg),
                     AppCard(
                       glow: TrackerColors.accentStart,
                       child: Column(
