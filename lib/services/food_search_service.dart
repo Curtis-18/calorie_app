@@ -1,41 +1,96 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../config/api_config.dart';
 import '../models/detected_food.dart';
 import '../models/food_item.dart';
 
+/// A food search failure with a message that is safe to show the user.
+class FoodSearchException implements Exception {
+  const FoodSearchException(this.message);
+
+  final String message;
+
+  // The search screen renders `e.toString()`, so keep it to the message
+  // rather than "Exception: Food search failed: 500".
+  @override
+  String toString() => message;
+}
+
+/// Food search through the backend's `/foods/search` proxy.
+///
+/// This used to call USDA directly with the API key compiled into the app,
+/// which shipped the key in every web bundle and mobile build. The backend
+/// holds the key now; the client only sends the user's session token.
 class FoodSearchService {
-  static const _apiKey = 'DN84n9OEF2cocrQnNRgCYN85qkPWRYCg9sXt6dmc';
-  static const _baseUrl = 'https://api.nal.usda.gov/fdc/v1/foods/search';
-  static const _timeout = Duration(seconds: 8);
+  FoodSearchService({
+    this._client,
+    this._tokenProvider,
+    this.timeout = const Duration(seconds: 30),
+  });
+
+  final http.Client? _client;
+  final Future<String?> Function()? _tokenProvider;
+
+  /// Covers a Render cold start. USDA itself answers in about a second.
+  final Duration timeout;
+
+  static const pageSize = 20;
+
+  static const signedOutMessage = "You've been signed out. Please log in again.";
+  static const timeoutMessage = 'Search is taking too long. The server may be waking up, so try again.';
+  static const networkMessage = "Couldn't reach the server. Check your connection and try again.";
+  static const unavailableMessage = 'Food search is unavailable right now. Please try again in a moment.';
+
+  static Future<String?> _currentToken() async =>
+      Supabase.instance.client.auth.currentSession?.accessToken;
 
   Future<List<FoodItem>> search(String query) async {
     final trimmedQuery = query.trim();
     if (trimmedQuery.isEmpty) return [];
 
-    final uri = Uri.parse(_baseUrl).replace(
+    final token = await (_tokenProvider ?? _currentToken)();
+    if (token == null) throw const FoodSearchException(signedOutMessage);
+
+    final uri = Uri.parse('${ApiConfig.baseUrl}/foods/search').replace(
       queryParameters: {
         'query': trimmedQuery,
-        'api_key': _apiKey,
-        'pageSize': '20',
+        'page_size': '$pageSize',
       },
     );
 
-    final response = await http.get(uri).timeout(_timeout);
-    if (response.statusCode != 200) {
-      throw Exception('Food search failed: ${response.statusCode}');
+    final client = _client ?? http.Client();
+    final http.Response response;
+    try {
+      response = await client
+          .get(uri, headers: {'Authorization': 'Bearer $token'})
+          .timeout(timeout);
+    } on TimeoutException {
+      throw const FoodSearchException(timeoutMessage);
+    } on http.ClientException {
+      throw const FoodSearchException(networkMessage);
+    } finally {
+      if (_client == null) client.close();
     }
 
-    return _parseFoodItems(response.body);
-  }
+    if (response.statusCode == 401) {
+      throw const FoodSearchException('Your session has expired. Please log in again.');
+    }
+    if (response.statusCode != 200) {
+      throw const FoodSearchException(unavailableMessage);
+    }
 
-  List<FoodItem> _parseFoodItems(String body) {
-    final data = jsonDecode(body) as Map<String, dynamic>;
-    final foods = data['foods'] as List<dynamic>? ?? [];
-
-    return foods
-        .map((f) => FoodItem.fromJson(f as Map<String, dynamic>))
-        .where((item) => item.caloriesPer100g != null)
-        .toList();
+    try {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final results = data['results'] as List<dynamic>? ?? const [];
+      return results
+          .map((r) => FoodItem.fromApiJson(r as Map<String, dynamic>))
+          .where((item) => item.caloriesPer100g != null)
+          .toList();
+    } catch (_) {
+      throw const FoodSearchException(unavailableMessage);
+    }
   }
 
   FoodItem _bestMatch(List<FoodItem> results, String query) {

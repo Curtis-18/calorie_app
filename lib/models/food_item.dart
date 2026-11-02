@@ -17,42 +17,14 @@ class FoodItem {
     this.fatPer100g,
   });
 
-  factory FoodItem.fromJson(Map<String, dynamic> json) {
-    double? calories;
-    double? protein;
-    double? carbs;
-    double? fat;
-    final nutrients = json['foodNutrients'] as List<dynamic>? ?? [];
-
-    for (final n in nutrients) {
-      final name = n['nutrientName'];
-      final value = (n['value'] as num?)?.toDouble();
-      if (value == null) continue;
-
-      switch (name) {
-        case 'Energy':
-          if (n['unitName'] == 'KCAL') calories = value;
-          break;
-        case 'Protein':
-          protein = value;
-          break;
-        case 'Carbohydrate, by difference':
-          carbs = value;
-          break;
-        case 'Total lipid (fat)':
-          fat = value;
-          break;
-      }
-    }
-
-    return FoodItem(
-      fdcId: json['fdcId'],
-      description: json['description'] ?? 'Unknown food',
-      dataType: json['dataType'] as String?,
-      caloriesPer100g: calories,
-      proteinPer100g: protein,
-      carbsPer100g: carbs,
-      fatPer100g: fat,
-    );
-  }
+  /// One result from the backend's `GET /foods/search`.
+  factory FoodItem.fromApiJson(Map<String, dynamic> json) => FoodItem(
+        fdcId: (json['fdc_id'] as num).toInt(),
+        description: json['description'] as String? ?? 'Unknown food',
+        dataType: json['data_type'] as String?,
+        caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble(),
+        proteinPer100g: (json['protein_g_per_100g'] as num?)?.toDouble(),
+        carbsPer100g: (json['carbs_g_per_100g'] as num?)?.toDouble(),
+        fatPer100g: (json['fat_g_per_100g'] as num?)?.toDouble(),
+      );
 }

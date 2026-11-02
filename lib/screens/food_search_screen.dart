@@ -31,22 +31,27 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   bool _loading = false;
   String? _error;
 
+  /// Bumped per search. A slower, older response (more likely now that search
+  /// goes through the backend) must not overwrite the results of a newer one.
+  int _latestRequest = 0;
+
   void _onQueryChanged(String query) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () async {
+      final request = ++_latestRequest;
       setState(() {
         _loading = true;
         _error = null;
       });
       try {
         final results = await _service.search(query);
-        if (!mounted) return;
+        if (!mounted || request != _latestRequest) return;
         setState(() {
           _results = results;
           _loading = false;
         });
       } catch (e) {
-        if (!mounted) return;
+        if (!mounted || request != _latestRequest) return;
         setState(() {
           _error = e.toString();
           _loading = false;
