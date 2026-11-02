@@ -1,27 +1,48 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:async'; // Added for StreamSubscription
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/food_entry.dart';
+import '../services/user_cache.dart';
 
+/// Today's food log for the signed-in user, cached per user on the device.
 class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
-  StreamSubscription<AuthState>? _authSubscription;
+  FoodLogNotifier({
+    this._client,
+    String? Function()? currentUserId,
+    String? Function()? authToken,
+    Stream<String?>? userIdChanges,
+  })  : _currentUserId = currentUserId ?? UserCache.currentUserId,
+        _authToken = authToken ?? _supabaseToken,
+        super([]) {
+    _authSubscription = (userIdChanges ?? UserCache.userIdChanges()).listen(_onUser);
+    _onUser(_currentUserId());
+  }
 
-  FoodLogNotifier( ) : super([]) {
-    _loadToday();
-    
-    // FIXED: Listen to auth changes so the provider updates when the user logs in
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final event = data.event;
-      if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.tokenRefreshed) {
-        _loadToday();
-      } else if (event == AuthChangeEvent.signedOut) {
-        state = []; // Clear logs on logout
-      }
-    });
+  final http.Client? _client;
+  final String? Function() _currentUserId;
+  final String? Function() _authToken;
+  StreamSubscription<String?>? _authSubscription;
+  String? _userId;
+
+  /// Bumped on every user change. A load that started for a previous user
+  /// (e.g. still in flight at sign-out) must not put that user's entries back
+  /// on screen once someone else, or no one, is signed in.
+  int _generation = 0;
+
+  static String? _supabaseToken() => Supabase.instance.client.auth.currentSession?.accessToken;
+
+  void _onUser(String? userId) {
+    if (userId != _userId) {
+      _userId = userId;
+      _generation++;
+      state = [];
+    }
+    // Same user again (sign-in event, token refresh): just resync.
+    if (userId != null) _loadToday();
   }
 
   @override
@@ -30,33 +51,41 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     super.dispose();
   }
 
-  String get _todayDateString => DateTime.now().toIso8601String().substring(0, 10);
-  String get _cacheKey => 'food_log_$_todayDateString';
+  http.Client get _http => _client ?? _sharedClient;
+  static final _sharedClient = http.Client();
 
-  String? _authToken() => Supabase.instance.client.auth.currentSession?.accessToken;
+  String get _todayDateString => DateTime.now().toIso8601String().substring(0, 10);
 
   Future<void> _loadToday() async {
+    final userId = _userId;
     final token = _authToken();
-    if (token == null) return;
+    if (userId == null || token == null) return;
+    final generation = _generation;
+    bool stillCurrent() => mounted && generation == _generation;
+
+    await UserCache.migrateLegacy(userId);
+    final today = DateTime.now();
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/logs/today?date=$_todayDateString' ),
+      final response = await _http.get(
+        Uri.parse('${ApiConfig.baseUrl}/logs/today?date=$_todayDateString'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
+        if (!stillCurrent()) return;
         final data = jsonDecode(response.body) as List<dynamic>;
         state = data.map((e) => FoodEntry.fromApiJson(e as Map<String, dynamic>)).toList();
-        await _persistCache();
+        await _persistCache(userId);
         return;
       }
     } catch (_) {
-      // Fallback to cache if offline
+      // Fall back to this user's cache if offline.
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList(_cacheKey) ?? [];
+    if (!stillCurrent()) return;
+    final saved = prefs.getStringList(UserCache.logKey(userId, today)) ?? [];
     state = saved.map((s) => FoodEntry.fromJson(jsonDecode(s))).toList();
   }
 
@@ -71,8 +100,8 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/logs' ),
+      final response = await _http.post(
+        Uri.parse('${ApiConfig.baseUrl}/logs'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -81,7 +110,7 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
           'id': entry.id,
           'name': entry.name,
           'calories': entry.calories,
-          'protein_g': entry.proteinG, // Ensure these match your backend schema
+          'protein_g': entry.proteinG,
           'carbs_g': entry.carbsG,
           'fat_g': entry.fatG,
           'meal_type': entry.mealType.name,
@@ -95,7 +124,7 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
         state = previous;
         throw Exception('Failed to save entry: ${response.body}');
       }
-      await _persistCache();
+      await _persistCache(_userId);
     } catch (e) {
       state = previous;
       rethrow;
@@ -113,8 +142,8 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     }
 
     try {
-      final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/logs/$id' ),
+      final response = await _http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/logs/$id'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 15));
 
@@ -122,17 +151,18 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
         state = previous;
         throw Exception('Failed to remove entry: ${response.body}');
       }
-      await _persistCache();
+      await _persistCache(_userId);
     } catch (e) {
       state = previous;
       rethrow;
     }
   }
 
-  Future<void> _persistCache() async {
+  Future<void> _persistCache(String? userId) async {
+    if (userId == null || userId != _userId) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-      _cacheKey,
+      UserCache.logKey(userId, DateTime.now()),
       state.map((e) => jsonEncode(e.toJson())).toList(),
     );
   }

@@ -2,18 +2,24 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/food_entry.dart';
+import 'user_cache.dart';
 
-/// Read-only access to the local food-log cache that the provider already
-/// writes (`food_log_<yyyy-mm-dd>`). Used by the presentation layer to show a
-/// logging streak and to let the user flip back through days that are cached
-/// on the device. It never writes and never talks to the backend.
+/// Read-only access to the signed-in user's local food-log cache (written by
+/// the food log provider under [UserCache.logKey]). Used by the presentation
+/// layer to show a logging streak and to let the user flip back through days
+/// that are cached on the device. It never writes and never talks to the
+/// backend. Signed out, it reports nothing.
 class LogCacheReader {
   LogCacheReader._();
 
-  static const String _prefix = 'food_log_';
-
-  static String keyFor(DateTime day) =>
-      '$_prefix${day.toIso8601String().substring(0, 10)}';
+  /// The signed-in user's prefs, after any one-time legacy migration, or
+  /// null when nobody is signed in.
+  static Future<(SharedPreferences, String)?> _scope() async {
+    final userId = UserCache.currentUserId();
+    if (userId == null) return null;
+    await UserCache.migrateLegacy(userId);
+    return (await SharedPreferences.getInstance(), userId);
+  }
 
   static DateTime _dayOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
@@ -23,8 +29,10 @@ class LogCacheReader {
   /// Cached entries for [day], newest first. Never throws.
   static Future<List<FoodEntry>> entriesFor(DateTime day) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getStringList(keyFor(day)) ?? const <String>[];
+      final scope = await _scope();
+      if (scope == null) return const <FoodEntry>[];
+      final (prefs, userId) = scope;
+      final raw = prefs.getStringList(UserCache.logKey(userId, day)) ?? const <String>[];
       final entries = <FoodEntry>[];
       for (final item in raw) {
         try {
@@ -42,11 +50,14 @@ class LogCacheReader {
   /// Days with cached data, most recent first.
   static Future<List<DateTime>> cachedDays({int limit = 14}) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final scope = await _scope();
+      if (scope == null) return const <DateTime>[];
+      final (prefs, userId) = scope;
+      final prefix = UserCache.logPrefix(userId);
       final days = <DateTime>[];
       for (final key in prefs.getKeys()) {
-        if (!key.startsWith(_prefix)) continue;
-        final parsed = DateTime.tryParse(key.substring(_prefix.length));
+        if (!key.startsWith(prefix)) continue;
+        final parsed = DateTime.tryParse(key.substring(prefix.length));
         if (parsed == null) continue;
         if ((prefs.getStringList(key) ?? const <String>[]).isEmpty) continue;
         days.add(_dayOnly(parsed));
@@ -61,9 +72,11 @@ class LogCacheReader {
   /// Consecutive days (ending today or yesterday) that have cached entries.
   static Future<int> currentStreak() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final scope = await _scope();
+      if (scope == null) return 0;
+      final (prefs, userId) = scope;
       bool hasEntries(DateTime day) =>
-          (prefs.getStringList(keyFor(day)) ?? const <String>[]).isNotEmpty;
+          (prefs.getStringList(UserCache.logKey(userId, day)) ?? const <String>[]).isNotEmpty;
 
       final today = _dayOnly(DateTime.now());
       var cursor = hasEntries(today) ? today : today.subtract(const Duration(days: 1));
