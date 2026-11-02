@@ -9,6 +9,7 @@ import '../providers/user_provider.dart';
 import '../services/log_cache_reader.dart';
 import '../services/photo_estimation.dart';
 import '../services/food_search_service.dart';
+import '../services/tour_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -16,6 +17,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_dialog.dart';
+import '../widgets/app_tour.dart';
 import '../widgets/calorie_ring.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/glass.dart';
@@ -25,6 +27,7 @@ import '../widgets/save_toast.dart';
 import '../widgets/shimmer.dart';
 import 'auth_gate.dart';
 import 'food_search_screen.dart';
+import 'main_shell.dart';
 import 'photo_review_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -40,13 +43,88 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _loadingPast = false;
   int _streak = 0;
 
+  // First-run tour targets.
+  final _ringKey = GlobalKey(debugLabel: 'tourRing');
+  final _addButtonKey = GlobalKey(debugLabel: 'tourAddButton');
+  final _cameraButtonKey = GlobalKey(debugLabel: 'tourCamera');
+  bool _tourScheduled = false;
+
+  /// Lets the splash fade, the shell's route transition finish and the ring
+  /// card's fade-in settle before anything is measured. Starting on the first
+  /// frame spotlighted targets mid-animation, in the wrong place.
+  static const _tourDelay = Duration(milliseconds: 1400);
+
   bool get _isToday => LogCacheReader.isSameDay(_selectedDay, DateTime.now());
 
   @override
   void initState() {
     super.initState();
     _refreshStreak();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeStartTour());
   }
+
+  Future<void> _maybeStartTour() async {
+    if (_tourScheduled) return;
+    _tourScheduled = true;
+    if (await TourService.hasSeen(TourService.dashboard)) return;
+    await Future<void>.delayed(_tourDelay);
+    if (!mounted || !_canShowTour()) return;
+
+    await AppTour.show(context, steps: _tourSteps());
+    // Skipped, finished or dismissed with back: don't show it again.
+    await TourService.markSeen(TourService.dashboard);
+  }
+
+  /// Only start when the dashboard is what the user is actually looking at:
+  /// its tab is selected and nothing (a dialog, a pushed screen, a sheet)
+  /// sits on top of the shell. Otherwise wait for the next launch.
+  bool _canShowTour() {
+    if (!TickerMode.valuesOf(context).enabled) return false; // another tab
+    final local = ModalRoute.of(context);
+    if (local != null && !local.isCurrent) return false; // pushed within the tab
+    final shellContext = MainShell.insightsTabKey.currentContext;
+    if (shellContext == null) return false;
+    final shell = ModalRoute.of(shellContext);
+    return shell == null || shell.isCurrent;
+  }
+
+  List<TourStep> _tourSteps() => [
+        TourStep(
+          targetKey: _ringKey,
+          icon: CupertinoIcons.flame_fill,
+          title: 'Your daily budget',
+          body: 'The ring shows how many calories you have left today. '
+              'It fills up as you log meals.',
+          radius: AppRadii.container,
+          padding: 6,
+        ),
+        TourStep(
+          targetKey: _addButtonKey,
+          icon: CupertinoIcons.search,
+          title: 'Log food by name',
+          body: 'Search for any food, then enter how much you had.',
+          shape: TourShape.circle,
+          padding: 5,
+        ),
+        TourStep(
+          targetKey: _cameraButtonKey,
+          icon: CupertinoIcons.camera_fill,
+          title: 'Or just snap a photo',
+          body: "Take a picture of your plate. We'll spot the foods and estimate "
+              'portions for you to check before saving.',
+          shape: TourShape.circle,
+          padding: 6,
+        ),
+        TourStep(
+          targetKey: MainShell.insightsTabKey,
+          icon: CupertinoIcons.chart_bar_alt_fill,
+          title: 'Your weekly coach',
+          body: 'Insights shows your trends and personal tips based on what '
+              "you've logged.",
+          shape: TourShape.pill,
+          padding: 6,
+        ),
+      ];
 
   Future<void> _refreshStreak() async {
     final streak = await LogCacheReader.currentStreak();
@@ -335,11 +413,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
-                            _RingCard(
-                              consumed: consumed,
-                              target: target,
-                              isToday: _isToday,
-                              loading: _loadingPast,
+                            KeyedSubtree(
+                              key: _ringKey,
+                              child: _RingCard(
+                                consumed: consumed,
+                                target: target,
+                                isToday: _isToday,
+                                loading: _loadingPast,
+                              ),
                             ),
                             const SizedBox(height: 14),
                             MacroBreakdownCard(
@@ -407,17 +488,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  AppFab(
-                    icon: CupertinoIcons.search,
-                    size: 50,
-                    iconSize: 21,
-                    onPressed: () => _startManualAdd(context),
+                  KeyedSubtree(
+                    key: _addButtonKey,
+                    child: AppFab(
+                      icon: CupertinoIcons.search,
+                      size: 50,
+                      iconSize: 21,
+                      onPressed: () => _startManualAdd(context),
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  AppFab(
-                    icon: CupertinoIcons.camera,
-                    gradient: TrackerColors.calorieGradient,
-                    onPressed: () => _startScan(context),
+                  KeyedSubtree(
+                    key: _cameraButtonKey,
+                    child: AppFab(
+                      icon: CupertinoIcons.camera,
+                      gradient: TrackerColors.calorieGradient,
+                      onPressed: () => _startScan(context),
+                    ),
                   ),
                 ],
               ),

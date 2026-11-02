@@ -9,6 +9,10 @@ import 'library_screen.dart';
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
+  /// Tour target key for the Insights tab icon. Exposed statically so that
+  /// DashboardScreen can reference it without constructor coupling.
+  static final insightsTabKey = GlobalKey(debugLabel: 'tourInsightsTab');
+
   @override
   State<MainShell> createState() => _MainShellState();
 }
@@ -42,6 +46,7 @@ class _MainShellState extends State<MainShell> {
           for (var i = 0; i < _tabs.length; i++)
             BottomNavigationBarItem(
               icon: _TabIcon(
+                key: i == 1 ? MainShell.insightsTabKey : null,
                 icon: _tabs[i].icon,
                 active: i == _index,
               ),
@@ -57,6 +62,7 @@ class _MainShellState extends State<MainShell> {
 /// Floating glass pill behind the active tab icon.
 class _TabIcon extends StatelessWidget {
   const _TabIcon({
+    super.key,
     required this.icon,
     required this.active,
   });
