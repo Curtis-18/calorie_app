@@ -1,19 +1,28 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:calorie_app/services/food_search_service.dart';
 import 'package:calorie_app/services/photo_estimation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+/// Fallback search that fails the test if anything calls it.
+FoodSearchService _noFallback() => FoodSearchService(
+      client: MockClient((_) async => fail('unexpected fallback USDA lookup')),
+      tokenProvider: () async => 'token',
+    );
+
 PhotoEstimationService _service(
   MockClient client, {
   String? token = 'token',
   Duration timeout = const Duration(seconds: 5),
+  FoodSearchService? fallback,
 }) =>
     PhotoEstimationService(
       client: client,
       tokenProvider: () async => token,
+      fallbackSearch: fallback ?? _noFallback(),
       timeout: timeout,
     );
 
@@ -29,13 +38,82 @@ Future<String> _messageFor(Future<void> Function() call) async {
 void main() {
   const bytes = [1, 2, 3];
 
+  test('uses the macros the backend filled in, with no extra lookups', () async {
+    var requests = 0;
+    final client = MockClient((request) async {
+      requests++;
+      return http.Response(
+        jsonEncode([
+          {
+            'name': 'Rice',
+            'estimated_grams': 150,
+            'matched': true,
+            'calories_per_100g': 130,
+            'protein_g_per_100g': 2.7,
+            'carbs_g_per_100g': 28.0,
+            'fat_g_per_100g': 0.3,
+          },
+          {'name': 'Mystery sauce', 'estimated_grams': 20, 'matched': false},
+        ]),
+        200,
+      );
+    });
+
+    final foods = await _service(client).analyzePhoto(bytes);
+
+    expect(requests, 1, reason: 'one round-trip per scan');
+    expect(foods[0].matched, isTrue);
+    expect(foods[0].estimatedCalories, 195); // 130 kcal/100 g x 150 g
+    expect(foods[0].carbsPer100g, 28.0);
+    expect(foods[1].matched, isFalse);
+    expect(foods[1].caloriesPer100g, isNull);
+  });
+
+  test('an older backend (name + grams only) falls back to per-food lookups', () async {
+    final photoClient = MockClient((_) async => http.Response(
+          jsonEncode([
+            {'name': 'rice', 'estimated_grams': 100},
+          ]),
+          200,
+        ));
+    final searches = <String>[];
+    final fallback = FoodSearchService(
+      client: MockClient((request) async {
+        searches.add(request.url.queryParameters['query']!);
+        return http.Response(
+          jsonEncode({
+            'results': [
+              {
+                'fdc_id': 1,
+                'description': 'Rice',
+                'data_type': 'Foundation',
+                'calories_per_100g': 130,
+                'protein_g_per_100g': 2.7,
+                'carbs_g_per_100g': 28,
+                'fat_g_per_100g': 0.3,
+              },
+            ],
+          }),
+          200,
+        );
+      }),
+      tokenProvider: () async => 'token',
+    );
+
+    final foods = await _service(photoClient, fallback: fallback).analyzePhoto(bytes);
+
+    expect(searches, ['rice']);
+    expect(foods.single.matched, isTrue);
+    expect(foods.single.estimatedCalories, 130);
+  });
+
   test('parses detected foods on 200', () async {
     final client = MockClient((request) async {
       expect(request.headers['Authorization'], 'Bearer token');
       expect(jsonDecode(request.body)['image'], base64Encode(bytes));
       return http.Response(
         jsonEncode([
-          {'name': 'Rice', 'estimated_grams': 150},
+          {'name': 'Rice', 'estimated_grams': 150, 'matched': false},
         ]),
         200,
       );

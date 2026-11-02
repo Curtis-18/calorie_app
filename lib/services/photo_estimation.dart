@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/detected_food.dart';
+import 'food_search_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A photo-analysis failure with a message that is safe to show the user.
@@ -24,11 +25,15 @@ class PhotoEstimationService {
   PhotoEstimationService({
     this._client,
     this._tokenProvider,
+    this._fallbackSearch,
     this.timeout = const Duration(seconds: 60),
   });
 
   final http.Client? _client;
   final Future<String?> Function()? _tokenProvider;
+
+  /// Only used against a backend that predates server-side enrichment.
+  final FoodSearchService? _fallbackSearch;
 
   /// Long enough to cover a Render cold start plus the backend's own Gemini
   /// retries. At 25 s a cold start alone was enough to fail the scan.
@@ -96,18 +101,22 @@ class PhotoEstimationService {
       throw PhotoAnalysisException(messageForStatus(response.statusCode));
     }
 
+    final List<DetectedFood> foods;
+    final bool enrichedByServer;
     try {
-      final data = jsonDecode(response.body) as List<dynamic>;
-      return data.map((item) {
-        final map = item as Map<String, dynamic>;
-        return DetectedFood(
-          name: map['name'] as String,
-          estimatedGrams: (map['estimated_grams'] as num).toDouble(),
-        );
-      }).toList();
+      final data = (jsonDecode(response.body) as List<dynamic>).cast<Map<String, dynamic>>();
+      foods = data.map(DetectedFood.fromApiJson).toList();
+      // The backend now fills in USDA macros in the same request. An older
+      // backend only sends name + grams; then do the lookups here as before.
+      enrichedByServer = data.every((item) => item.containsKey('matched'));
     } catch (_) {
       throw const PhotoAnalysisException(badResponseMessage);
     }
+
+    if (!enrichedByServer && foods.isNotEmpty) {
+      await (_fallbackSearch ?? FoodSearchService()).enrichDetectedFoods(foods);
+    }
+    return foods;
   }
 
   /// User-facing text for a non-200 from `POST /estimate-photo`.
