@@ -1,16 +1,21 @@
 import 'package:flutter/cupertino.dart';
+import '../models/progress.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'dashboard_header_bits.dart';
+import 'game/header_chips.dart';
+import 'game/progress_sheet.dart';
 import 'profile_sheet.dart';
 
-/// Minimal top bar: greeting, streak pill, date switcher and a profile
-/// affordance. Sits inside the frosted header of the dashboard.
+/// Minimal top bar: greeting with the level badge, the streak flame, date
+/// switcher and a profile affordance. Sits inside the frosted header of the
+/// dashboard.
 class DashboardHeader extends StatelessWidget {
   const DashboardHeader({
     super.key,
     required this.streakDays,
+    this.progress,
     required this.dateLabel,
     this.onPreviousDay,
     this.onNextDay,
@@ -18,7 +23,11 @@ class DashboardHeader extends StatelessWidget {
     this.onProfileTap,
   });
 
+  /// Local fallback streak, used until [progress] has loaded (or offline).
   final int streakDays;
+
+  /// Server-side game state: streak tier, freezes and level.
+  final ProgressData? progress;
   final String dateLabel;
   final VoidCallback? onPreviousDay;
   final VoidCallback? onNextDay;
@@ -44,11 +53,22 @@ class DashboardHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_greeting, style: AppType.title()),
+                Row(
+                  children: [
+                    Flexible(child: Text(_greeting, style: AppType.title(), overflow: TextOverflow.ellipsis)),
+                    if (progress != null) ...[
+                      const SizedBox(width: 10),
+                      LevelBadge(level: progress!.level, size: 30, onTap: () => showProgressSheet(context)),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    StreakPill(days: streakDays),
+                    if (progress != null)
+                      FlameStreakPill(streak: progress!.streak, onTap: () => showProgressSheet(context))
+                    else
+                      StreakPill(days: streakDays),
                     const SizedBox(width: 8),
                     Flexible(
                       child: DateSwitcher(

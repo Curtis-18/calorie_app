@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/food_entry.dart';
 import '../providers/food_log_provider.dart';
+import '../providers/progress_provider.dart';
+import '../models/progress.dart';
 import '../providers/user_provider.dart';
 import '../services/log_cache_reader.dart';
 import '../services/photo_estimation.dart';
@@ -20,6 +24,7 @@ import '../widgets/app_dialog.dart';
 import '../widgets/app_tour.dart';
 import '../widgets/calorie_ring.dart';
 import '../widgets/dashboard_header.dart';
+import '../widgets/game/celebrations.dart';
 import '../widgets/glass.dart';
 import '../widgets/macro_breakdown.dart';
 import '../widgets/meal_section.dart';
@@ -45,6 +50,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   DateTime? _pastDay;
   List<FoodEntry> _pastEntries = const [];
   late final AppLifecycleListener _lifecycle;
+  StreamSubscription<Celebration>? _celebrationSub;
+  final _celebrationQueue = <Celebration>[];
+  bool _celebrating = false;
   bool _loadingPast = false;
   int _streak = 0;
 
@@ -68,13 +76,55 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.initState();
     _refreshStreak();
     _lifecycle = AppLifecycleListener(onResume: _onResume);
+    _celebrationSub = ref.read(progressProvider.notifier).celebrations.listen(_enqueueCelebration);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeStartTour());
   }
 
   @override
   void dispose() {
     _lifecycle.dispose();
+    _celebrationSub?.cancel();
     super.dispose();
+  }
+
+  void _enqueueCelebration(Celebration celebration) {
+    _celebrationQueue.add(celebration);
+    _playCelebrations();
+  }
+
+  /// One at a time: the perfect-day burst plays over the ring without
+  /// blocking, badges and level-ups are shown as cards in turn.
+  Future<void> _playCelebrations() async {
+    if (_celebrating) return;
+    _celebrating = true;
+    try {
+      while (_celebrationQueue.isNotEmpty && mounted) {
+        final next = _celebrationQueue.removeAt(0);
+        if (next is PerfectDayCelebration) {
+          if (mounted && _isToday) showPerfectDayBurst(context, _ringKey);
+          await Future<void>.delayed(const Duration(milliseconds: 1300));
+        } else {
+          // Let a sheet or the photo flow finish before a card appears.
+          while (mounted && !_isFrontmost()) {
+            await Future<void>.delayed(const Duration(milliseconds: 500));
+          }
+          if (!mounted) return;
+          await showCelebrationCard(context, next);
+        }
+      }
+    } finally {
+      _celebrating = false;
+    }
+  }
+
+  /// True when nothing (dialog, sheet, pushed screen, the tour) is on top of
+  /// the dashboard.
+  bool _isFrontmost() {
+    final local = ModalRoute.of(context);
+    if (local != null && !local.isCurrent) return false;
+    final shellContext = MainShell.insightsTabKey.currentContext;
+    final shell = shellContext == null ? null : ModalRoute.of(shellContext);
+    return shell == null || shell.isCurrent;
   }
 
   /// Back in the foreground, possibly on a new day (timers don't run while a
@@ -85,6 +135,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // start waking it before the user's next action needs it.
     ServerWarmup.ping();
     ref.read(foodLogProvider.notifier).ensureCurrentDay();
+    ref.read(progressProvider.notifier).refreshSoon(); // the streak may have moved on
     _refreshStreak();
     if (mounted) setState(() {});
   }
@@ -378,6 +429,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final profile = ref.watch(userProfileProvider);
     final foodLog = ref.watch(foodLogProvider);
+    final progress = ref.watch(progressProvider);
 
     final entries = _isToday ? foodLog : _pastEntries;
     final target = profile?.calorieTarget ?? 2000;
@@ -405,6 +457,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Expanded(
                           child: DashboardHeader(
                             streakDays: _streak,
+                            progress: progress,
                             dateLabel: _dateLabel,
                             canGoNext: !_isToday,
                             onPreviousDay: () => _selectDay(
@@ -445,6 +498,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 target: target,
                                 isToday: _isToday,
                                 loading: _loadingPast,
+                                perfectDay: _isToday && (progress?.today.perfectDay ?? false),
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -546,12 +600,16 @@ class _RingCard extends StatelessWidget {
     required this.target,
     required this.isToday,
     required this.loading,
+    this.perfectDay = false,
   });
 
   final int consumed;
   final int target;
   final bool isToday;
   final bool loading;
+
+  /// Today's calories landed within the healthy band around the target.
+  final bool perfectDay;
 
   @override
   Widget build(BuildContext context) {
@@ -573,6 +631,35 @@ class _RingCard extends StatelessWidget {
         child: Column(
           children: [
             CalorieRing(consumed: consumed, target: target),
+            AnimatedSize(
+              duration: AppMotion.medium,
+              curve: AppMotion.standard,
+              child: perfectDay
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: TrackerColors.alpha(TrackerColors.accentEnd, 0.14),
+                          borderRadius: BorderRadius.circular(AppRadii.pill),
+                          border: Border.all(color: TrackerColors.alpha(TrackerColors.accentEnd, 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(CupertinoIcons.flame_fill, size: 13, color: TrackerColors.accentEnd),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Perfect day',
+                              style: AppType.caption(color: TrackerColors.accentEnd, size: 12)
+                                  .copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
             if (!isToday) ...[
               const SizedBox(height: 16),
               Row(
