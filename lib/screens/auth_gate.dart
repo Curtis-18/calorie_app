@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/server_handshake.dart';
 import '../theme/tracker_colors.dart';
-import '../widgets/app_dialog.dart';
+import '../widgets/animated_logo.dart';
 import '../widgets/waking_up_view.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
@@ -80,7 +80,7 @@ class _AuthGateState extends State<AuthGate> {
                 return CupertinoPageScaffold(
                   child: DecoratedBox(
                     decoration: BoxDecoration(color: TrackerColors.background),
-                    child: Center(child: PulsingRing()),
+                    child: const Center(child: AnimatedLogo(size: 140, tile: true, sparks: false)),
                   ),
                 );
               case HandshakePhase.waking:
@@ -96,7 +96,7 @@ class _AuthGateState extends State<AuthGate> {
                 return CupertinoPageScaffold(
                   child: DecoratedBox(
                     decoration: BoxDecoration(color: TrackerColors.background),
-                    child: Center(child: PulsingRing()),
+                    child: const Center(child: AnimatedLogo(size: 140, tile: true, sparks: false)),
                   ),
                 );
               case HandshakePhase.unreachable:

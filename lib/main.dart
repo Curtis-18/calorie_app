@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ThemeHost(
       builder: (context, theme) => CupertinoApp(
-        title: 'Calorie Tracker',
+        title: 'NuStreak',
         theme: theme,
         localizationsDelegates: appLocalizationsDelegates,
         home: SplashGate(

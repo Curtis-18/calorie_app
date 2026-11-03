@@ -1,11 +1,11 @@
 {
-    "name": "Calorie Tracker",
-    "short_name": "Calorie",
+    "name": "NuStreak",
+    "short_name": "NuStreak",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0B0C10",
     "theme_color": "#0B0C10",
-    "description": "Track calories, macros and meals with a native iOS feel.",
+    "description": "Nutrition streaks with friends: log meals, keep your streak alive.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -61,7 +61,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay> {
             if (_step == 1)
               SplitText(
                 key: const ValueKey(1),
-                text: 'Welcome to Calorie Tracker',
+                text: 'Welcome to NuStreak',
                 style: AppType.display(size: 30, color: TrackerColors.accentEndText),
                 onComplete: _next,
               ),

@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'app_field.dart' show AppBackdrop;
+import 'animated_logo.dart';
 import 'glass.dart';
 
 /// Shown while the backend boots after a cold start.
@@ -177,24 +178,7 @@ class _Ember extends StatelessWidget {
                 size: const Size.square(_size),
                 painter: _OrbitPainter(rotation: t),
               ),
-              Transform.scale(
-                scale: 0.97 + 0.03 * breath,
-                child: Container(
-                  width: 84,
-                  height: 84,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    gradient: TrackerColors.calorieGradient,
-                    borderRadius: AppRadii.containerAll,
-                    boxShadow: AppDecor.layeredGlow(TrackerColors.accentStart, opacity: 0.35),
-                  ),
-                  child: Icon(
-                    CupertinoIcons.flame_fill,
-                    size: 38,
-                    color: TrackerColors.onAccent,
-                  ),
-                ),
-              ),
+              AnimatedLogo(size: _size * 0.62, tile: true, sparks: false, intro: false),
             ],
           ),
         );

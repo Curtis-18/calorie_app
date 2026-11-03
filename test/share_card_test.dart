@@ -124,7 +124,7 @@ void main() {
 
       final none = ShareCardData.from(progress: _progress(streak: 0));
       expect(none.hasStreak, isFalse);
-      expect(none.shareText, "I'm level 4 on Calorie Tracker 🔥");
+      expect(none.shareText, "I'm level 4 on NuStreak 🔥");
     });
   });
 

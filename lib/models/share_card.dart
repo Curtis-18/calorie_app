@@ -88,9 +88,9 @@ class ShareCardData {
   /// Text that goes with the image in the share sheet.
   String get shareText {
     if (hasStreak) {
-      return "I'm on a $streakDays-day streak and level $level on Calorie Tracker 🔥";
+      return "I'm on a $streakDays-day streak and level $level on NuStreak 🔥";
     }
-    return "I'm level $level on Calorie Tracker 🔥";
+    return "I'm level $level on NuStreak 🔥";
   }
 
   static String shortDate(DateTime d) {

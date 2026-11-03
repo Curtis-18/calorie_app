@@ -112,7 +112,7 @@ class _BrandRow extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            'Calorie Tracker',
+            'NuStreak',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppType.headline(color: _p.textPrimary).copyWith(fontSize: 14.5),
