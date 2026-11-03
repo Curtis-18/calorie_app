@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
@@ -27,8 +28,11 @@ class AnimatedLogo extends StatefulWidget {
   /// whose background isn't the dark brand colour (the image has its own).
   final bool tile;
 
-  static const _logoAsset = 'assets/logo/logo.png';
-  static const _flameAsset = 'assets/logo/flame.png';
+  static const _logoAsset = 'assets/logo/logo.webp';
+  static const _flameAsset = 'assets/logo/flame.webp';
+
+  /// The picture's own dark backdrop (used behind it when drawn as a tile).
+  static const _backdrop = Color(0xFF0C1017);
 
   @override
   State<AnimatedLogo> createState() => _AnimatedLogoState();
@@ -42,27 +46,60 @@ class _AnimatedLogoState extends State<AnimatedLogo> with TickerProviderStateMix
   );
 
   bool _reduceMotion = false;
+  bool _started = false;
+  ImageProvider? _logo;
+  ImageProvider? _flame;
+
+  /// Decode at the size it is shown (capped at 2x: phones gain nothing from
+  /// more here, and it keeps memory and decode time down).
+  ImageProvider _provider(String asset, int width) => ResizeImage(AssetImage(asset), width: width);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final dpr = math.min(MediaQuery.devicePixelRatioOf(context), 2.0);
+    final width = (widget.size * dpr).round();
+    _logo = _provider(AnimatedLogo._logoAsset, width);
+    _flame = _provider(AnimatedLogo._flameAsset, width);
+
     if (_reduceMotion) {
       _loop.value = 0.25;
       _intro.value = 1;
       _loop.stop();
-    } else {
-      if (!_loop.isAnimating) _loop.repeat();
-      if (widget.intro) {
-        if (_intro.status == AnimationStatus.dismissed) _intro.forward();
-      } else {
-        _intro.value = 1;
-      }
+      return;
     }
+    if (!_loop.isAnimating) _loop.repeat();
+    if (!widget.intro) {
+      _intro.value = 1;
+    } else if (!_started) {
+      _started = true;
+      _startWhenLoaded();
+    }
+  }
+
+  /// The entrance only starts once the pictures are ready. On a phone they
+  /// arrive over the network, and an animation that ran before then played
+  /// out to nothing and the logo just popped in.
+  Timer? _fallback;
+
+  void _startWhenLoaded() {
+    // If the pictures are slow or fail, play anyway after a while.
+    _fallback = Timer(const Duration(seconds: 6), _play);
+    Future.wait([
+      precacheImage(_logo!, context),
+      precacheImage(_flame!, context),
+    ]).then((_) => _play(), onError: (_) => _play());
+  }
+
+  void _play() {
+    _fallback?.cancel();
+    if (mounted && _intro.status == AnimationStatus.dismissed) _intro.forward();
   }
 
   @override
   void dispose() {
+    _fallback?.cancel();
     _loop.dispose();
     _intro.dispose();
     super.dispose();
@@ -71,33 +108,28 @@ class _AnimatedLogoState extends State<AnimatedLogo> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final size = widget.size;
-    final cacheWidth = (size * MediaQuery.devicePixelRatioOf(context)).round();
 
-    Widget image(String asset) => Image.asset(
-      asset,
+    Widget image(ImageProvider provider, Animation<double> opacity) => Image(
+      image: provider,
       width: size,
       height: size,
-      cacheWidth: cacheWidth,
+      opacity: opacity,
       filterQuality: FilterQuality.medium,
       gaplessPlayback: true,
       excludeFromSemantics: true,
     );
 
-    Widget base = image(AnimatedLogo._logoAsset);
-    base = widget.tile
-        ? ClipRRect(borderRadius: BorderRadius.circular(size * 0.22), child: base)
-        // Fade the picture's own dark backdrop into the screen's.
-        : ShaderMask(
-            blendMode: BlendMode.dstIn,
-            shaderCallback: (rect) => const RadialGradient(
-              radius: 0.5,
-              colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF), Color(0x00FFFFFF)],
-              stops: [0, 0.72, 1],
-            ).createShader(rect),
-            child: base,
-          );
-
-    final flame = image(AnimatedLogo._flameAsset);
+    // Fade by painting the pictures with an alpha, not by wrapping them in
+    // Opacity or ShaderMask widgets: those render through offscreen layers
+    // every frame, which is what made this stutter on phones.
+    final introFade = CurvedAnimation(parent: _intro, curve: Curves.easeOutCubic);
+    Widget base = image(_logo!, introFade);
+    if (widget.tile) {
+      base = ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.22),
+        child: ColoredBox(color: AnimatedLogo._backdrop, child: base),
+      );
+    }
 
     return Semantics(
       label: 'NuStreak',
@@ -118,7 +150,7 @@ class _AnimatedLogoState extends State<AnimatedLogo> with TickerProviderStateMix
               final flicker = 0.93 + 0.07 * math.sin(t * 2 + 1) * math.sin(t * 5);
               final breath = 0.5 + 0.5 * math.sin(t);
 
-              Widget flameLayer = Transform(
+              final flameLayer = Transform(
                 alignment: const Alignment(-0.55, 0.55), // the flame's root
                 transform: Matrix4.identity()
                   ..rotateZ(sway)
@@ -128,47 +160,46 @@ class _AnimatedLogoState extends State<AnimatedLogo> with TickerProviderStateMix
                     1.0,
                     1.0,
                   ),
-                child: flame,
+                child: image(_flame!, AlwaysStoppedAnimation((flicker * ignite).clamp(0.0, 1.0))),
               );
-              flameLayer = Opacity(opacity: (flicker * ignite).clamp(0.0, 1.0), child: flameLayer);
 
-              return Opacity(
-                opacity: intro.clamp(0.0, 1.0),
-                child: Transform.scale(
-                  scale: 0.86 + 0.14 * intro,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      // Warm glow, breathing. (The tile is self-contained.)
-                      if (!widget.tile)
-                        Positioned.fill(
-                          child: Transform.scale(
-                            scale: 1.05 + 0.06 * breath,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: RadialGradient(
-                                  center: const Alignment(0.2, -0.1),
-                                  radius: 0.42,
-                                  colors: [
-                                    TrackerColors.alpha(TrackerColors.accentStart, (0.22 + 0.12 * breath) * ignite),
-                                    TrackerColors.alpha(TrackerColors.accentStart, 0),
-                                  ],
-                                ),
+              return Transform.scale(
+                scale: 0.86 + 0.14 * intro,
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Warm glow, breathing. (The tile is self-contained.)
+                    if (!widget.tile)
+                      Positioned.fill(
+                        child: Transform.scale(
+                          scale: 1.05 + 0.06 * breath,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: const Alignment(0.2, -0.1),
+                                radius: 0.42,
+                                colors: [
+                                  TrackerColors.alpha(
+                                    TrackerColors.accentStart,
+                                    (0.22 + 0.12 * breath) * ignite * intro,
+                                  ),
+                                  TrackerColors.alpha(TrackerColors.accentStart, 0),
+                                ],
                               ),
                             ),
                           ),
                         ),
-                      base,
-                      flameLayer,
-                      if (widget.sparks && !_reduceMotion)
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _SparkPainter(progress: _loop.value, strength: ignite),
-                          ),
+                      ),
+                    base,
+                    flameLayer,
+                    if (widget.sparks && !_reduceMotion)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _SparkPainter(progress: _loop.value, strength: ignite),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               );
             },
