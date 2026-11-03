@@ -51,7 +51,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: TrackerColors.background),
+        decoration: BoxDecoration(color: TrackerColors.background),
         child: _loading
             ? ListView(
                 padding: const EdgeInsets.all(AppSpacing.gutter),
@@ -69,7 +69,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     accent: TrackerColors.error,
                   )
                 : _recipe == null
-                    ? const AppEmptyState(
+                    ? AppEmptyState(
                         icon: CupertinoIcons.book,
                         title: 'Recipe not found',
                         message: 'This recipe may no longer be available.',
@@ -109,10 +109,10 @@ class _RecipeContent extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         CupertinoIcons.tag_fill,
                         size: 13,
-                        color: TrackerColors.accentEnd,
+                        color: TrackerColors.accentEndText,
                       ),
                       const SizedBox(width: 8),
                       Expanded(

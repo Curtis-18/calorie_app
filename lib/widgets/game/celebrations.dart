@@ -193,13 +193,13 @@ class _RisingChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(CupertinoIcons.flame_fill, size: 15, color: TrackerColors.textPrimary),
+            Icon(CupertinoIcons.flame_fill, size: 15, color: TrackerColors.onAccent),
             const SizedBox(width: 6),
-            Text(label, style: AppType.button(size: 15)),
+            Text(label, style: AppType.button(color: TrackerColors.onAccent, size: 15)),
             const SizedBox(width: 8),
             Text(
               detail,
-              style: AppType.caption(color: TrackerColors.alpha(TrackerColors.textPrimary, 0.85), size: 12)
+              style: AppType.caption(color: TrackerColors.alpha(TrackerColors.onAccent, 0.85), size: 12)
                   .copyWith(fontWeight: FontWeight.w800),
             ),
           ],
@@ -233,7 +233,7 @@ class _CelebrationCard extends StatelessWidget {
           'BADGE UNLOCKED',
           achievement.title,
           achievement.description,
-          Icon(achievement.icon, size: 44, color: TrackerColors.textPrimary) as Widget,
+          Icon(achievement.icon, size: 44, color: TrackerColors.onAccent) as Widget,
         ),
       LevelUpCelebration(:final level) => (
           'LEVEL UP',
@@ -283,7 +283,7 @@ class _CelebrationCard extends StatelessWidget {
                               shape: BoxShape.circle,
                               gradient: TrackerColors.calorieGradient,
                               border: Border.all(
-                                color: TrackerColors.alpha(TrackerColors.textPrimary, 0.25),
+                                color: TrackerColors.alpha(TrackerColors.onAccent, 0.25),
                                 width: 2,
                               ),
                               boxShadow: AppDecor.layeredGlow(TrackerColors.accentStart, opacity: 0.5),
@@ -297,7 +297,7 @@ class _CelebrationCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     eyebrow,
-                    style: AppType.sectionLabel(color: TrackerColors.accentEnd).copyWith(letterSpacing: 1.6),
+                    style: AppType.sectionLabel(color: TrackerColors.accentEndText).copyWith(letterSpacing: 1.6),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(title, textAlign: TextAlign.center, style: AppType.display(size: 28)),

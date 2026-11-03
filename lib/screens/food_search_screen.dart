@@ -138,7 +138,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         ),
       ),
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: TrackerColors.background),
+        decoration: BoxDecoration(color: TrackerColors.background),
         child: _loading
             ? ListView(
                 padding: const EdgeInsets.all(AppSpacing.gutter),
@@ -154,7 +154,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                     accent: TrackerColors.error,
                   )
                 : _results.isEmpty
-                    ? const AppEmptyState(
+                    ? AppEmptyState(
                         icon: CupertinoIcons.search,
                         title: 'Find a food',
                         message: 'Search thousands of foods to add them to this meal.',
@@ -197,7 +197,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.md),
-                                    const Icon(
+                                    Icon(
                                       CupertinoIcons.chevron_right,
                                       size: 15,
                                       color: TrackerColors.textTertiary,
@@ -261,7 +261,7 @@ class _QuantityDialogState extends State<_QuantityDialog> {
                   controller: _gramsController,
                   autofocus: true,
                   onChanged: (value) => setState(() => _grams = parseGrams(value)),
-                  suffix: const Padding(
+                  suffix: Padding(
                     padding: EdgeInsets.only(right: 14),
                     child: Text('g', style: TextStyle(color: TrackerColors.textTertiary, fontSize: 15)),
                   ),
@@ -286,7 +286,7 @@ class _QuantityDialogState extends State<_QuantityDialog> {
                       : '≈ ${caloriesFor(widget.food.caloriesPer100g, _grams!)} kcal',
                   textAlign: TextAlign.center,
                   style: AppType.caption(
-                    color: _grams == null ? TrackerColors.error : TrackerColors.accentEnd,
+                    color: _grams == null ? TrackerColors.error : TrackerColors.accentEndText,
                     size: 13,
                   ).copyWith(fontWeight: FontWeight.w700),
                 ),

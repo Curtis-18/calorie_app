@@ -7,6 +7,10 @@ import '../../theme/tracker_colors.dart';
 import '../game/flame_style.dart';
 import '../game/header_chips.dart';
 
+/// The card always uses the dark palette, so a shared image looks the same
+/// whichever mode the app is in.
+const _p = TrackerPalette.dark;
+
 /// The branded progress card that gets rendered to a PNG and shared.
 ///
 /// Laid out at a fixed 360×640 logical size (9:16, story-friendly) and
@@ -21,7 +25,7 @@ class ProgressShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = FlameStyle.of(data.tier, dim: !data.hasStreak);
+    final style = FlameStyle.of(data.tier, dim: !data.hasStreak, palette: _p);
     final glowColor = data.hasStreak ? style.color : TrackerColors.accentStart;
 
     return SizedBox.fromSize(
@@ -29,7 +33,7 @@ class ProgressShareCard extends StatelessWidget {
       // Opaque base first: the glow is translucent, and a PNG keeps whatever
       // is (or isn't) underneath it.
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: TrackerColors.background),
+        decoration: BoxDecoration(color: _p.background),
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
@@ -78,7 +82,7 @@ class ProgressShareCard extends StatelessWidget {
                 Text(
                   'Small habits, every day.',
                   textAlign: TextAlign.center,
-                  style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5),
+                  style: AppType.caption(color: _p.textTertiary, size: 11.5),
                 ),
               ],
             ),
@@ -103,7 +107,7 @@ class _BrandRow extends StatelessWidget {
           height: 26,
           alignment: Alignment.center,
           decoration: BoxDecoration(gradient: TrackerColors.calorieGradient, borderRadius: BorderRadius.circular(8)),
-          child: const Icon(CupertinoIcons.flame_fill, size: 15, color: TrackerColors.textPrimary),
+          child: Icon(CupertinoIcons.flame_fill, size: 15, color: _p.textPrimary),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -111,11 +115,11 @@ class _BrandRow extends StatelessWidget {
             'Calorie Tracker',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppType.headline().copyWith(fontSize: 14.5),
+            style: AppType.headline(color: _p.textPrimary).copyWith(fontSize: 14.5),
           ),
         ),
         const SizedBox(width: 8),
-        Text(date, style: AppType.caption(color: TrackerColors.textSecondary, size: 11.5)),
+        Text(date, style: AppType.caption(color: _p.textSecondary, size: 11.5)),
       ],
     );
   }
@@ -151,12 +155,16 @@ class _Hero extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         if (data.hasStreak) ...[
-          Text('${data.streakDays}', textAlign: TextAlign.center, style: AppType.display(size: 72)),
+          Text(
+            '${data.streakDays}',
+            textAlign: TextAlign.center,
+            style: AppType.display(size: 72, color: _p.textPrimary),
+          ),
           const SizedBox(height: 4),
           Text(
             'day streak',
             textAlign: TextAlign.center,
-            style: AppType.title(color: TrackerColors.textSecondary),
+            style: AppType.title(color: _p.textSecondary),
           ),
           const SizedBox(height: 12),
           Center(
@@ -168,12 +176,16 @@ class _Hero extends StatelessWidget {
             ),
           ),
         ] else ...[
-          Text('Level ${data.level}', textAlign: TextAlign.center, style: AppType.display(size: 56)),
+          Text(
+            'Level ${data.level}',
+            textAlign: TextAlign.center,
+            style: AppType.display(size: 56, color: _p.textPrimary),
+          ),
           const SizedBox(height: 8),
           Text(
             'and just getting started',
             textAlign: TextAlign.center,
-            style: AppType.title(color: TrackerColors.textSecondary),
+            style: AppType.title(color: _p.textSecondary),
           ),
         ],
       ],
@@ -217,9 +229,9 @@ class _Tile extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: TrackerColors.alpha(TrackerColors.surface, 0.82),
+        color: TrackerColors.alpha(_p.surface, 0.82),
         borderRadius: AppRadii.buttonAll,
-        border: Border.all(color: TrackerColors.borderStrong),
+        border: Border.all(color: _p.borderStrong),
       ),
       child: child,
     );
@@ -237,13 +249,13 @@ class _LevelTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('LEVEL', style: AppType.sectionLabel().copyWith(fontSize: 10)),
+          Text('LEVEL', style: AppType.sectionLabel(color: _p.textSecondary).copyWith(fontSize: 10)),
           const SizedBox(height: 6),
-          Text('${data.level}', style: AppType.display(size: 28)),
+          Text('${data.level}', style: AppType.display(size: 28, color: _p.textPrimary)),
           const SizedBox(height: 8),
-          XpBar(fraction: data.levelFraction, height: 6),
+          XpBar(fraction: data.levelFraction, height: 6, track: _p.textPrimary.withValues(alpha: 0.1)),
           const SizedBox(height: 6),
-          Text('${data.totalXp} XP', style: AppType.caption(color: TrackerColors.textTertiary, size: 11)),
+          Text('${data.totalXp} XP', style: AppType.caption(color: _p.textTertiary, size: 11)),
         ],
       ),
     );
@@ -261,24 +273,28 @@ class _BadgeCountTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('BADGES', style: AppType.sectionLabel().copyWith(fontSize: 10)),
+          Text('BADGES', style: AppType.sectionLabel(color: _p.textSecondary).copyWith(fontSize: 10)),
           const SizedBox(height: 6),
           Text.rich(
             TextSpan(
               text: '${data.badgeCount}',
-              style: AppType.display(size: 28),
+              style: AppType.display(size: 28, color: _p.textPrimary),
               children: [
                 TextSpan(
                   text: ' / ${data.badgeTotal}',
-                  style: AppType.headline(color: TrackerColors.textTertiary),
+                  style: AppType.headline(color: _p.textTertiary),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          XpBar(fraction: data.badgeTotal == 0 ? 0 : data.badgeCount / data.badgeTotal, height: 6),
+          XpBar(
+            fraction: data.badgeTotal == 0 ? 0 : data.badgeCount / data.badgeTotal,
+            height: 6,
+            track: _p.textPrimary.withValues(alpha: 0.1),
+          ),
           const SizedBox(height: 6),
-          Text('unlocked', style: AppType.caption(color: TrackerColors.textTertiary, size: 11)),
+          Text('unlocked', style: AppType.caption(color: _p.textTertiary, size: 11)),
         ],
       ),
     );
@@ -305,10 +321,10 @@ class _BadgeRow extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: TrackerColors.calorieGradient,
-                border: Border.all(color: TrackerColors.alpha(TrackerColors.textPrimary, 0.22)),
+                border: Border.all(color: TrackerColors.alpha(_p.textPrimary, 0.22)),
                 boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 12, opacity: 0.3),
               ),
-              child: Icon(badge.icon, size: 18, color: TrackerColors.textPrimary),
+              child: Icon(badge.icon, size: 18, color: _p.textPrimary),
             ),
         ],
       ),
@@ -343,9 +359,9 @@ class _WeightTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('WEIGHT TREND', style: AppType.sectionLabel().copyWith(fontSize: 10)),
+                Text('WEIGHT TREND', style: AppType.sectionLabel(color: _p.textSecondary).copyWith(fontSize: 10)),
                 const SizedBox(height: 3),
-                Text(since, style: AppType.caption(color: TrackerColors.textTertiary, size: 11)),
+                Text(since, style: AppType.caption(color: _p.textTertiary, size: 11)),
               ],
             ),
           ),

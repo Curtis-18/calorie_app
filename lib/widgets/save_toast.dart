@@ -24,7 +24,7 @@ class SaveToast extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLoading = state == SaveToastState.loading;
     final isSuccess = state == SaveToastState.success;
-    final accent = isSuccess ? TrackerColors.success : TrackerColors.accentStart;
+    final accent = isSuccess ? TrackerColors.success : TrackerColors.accentStartText;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.9, end: 1),

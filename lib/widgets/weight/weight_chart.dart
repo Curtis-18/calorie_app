@@ -43,6 +43,9 @@ class WeightChart extends StatelessWidget {
 }
 
 class _WeightChartPainter extends CustomPainter {
+  /// Painters read colours while painting; this tells them the mode changed.
+  final int _paletteEpoch = TrackerColors.paletteEpoch;
+
   _WeightChartPainter({
     required this.points,
     required this.unit,
@@ -191,5 +194,5 @@ class _WeightChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_WeightChartPainter old) =>
-      old.points != points || old.unit != unit || old.reveal != reveal;
+      old.points != points || old.unit != unit || old.reveal != reveal || old._paletteEpoch != _paletteEpoch;
 }

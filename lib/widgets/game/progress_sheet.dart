@@ -142,7 +142,7 @@ class StreakHeroCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             _Notice(
               icon: CupertinoIcons.clock_fill,
-              color: TrackerColors.accentEnd,
+              color: TrackerColors.accentEndText,
               text: streak.freezes > 0
                   ? "Log something today to grow your streak. If you can't, a freeze will save it."
                   : 'Log something today to keep your streak alive.',
@@ -249,7 +249,7 @@ class LevelCard extends StatelessWidget {
                   ),
                   child: Text(
                     '+$todayXp today',
-                    style: AppType.caption(color: TrackerColors.accentEnd, size: 12)
+                    style: AppType.caption(color: TrackerColors.accentEndText, size: 12)
                         .copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -343,7 +343,7 @@ class BadgeTile extends StatelessWidget {
                       color: a.unlocked ? null : TrackerColors.surfaceElevated,
                       border: Border.all(
                         color: a.unlocked
-                            ? TrackerColors.alpha(TrackerColors.textPrimary, 0.22)
+                            ? TrackerColors.alpha(TrackerColors.onAccent, 0.22)
                             : TrackerColors.border,
                       ),
                       boxShadow: a.unlocked ? AppDecor.glow(TrackerColors.accentStart, blur: 16, opacity: 0.35) : null,
@@ -351,11 +351,11 @@ class BadgeTile extends StatelessWidget {
                     child: Icon(
                       a.icon,
                       size: 22,
-                      color: a.unlocked ? TrackerColors.textPrimary : TrackerColors.textTertiary,
+                      color: a.unlocked ? TrackerColors.onAccent : TrackerColors.textTertiary,
                     ),
                   ),
                   if (!a.unlocked && a.goal <= 1)
-                    const Positioned(
+                    Positioned(
                       right: 4,
                       bottom: 4,
                       child: Icon(CupertinoIcons.lock_fill, size: 12, color: TrackerColors.textTertiary),
@@ -415,7 +415,7 @@ class _HowToEarn extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 5),
               child: Row(
                 children: [
-                  Icon(icon, size: 15, color: TrackerColors.accentEnd),
+                  Icon(icon, size: 15, color: TrackerColors.accentEndText),
                   const SizedBox(width: 10),
                   Expanded(child: Text(label, style: AppType.callout())),
                   Text(

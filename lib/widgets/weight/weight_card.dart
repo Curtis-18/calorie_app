@@ -97,7 +97,7 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
       children: [
         Text(
           h.entries.length == 1 ? unit.format(s.currentKg) : unit.formatChange(s.changeKg),
-          style: AppType.display(size: 34, color: TrackerColors.accentEnd),
+          style: AppType.display(size: 34, color: TrackerColors.accentEndText),
         ),
         const SizedBox(height: 2),
         Text(
@@ -131,7 +131,7 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
           const SizedBox(height: AppSpacing.md),
           Text(
             "It's been ${s.daysSinceLast} days. Time for a weigh-in?",
-            style: AppType.caption(color: TrackerColors.accentEnd, size: 12.5),
+            style: AppType.caption(color: TrackerColors.accentEndText, size: 12.5),
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
@@ -225,7 +225,7 @@ class _RangeChip extends StatelessWidget {
         child: Text(
           label,
           style: AppType.caption(
-            color: selected ? TrackerColors.accentEnd : TrackerColors.textSecondary,
+            color: selected ? TrackerColors.accentEndText : TrackerColors.textSecondary,
             size: 12,
           ).copyWith(fontWeight: FontWeight.w800),
         ),
@@ -266,7 +266,7 @@ class UnitToggle extends StatelessWidget {
                 child: Text(
                   u.label,
                   style: AppType.caption(
-                    color: u == unit ? TrackerColors.textPrimary : TrackerColors.textSecondary,
+                    color: u == unit ? TrackerColors.onAccent : TrackerColors.textSecondary,
                     size: 11.5,
                   ).copyWith(fontWeight: FontWeight.w800),
                 ),
@@ -289,7 +289,7 @@ class _Message extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, size: 28, color: TrackerColors.accentEnd),
+        Icon(icon, size: 28, color: TrackerColors.accentEndText),
         const SizedBox(height: AppSpacing.md),
         Text(text, textAlign: TextAlign.center, style: AppType.callout()),
         const SizedBox(height: AppSpacing.lg),
@@ -455,11 +455,11 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(CupertinoIcons.calendar, size: 15, color: TrackerColors.textSecondary),
+                  Icon(CupertinoIcons.calendar, size: 15, color: TrackerColors.textSecondary),
                   const SizedBox(width: 6),
                   Text(_isToday ? 'Today' : _long(_day), style: AppType.callout()),
                   const SizedBox(width: 4),
-                  const Icon(CupertinoIcons.chevron_down, size: 12, color: TrackerColors.textTertiary),
+                  Icon(CupertinoIcons.chevron_down, size: 12, color: TrackerColors.textTertiary),
                 ],
               ),
             ),

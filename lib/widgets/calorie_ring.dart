@@ -124,7 +124,10 @@ class _RingCenter extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  const _RingPainter({
+  /// Painters read colours while painting; this tells them the mode changed.
+  final int _paletteEpoch = TrackerColors.paletteEpoch;
+
+  _RingPainter({
     required this.progress,
     required this.strokeWidth,
     required this.showTicks,
@@ -191,13 +194,13 @@ class _RingPainter extends CustomPainter {
       cap,
       strokeWidth * 0.5,
       Paint()
-        ..color = TrackerColors.textPrimary
+        ..color = TrackerColors.onAccent
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
     canvas.drawCircle(
       cap,
       strokeWidth * 0.26,
-      Paint()..color = TrackerColors.textPrimary,
+      Paint()..color = TrackerColors.onAccent,
     );
   }
 
@@ -224,5 +227,6 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(covariant _RingPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.strokeWidth != strokeWidth ||
-      oldDelegate.showTicks != showTicks;
+      oldDelegate.showTicks != showTicks ||
+      oldDelegate._paletteEpoch != _paletteEpoch;
 }

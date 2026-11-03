@@ -45,7 +45,8 @@ class AppDecor {
 
   static const double blur = 20;
 
-  /// Standard card: #16181F surface with a 1px rgba(255,255,255,0.08) border.
+  /// Standard card: the surface colour with a hairline border (and, in light
+  /// mode, a soft shadow).
   static BoxDecoration card({
     Color? color,
     Gradient? gradient,
@@ -58,7 +59,8 @@ class AppDecor {
         gradient: gradient,
         borderRadius: borderRadius ?? AppRadii.containerAll,
         border: border ?? Border.all(color: TrackerColors.border, width: 1),
-        boxShadow: shadow,
+        // Light mode lifts cards with a soft shadow (none in dark mode).
+        boxShadow: shadow == null ? TrackerColors.cardShadow : [...TrackerColors.cardShadow, ...shadow],
       );
 
   /// Frosted glass fill used on headers, sheets, tab bar and floating chips.
@@ -70,9 +72,13 @@ class AppDecor {
     bool blurSurface = true,
   }) =>
       BoxDecoration(
-        color: tint == null
-            ? TrackerColors.alpha(TrackerColors.textPrimary, opacity)
-            : TrackerColors.alpha(tint, opacity),
+        color: tint != null
+            ? TrackerColors.alpha(tint, opacity)
+            : TrackerColors.isDark
+                // Dark: a veil of white over the blurred backdrop.
+                ? TrackerColors.alpha(TrackerColors.textPrimary, opacity)
+                // Light: frosted white, strong enough to read text on.
+                : TrackerColors.alpha(TrackerColors.surface, (0.5 + opacity * 3).clamp(0.5, 0.92)),
         borderRadius: borderRadius ?? AppRadii.containerAll,
         border: border ?? Border.all(color: TrackerColors.border, width: 1),
       );
@@ -99,6 +105,6 @@ class AppDecor {
         BoxShadow(color: TrackerColors.alpha(color, opacity * 0.4), blurRadius: 44, spreadRadius: 4),
       ];
 
-  static const Border hairlineTop = Border(top: BorderSide(color: TrackerColors.border, width: 1));
+  static Border get hairlineTop => Border(top: BorderSide(color: TrackerColors.border, width: 1));
   static const Border none = Border();
 }

@@ -29,13 +29,13 @@ class StreakPill extends StatelessWidget {
             Icon(
               CupertinoIcons.flame_fill,
               size: 13,
-              color: TrackerColors.accentEnd,
+              color: TrackerColors.accentEndText,
               shadows: AppDecor.glow(TrackerColors.accentEnd, blur: 8, opacity: 0.7),
             ),
             const SizedBox(width: 5),
             Text(
               '$days day${days == 1 ? '' : 's'}',
-              style: AppType.caption(color: TrackerColors.accentEnd, size: 12)
+              style: AppType.caption(color: TrackerColors.accentEndText, size: 12)
                   .copyWith(fontWeight: FontWeight.w800),
             ),
           ],

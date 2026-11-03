@@ -101,7 +101,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     return CupertinoPageScaffold(
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: TrackerColors.background),
+        decoration: BoxDecoration(color: TrackerColors.background),
         child: Column(
           children: [
             SafeArea(
@@ -235,7 +235,7 @@ class _RecipeRow extends StatelessWidget {
                       height: 64,
                       color: TrackerColors.surfaceElevated,
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: Icon(
                         CupertinoIcons.photo,
                         size: 18,
                         color: TrackerColors.textTertiary,
@@ -260,7 +260,7 @@ class _RecipeRow extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         CupertinoIcons.clock,
                         size: 12,
                         color: TrackerColors.textTertiary,
@@ -273,7 +273,7 @@ class _RecipeRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Icon(CupertinoIcons.chevron_right, size: 15, color: TrackerColors.textTertiary),
+            Icon(CupertinoIcons.chevron_right, size: 15, color: TrackerColors.textTertiary),
           ],
         ),
       ),

@@ -66,11 +66,11 @@ class StepProgress extends StatelessWidget {
                   : null,
             ),
             child: isCompleted
-                ? const Icon(CupertinoIcons.check_mark, size: 14, color: TrackerColors.background)
+                ? Icon(CupertinoIcons.check_mark, size: 14, color: TrackerColors.background)
                 : Text(
                     '${step + 1}',
                     style: AppType.caption(
-                      color: isCurrent ? TrackerColors.accentStart : TrackerColors.textTertiary,
+                      color: isCurrent ? TrackerColors.accentStartText : TrackerColors.textTertiary,
                       size: 12,
                     ).copyWith(fontWeight: FontWeight.w800),
                   ),

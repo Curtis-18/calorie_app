@@ -67,7 +67,7 @@ class FlameStreakPill extends StatelessWidget {
                 ),
                 if (streak.freezes > 0) ...[
                   const SizedBox(width: 6),
-                  const Icon(CupertinoIcons.snow, size: 11, color: FlameStyle.freezeColor),
+                  Icon(CupertinoIcons.snow, size: 11, color: FlameStyle.freezeColor),
                   if (streak.freezes > 1)
                     Text(
                       '${streak.freezes}',
@@ -126,6 +126,9 @@ class LevelBadge extends StatelessWidget {
 
 /// A circular progress ring in the calorie gradient.
 class XpRingPainter extends CustomPainter {
+  /// Painters read colours while painting; this tells them the mode changed.
+  final int _paletteEpoch = TrackerColors.paletteEpoch;
+
   XpRingPainter({required this.fraction, this.strokeWidth = 3, this.track});
 
   final double fraction;
@@ -163,15 +166,19 @@ class XpRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(XpRingPainter old) => old.fraction != fraction || old.track != track;
+  bool shouldRepaint(XpRingPainter old) =>
+      old.fraction != fraction || old.track != track || old._paletteEpoch != _paletteEpoch;
 }
 
 /// Slim gradient XP bar.
 class XpBar extends StatelessWidget {
-  const XpBar({super.key, required this.fraction, this.height = 8});
+  const XpBar({super.key, required this.fraction, this.height = 8, this.track});
 
   final double fraction;
   final double height;
+
+  /// The empty part of the bar; defaults to a faint wash of the text colour.
+  final Color? track;
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +187,7 @@ class XpBar extends StatelessWidget {
         height: height,
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
-          color: TrackerColors.alpha(TrackerColors.textPrimary, 0.08),
+          color: track ?? TrackerColors.alpha(TrackerColors.textPrimary, 0.08),
           borderRadius: BorderRadius.circular(AppRadii.pill),
         ),
         child: TweenAnimationBuilder<double>(

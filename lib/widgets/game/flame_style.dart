@@ -15,54 +15,71 @@ class FlameStyle {
   /// Glow strength, 0..1.
   final double glow;
 
-  static const freezeColor = Color(0xFF64D2FF);
+  /// Streak-freeze snowflake colour; follows the mode (deeper blue on white).
+  static Color get freezeColor => TrackerColors.freeze;
   static const _infernoRed = Color(0xFFFF3B30);
 
-  static FlameStyle of(FlameTier tier, {bool dim = false}) {
+  /// The style for [tier]. The gradient is always vivid; [color], used for
+  /// text and small icons, is deepened on light backgrounds so it stays
+  /// readable. Pass [palette] to pin a mode (the share card is always dark).
+  static FlameStyle of(FlameTier tier, {bool dim = false, TrackerPalette? palette}) {
+    final p = palette ?? TrackerColors.palette;
+    final style = _vivid(tier, dim: dim, palette: p);
+    if (p.isDark || dim) return style;
+    return FlameStyle(gradient: style.gradient, color: _ink(style.color), glow: style.glow);
+  }
+
+  /// A darker take on [c] with the same hue, for text on white.
+  static Color _ink(Color c) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl.withLightness(hsl.lightness.clamp(0.0, 0.38)).toColor();
+  }
+
+  static FlameStyle _vivid(FlameTier tier, {required bool dim, required TrackerPalette palette}) {
     if (dim) {
+      final p = palette;
       return FlameStyle(
-        gradient: LinearGradient(colors: [
-          TrackerColors.alpha(TrackerColors.textSecondary, 0.9),
-          TrackerColors.alpha(TrackerColors.textSecondary, 0.6),
-        ]),
-        color: TrackerColors.textSecondary,
+        gradient: LinearGradient(
+          colors: [TrackerColors.alpha(p.textSecondary, 0.9), TrackerColors.alpha(p.textSecondary, 0.6)],
+        ),
+        color: p.textSecondary,
         glow: 0,
       );
     }
     return switch (tier) {
       FlameTier.spark => const FlameStyle(
-          gradient: LinearGradient(colors: [Color(0xFFFFB86B), TrackerColors.accentEnd]),
-          color: Color(0xFFFFB86B),
-          glow: 0.25,
-        ),
+        gradient: LinearGradient(colors: [Color(0xFFFFB86B), TrackerColors.accentEnd]),
+        color: Color(0xFFFFB86B),
+        glow: 0.25,
+      ),
       FlameTier.ember => const FlameStyle(
-          gradient: LinearGradient(colors: [TrackerColors.accentEnd, Color(0xFFFFB340)]),
-          color: TrackerColors.accentEnd,
-          glow: 0.45,
-        ),
+        gradient: LinearGradient(colors: [TrackerColors.accentEnd, Color(0xFFFFB340)]),
+        color: TrackerColors.accentEnd,
+        glow: 0.45,
+      ),
       FlameTier.flame => const FlameStyle(
-          gradient: TrackerColors.calorieGradient,
-          color: TrackerColors.accentStart,
-          glow: 0.6,
-        ),
+        gradient: TrackerColors.calorieGradient,
+        color: TrackerColors.accentStart,
+        glow: 0.6,
+      ),
       FlameTier.blaze => const FlameStyle(
-          gradient: LinearGradient(
-            begin: Alignment.bottomLeft,
-            end: Alignment.topRight,
-            colors: [TrackerColors.accentStart, TrackerColors.accentEnd, Color(0xFFFFD60A)],
-          ),
-          color: TrackerColors.accentStart,
-          glow: 0.8,
+        gradient: LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [TrackerColors.accentStart, TrackerColors.accentEnd, Color(0xFFFFD60A)],
         ),
+        color: TrackerColors.accentStart,
+        glow: 0.8,
+      ),
       FlameTier.inferno => const FlameStyle(
-          gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [_infernoRed, TrackerColors.accentStart, Color(0xFFFFD60A)],
-          ),
-          color: _infernoRed,
-          glow: 1,
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [_infernoRed, TrackerColors.accentStart, Color(0xFFFFD60A)],
         ),
+        color: _infernoRed,
+        glow: 1,
+      ),
     };
   }
 }

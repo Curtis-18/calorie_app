@@ -104,7 +104,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
         middle: const Text('Review detected foods'),
       ),
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: TrackerColors.background),
+        decoration: BoxDecoration(color: TrackerColors.background),
         child: Column(
           children: [
             Padding(
@@ -112,7 +112,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     CupertinoIcons.info_circle,
                     size: 15,
                     color: TrackerColors.textTertiary,
@@ -129,7 +129,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
             ),
             Expanded(
               child: _items.isEmpty
-                  ? const AppEmptyState(
+                  ? AppEmptyState(
                       icon: CupertinoIcons.trash,
                       title: 'No items left to add',
                       message: 'Go back and scan the photo again.',
@@ -175,7 +175,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                               child: item.matched
                                                   ? _Chip(
                                                       label: '~${item.estimatedCalories} kcal',
-                                                      color: TrackerColors.accentStart,
+                                                      color: TrackerColors.accentStartText,
                                                     )
                                                   : _Chip(
                                                       label: 'No match · Find',
@@ -261,7 +261,7 @@ class _GramFieldState extends State<_GramField> {
         style: AppType.body(size: 14),
         cursorColor: TrackerColors.accentStart,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        suffix: const Padding(
+        suffix: Padding(
           padding: EdgeInsets.only(right: 10),
           child: Text('g', style: TextStyle(color: TrackerColors.textTertiary, fontSize: 13)),
         ),

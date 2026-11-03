@@ -3,21 +3,22 @@ import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/tracker_colors.dart';
 
-/// Dark pulsing gradient used in place of generic loading spinners.
+/// Pulsing gradient used in place of generic loading spinners.
 class Shimmer extends StatefulWidget {
   const Shimmer({
     super.key,
     required this.child,
     this.borderRadius,
-    this.baseColor = TrackerColors.shimmerBase,
-    this.highlightColor = TrackerColors.shimmerHighlight,
+    this.baseColor,
+    this.highlightColor,
     this.enabled = true,
   });
 
   final Widget child;
   final BorderRadius? borderRadius;
-  final Color baseColor;
-  final Color highlightColor;
+  /// Defaults to the current mode's shimmer colours.
+  final Color? baseColor;
+  final Color? highlightColor;
   final bool enabled;
 
   @override
@@ -58,7 +59,7 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
 
     if (!widget.enabled) {
       return DecoratedBox(
-        decoration: BoxDecoration(color: widget.baseColor, borderRadius: radius),
+        decoration: BoxDecoration(color: widget.baseColor ?? TrackerColors.shimmerBase, borderRadius: radius),
         child: widget.child,
       );
     }
@@ -73,9 +74,9 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
               begin: Alignment(-1.6 + _controller.value * 3.2, 0),
               end: Alignment(-0.6 + _controller.value * 3.2, 0),
               colors: [
-                widget.baseColor,
-                widget.highlightColor,
-                widget.baseColor,
+                widget.baseColor ?? TrackerColors.shimmerBase,
+                widget.highlightColor ?? TrackerColors.shimmerHighlight,
+                widget.baseColor ?? TrackerColors.shimmerBase,
               ],
               stops: const [0.15, 0.5, 0.85],
             ),

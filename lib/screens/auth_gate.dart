@@ -77,7 +77,7 @@ class _AuthGateState extends State<AuthGate> {
             switch (phase) {
               case HandshakePhase.checking:
                 // Usually a fraction of a second: keep the splash's calm look.
-                return const CupertinoPageScaffold(
+                return CupertinoPageScaffold(
                   child: DecoratedBox(
                     decoration: BoxDecoration(color: TrackerColors.background),
                     child: Center(child: PulsingRing()),
@@ -93,7 +93,7 @@ class _AuthGateState extends State<AuthGate> {
                 // Session can't be refreshed: back to sign-in rather than a
                 // misleading "Could not reach the server".
                 WidgetsBinding.instance.addPostFrameCallback((_) => _signOut());
-                return const CupertinoPageScaffold(
+                return CupertinoPageScaffold(
                   child: DecoratedBox(
                     decoration: BoxDecoration(color: TrackerColors.background),
                     child: Center(child: PulsingRing()),

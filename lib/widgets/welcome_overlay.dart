@@ -44,10 +44,10 @@ class _WelcomeOverlayState extends State<WelcomeOverlay> {
                 borderRadius: AppRadii.containerAll,
                 boxShadow: AppDecor.layeredGlow(TrackerColors.accentStart, opacity: 0.35),
               ),
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.flame_fill,
                 size: 40,
-                color: TrackerColors.textPrimary,
+                color: TrackerColors.onAccent,
               ),
             ),
             const SizedBox(height: AppSpacing.xxl),
@@ -62,7 +62,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay> {
               SplitText(
                 key: const ValueKey(1),
                 text: 'Welcome to Calorie Tracker',
-                style: AppType.display(size: 30, color: TrackerColors.accentEnd),
+                style: AppType.display(size: 30, color: TrackerColors.accentEndText),
                 onComplete: _next,
               ),
             if (_step == 2)

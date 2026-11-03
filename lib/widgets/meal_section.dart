@@ -122,19 +122,19 @@ class MealSection extends StatelessWidget {
                               ],
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
                                 'Delete',
                                 style: TextStyle(
-                                  color: TrackerColors.textPrimary,
+                                  color: TrackerColors.error,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Icon(CupertinoIcons.delete, color: TrackerColors.textPrimary, size: 18),
+                              Icon(CupertinoIcons.delete, color: TrackerColors.error, size: 18),
                             ],
                           ),
                         ),
@@ -193,7 +193,7 @@ class _FoodRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           AppPill(
             label: '${entry.calories} kcal',
-            color: TrackerColors.accentStart,
+            color: TrackerColors.accentStartText,
             dense: true,
           ),
         ],

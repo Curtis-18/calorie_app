@@ -456,7 +456,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Stack(
         children: [
           DecoratedBox(
-            decoration: const BoxDecoration(color: TrackerColors.background),
+            decoration: BoxDecoration(color: TrackerColors.background),
             child: Column(
               children: [
                 SafeArea(
@@ -663,11 +663,11 @@ class _RingCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(CupertinoIcons.flame_fill, size: 13, color: TrackerColors.accentEnd),
+                            Icon(CupertinoIcons.flame_fill, size: 13, color: TrackerColors.accentEndText),
                             const SizedBox(width: 6),
                             Text(
                               'Perfect day',
-                              style: AppType.caption(color: TrackerColors.accentEnd, size: 12)
+                              style: AppType.caption(color: TrackerColors.accentEndText, size: 12)
                                   .copyWith(fontWeight: FontWeight.w800),
                             ),
                           ],
@@ -681,7 +681,7 @@ class _RingCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(CupertinoIcons.clock, size: 13, color: TrackerColors.textTertiary),
+                  Icon(CupertinoIcons.clock, size: 13, color: TrackerColors.textTertiary),
                   const SizedBox(width: 6),
                   Text('Cached day', style: AppType.caption(size: 11)),
                 ],

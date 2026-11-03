@@ -37,9 +37,9 @@ class _MainShellState extends State<MainShell> {
         height: 58,
         iconSize: 22,
         backgroundColor: TrackerColors.navFill,
-        activeColor: TrackerColors.accentStart,
+        activeColor: TrackerColors.accentStartText,
         inactiveColor: TrackerColors.textTertiary,
-        border: const Border(
+        border: Border(
           top: BorderSide(color: TrackerColors.border, width: 1),
         ),
         items: [
@@ -74,7 +74,7 @@ class _TabIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: AppMotion.quick,
-      curve: AppMotion.spring,
+      curve: AppMotion.standard,
       width: active ? 56 : 40,
       height: 32,
       alignment: Alignment.center,
@@ -94,7 +94,7 @@ class _TabIcon extends StatelessWidget {
       child: Icon(
         icon,
         size: 20,
-        color: active ? TrackerColors.accentStart : TrackerColors.textTertiary,
+        color: active ? TrackerColors.accentStartText : TrackerColors.textTertiary,
       ),
     );
   }

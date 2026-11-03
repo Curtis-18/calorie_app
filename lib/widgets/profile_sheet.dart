@@ -8,6 +8,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
+import 'appearance_picker.dart';
 import 'glass.dart';
 
 /// Read-only profile surface: the data already held by [userProfileProvider].
@@ -51,6 +52,8 @@ class _ProfileContent extends StatelessWidget {
               );
             },
           ),
+          const SizedBox(height: AppSpacing.xl),
+          const AppearancePicker(),
         ],
       );
     }
@@ -74,7 +77,7 @@ class _ProfileContent extends StatelessWidget {
               ),
               child: Text(
                 p.gender == Gender.female ? 'F' : 'M',
-                style: AppType.button(size: 22).copyWith(fontWeight: FontWeight.w800),
+                style: AppType.button(color: TrackerColors.onAccent, size: 22).copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -117,7 +120,7 @@ class _ProfileContent extends StatelessWidget {
                 label: 'Target',
                 value: (p.calorieTarget ?? 0).toString(),
                 sub: 'calories a day',
-                accent: TrackerColors.accentStart,
+                accent: TrackerColors.accentStartText,
               ),
             ),
           ],
@@ -151,7 +154,9 @@ class _ProfileContent extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
+        const AppearancePicker(),
+        const SizedBox(height: AppSpacing.xl),
         AppButton.glass(
           label: 'Edit profile',
           icon: CupertinoIcons.pencil,

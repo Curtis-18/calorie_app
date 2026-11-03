@@ -94,7 +94,7 @@ class MacroBar extends StatelessWidget {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: TrackerColors.textPrimary,
+                          color: TrackerColors.onAccent,
                           borderRadius: BorderRadius.circular(AppRadii.pill),
                           boxShadow: AppDecor.glow(color, blur: 10, opacity: 0.8),
                         ),
@@ -147,7 +147,7 @@ class MacroBreakdownCard extends StatelessWidget {
             children: [
               Text('MACROS', style: AppType.sectionLabel()),
               const Spacer(),
-              const Icon(CupertinoIcons.chart_bar_fill, size: 13, color: TrackerColors.textTertiary),
+              Icon(CupertinoIcons.chart_bar_fill, size: 13, color: TrackerColors.textTertiary),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),

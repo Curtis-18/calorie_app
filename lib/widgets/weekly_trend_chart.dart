@@ -84,7 +84,7 @@ class _WeeklyTrendChartState extends State<WeeklyTrendChart> with SingleTickerPr
                       Text(
                         day.calories > 0 ? _compact(day.calories) : '',
                         style: AppType.caption(
-                          color: isToday ? TrackerColors.accentEnd : TrackerColors.textTertiary,
+                          color: isToday ? TrackerColors.accentEndText : TrackerColors.textTertiary,
                           size: 9,
                         ),
                       ),

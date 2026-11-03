@@ -68,7 +68,7 @@ class AppBackdrop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(color: TrackerColors.background),
+      decoration: BoxDecoration(color: TrackerColors.background),
       child: Stack(
         children: [
           const Positioned(top: -120, right: -80, child: _Bloom(color: TrackerColors.accentStart, size: 300)),

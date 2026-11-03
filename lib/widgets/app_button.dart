@@ -55,7 +55,7 @@ class AppButton extends StatelessWidget {
           border: enabled ? null : Border.all(color: TrackerColors.border, width: 1),
           boxShadow: enabled ? AppDecor.glow(TrackerColors.accentStart, blur: 22, opacity: 0.3) : null,
         );
-        foreground = enabled ? TrackerColors.textPrimary : TrackerColors.textTertiary;
+        foreground = enabled ? TrackerColors.onAccent : TrackerColors.textTertiary;
       case AppButtonStyle.glass:
         decoration = BoxDecoration(
           color: TrackerColors.alpha(TrackerColors.textPrimary, 0.06),
@@ -71,7 +71,7 @@ class AppButton extends StatelessWidget {
           color: const Color(0x00000000),
           borderRadius: AppRadii.buttonAll,
         );
-        foreground = TrackerColors.accentStart;
+        foreground = TrackerColors.accentStartText;
     }
 
     Widget content = AnimatedContainer(
@@ -205,7 +205,7 @@ class AppFab extends StatelessWidget {
         child: Icon(
           icon,
           size: iconSize,
-          color: foreground ?? TrackerColors.textPrimary,
+          color: foreground ?? (isGradient ? TrackerColors.onAccent : TrackerColors.textPrimary),
         ),
       ),
     );

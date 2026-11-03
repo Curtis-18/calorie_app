@@ -65,7 +65,7 @@ class ChoiceCard extends StatelessWidget {
                   gradient: selected ? TrackerColors.calorieGradient : null,
                   color: selected ? null : TrackerColors.alpha(TrackerColors.textPrimary, 0.06),
                 ),
-                child: Icon(icon, size: 20, color: selected ? TrackerColors.textPrimary : TrackerColors.textSecondary),
+                child: Icon(icon, size: 20, color: selected ? TrackerColors.onAccent : TrackerColors.textSecondary),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -89,7 +89,7 @@ class ChoiceCard extends StatelessWidget {
                   border: selected ? null : Border.all(color: TrackerColors.borderStrong, width: 1.5),
                 ),
                 child: selected
-                    ? const Icon(CupertinoIcons.checkmark_alt, size: 14, color: TrackerColors.textPrimary)
+                    ? Icon(CupertinoIcons.checkmark_alt, size: 14, color: TrackerColors.onAccent)
                     : null,
               ),
             ],
@@ -134,7 +134,7 @@ class UnitPills<T> extends StatelessWidget {
                 child: Text(
                   entry.value,
                   style: AppType.caption(
-                    color: entry.key == value ? TrackerColors.textPrimary : TrackerColors.textSecondary,
+                    color: entry.key == value ? TrackerColors.onAccent : TrackerColors.textSecondary,
                     size: 12,
                   ).copyWith(fontWeight: FontWeight.w800),
                 ),

@@ -58,21 +58,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   SaveToastState _saveState = SaveToastState.initial;
 
   /// Material bridge: the step forms use Material inputs, so we hand them the
-  /// same Obsidian palette instead of the default light scheme.
+  /// app's palette (dark or light) instead of Material's default scheme.
   ThemeData get _materialTheme {
-    final scheme = const ColorScheme.dark(
+    final isDark = TrackerColors.isDark;
+    final scheme = (isDark ? ColorScheme.dark : ColorScheme.light)(
       primary: TrackerColors.accentStart,
-      onPrimary: TrackerColors.textPrimary,
+      onPrimary: TrackerColors.onAccent,
       secondary: TrackerColors.accentEnd,
       surface: TrackerColors.surface,
       onSurface: TrackerColors.textPrimary,
       error: TrackerColors.error,
-      onError: TrackerColors.textPrimary,
+      onError: TrackerColors.onAccent,
     );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: TrackerColors.brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: TrackerColors.background,
       splashFactory: NoSplash.splashFactory,
@@ -84,7 +85,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: TrackerColors.surfaceElevated,
-        floatingLabelStyle: AppType.caption(color: TrackerColors.accentStart, size: 12),
+        floatingLabelStyle: AppType.caption(color: TrackerColors.accentStartText, size: 12),
         labelStyle: AppType.caption(color: TrackerColors.textTertiary, size: 13),
         hintStyle: AppType.body(color: TrackerColors.textTertiary, size: 15),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
@@ -607,7 +608,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         },
         child: CupertinoPageScaffold(
           child: DecoratedBox(
-            decoration: const BoxDecoration(color: TrackerColors.background),
+            decoration: BoxDecoration(color: TrackerColors.background),
             child: SafeArea(
               child: Stack(
                 children: [
@@ -701,9 +702,9 @@ class _SexOption extends StatelessWidget {
             gradient: selected ? TrackerColors.calorieGradient : null,
             color: selected ? null : TrackerColors.surfaceElevated,
             borderRadius: AppRadii.buttonAll,
-            border: Border.all(color: selected ? TrackerColors.alpha(TrackerColors.textPrimary, 0.2) : TrackerColors.border),
+            border: Border.all(color: selected ? TrackerColors.alpha(TrackerColors.onAccent, 0.2) : TrackerColors.border),
           ),
-          child: Text(label, style: AppType.button()),
+          child: Text(label, style: AppType.button(color: selected ? TrackerColors.onAccent : TrackerColors.textPrimary)),
         ),
       ),
     );

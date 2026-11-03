@@ -188,10 +188,10 @@ class _Ember extends StatelessWidget {
                     borderRadius: AppRadii.containerAll,
                     boxShadow: AppDecor.layeredGlow(TrackerColors.accentStart, opacity: 0.35),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     CupertinoIcons.flame_fill,
                     size: 38,
-                    color: TrackerColors.textPrimary,
+                    color: TrackerColors.onAccent,
                   ),
                 ),
               ),
@@ -204,6 +204,9 @@ class _Ember extends StatelessWidget {
 }
 
 class _OrbitPainter extends CustomPainter {
+  /// Painters read colours while painting; this tells them the mode changed.
+  final int _paletteEpoch = TrackerColors.paletteEpoch;
+
   _OrbitPainter({required this.rotation});
 
   /// 0..1 of a full turn.
@@ -255,7 +258,7 @@ class _OrbitPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_OrbitPainter old) => old.rotation != rotation;
+  bool shouldRepaint(_OrbitPainter old) => old.rotation != rotation || old._paletteEpoch != _paletteEpoch;
 }
 
 class _ProgressBar extends StatelessWidget {
@@ -303,7 +306,7 @@ class _TipCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 18, 14),
       child: Row(
         children: [
-          const Icon(CupertinoIcons.lightbulb_fill, size: 18, color: TrackerColors.accentEnd),
+          Icon(CupertinoIcons.lightbulb_fill, size: 18, color: TrackerColors.accentEndText),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
@@ -343,7 +346,7 @@ class ServerUnreachableView extends StatelessWidget {
                     borderRadius: AppRadii.containerAll,
                     border: Border.all(color: TrackerColors.alpha(TrackerColors.error, 0.3)),
                   ),
-                  child: const Icon(CupertinoIcons.wifi_exclamationmark, size: 36, color: TrackerColors.error),
+                  child: Icon(CupertinoIcons.wifi_exclamationmark, size: 36, color: TrackerColors.error),
                 ),
                 const SizedBox(height: 32),
                 Text(

@@ -360,7 +360,7 @@ class _TourCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadii.small),
                         boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 14, opacity: 0.35),
                       ),
-                      child: Icon(step.icon, size: 18, color: TrackerColors.textPrimary),
+                      child: Icon(step.icon, size: 18, color: TrackerColors.onAccent),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(child: Text(step.title, style: AppType.headline())),
@@ -448,6 +448,9 @@ class _Hole {
 }
 
 class _ScrimPainter extends CustomPainter {
+  /// Painters read colours while painting; this tells them the mode changed.
+  final int _paletteEpoch = TrackerColors.paletteEpoch;
+
   _ScrimPainter({required this.hole, this.pulse});
 
   final _Hole hole;
@@ -502,5 +505,8 @@ class _ScrimPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ScrimPainter old) =>
-      old.hole.rect != hole.rect || old.hole.radius != hole.radius || old.pulse != pulse;
+      old.hole.rect != hole.rect ||
+      old.hole.radius != hole.radius ||
+      old.pulse != pulse ||
+      old._paletteEpoch != _paletteEpoch;
 }

@@ -93,7 +93,7 @@ class _SplashRingState extends State<SplashRing> with SingleTickerProviderStateM
               Icon(
                 CupertinoIcons.flame_fill,
                 size: widget.size * 0.3,
-                color: TrackerColors.accentEnd,
+                color: TrackerColors.accentEndText,
               ),
             ],
           ),
@@ -123,7 +123,7 @@ class AppSplash extends StatelessWidget {
               duration: AppMotion.medium,
               curve: AppMotion.standard,
               child: DecoratedBox(
-                decoration: const BoxDecoration(color: TrackerColors.background),
+                decoration: BoxDecoration(color: TrackerColors.background),
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

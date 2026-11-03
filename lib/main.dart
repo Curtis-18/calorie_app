@@ -3,15 +3,16 @@ import 'package:flutter/material.dart' show DefaultMaterialLocalizations;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
+import 'providers/appearance_provider.dart';
 import 'screens/auth_gate.dart';
 import 'screens/main_shell.dart';
 import 'services/server_handshake.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_shapes.dart';
-import 'theme/app_theme.dart';
 import 'theme/tracker_colors.dart';
 import 'widgets/glass.dart';
 import 'widgets/splash.dart';
+import 'widgets/theme_host.dart';
 
 /// The onboarding steps are built from Material inputs (`TextFormField`,
 /// `DropdownButtonFormField`) inside a `CupertinoApp`, which ships no
@@ -42,7 +43,14 @@ Future<void> main() async {
     );
   }
 
-  runApp(ProviderScope(child: MyApp(configError: configError)));
+  // Open in the user's chosen mode from the very first frame.
+  final appearance = await AppearanceNotifier.load();
+  TrackerColors.apply(appearance.resolve(WidgetsBinding.instance.platformDispatcher.platformBrightness));
+
+  runApp(ProviderScope(
+    overrides: [appearanceProvider.overrideWith((ref) => AppearanceNotifier(appearance))],
+    child: MyApp(configError: configError),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -52,17 +60,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
-      title: 'Calorie Tracker',
-      theme: AppTheme.cupertino,
-      localizationsDelegates: appLocalizationsDelegates,
-      home: SplashGate(
-        child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError!),
+    return ThemeHost(
+      builder: (context, theme) => CupertinoApp(
+        title: 'Calorie Tracker',
+        theme: theme,
+        localizationsDelegates: appLocalizationsDelegates,
+        home: SplashGate(
+          child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError!),
+        ),
+        routes: {
+          '/onboarding': (context) => const OnboardingScreen(),
+          '/dashboard': (context) => const MainShell(),
+        },
       ),
-      routes: {
-        '/onboarding': (context) => const OnboardingScreen(),
-        '/dashboard': (context) => const MainShell(),
-      },
     );
   }
 }
@@ -79,7 +89,7 @@ class ConfigErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: TrackerColors.background),
+        decoration: BoxDecoration(color: TrackerColors.background),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -108,14 +118,14 @@ class ConfigErrorScreen extends StatelessWidget {
                                 width: 1,
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               CupertinoIcons.exclamationmark_triangle_fill,
                               size: 18,
                               color: TrackerColors.error,
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Supabase not configured',
                               style: TextStyle(
@@ -131,7 +141,7 @@ class ConfigErrorScreen extends StatelessWidget {
                       const SizedBox(height: AppSpacing.lg),
                       Text(
                         message,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: TrackerColors.textSecondary,
                           fontSize: 13,
                           height: 1.5,

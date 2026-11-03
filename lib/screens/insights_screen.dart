@@ -27,7 +27,7 @@ class InsightsScreen extends ConsumerWidget {
 
     return CupertinoPageScaffold(
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: TrackerColors.background),
+        decoration: BoxDecoration(color: TrackerColors.background),
         child: Column(
           children: [
             SafeArea(
@@ -69,7 +69,7 @@ class InsightsScreen extends ConsumerWidget {
                           ),
                           child: insightsAsync.isLoading
                               ? const PulsingRing(size: 18, strokeWidth: 2)
-                              : const Icon(
+                              : Icon(
                                   CupertinoIcons.refresh,
                                   size: 17,
                                   color: TrackerColors.textPrimary,
@@ -138,9 +138,9 @@ class InsightsScreen extends ConsumerWidget {
                                     opacity: 0.3,
                                   ),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   CupertinoIcons.sparkles,
-                                  color: TrackerColors.textPrimary,
+                                  color: TrackerColors.onAccent,
                                   size: 17,
                                 ),
                               ),
@@ -230,7 +230,7 @@ class _TipRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadii.pill),
               boxShadow: AppDecor.glow(TrackerColors.macroProtein, blur: 10, opacity: 0.25),
             ),
-            child: const Icon(
+            child: Icon(
               CupertinoIcons.check_mark,
               size: 11,
               color: TrackerColors.macroProtein,
