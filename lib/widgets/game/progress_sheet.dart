@@ -6,10 +6,12 @@ import '../../providers/progress_provider.dart';
 import '../../theme/app_shapes.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/tracker_colors.dart';
+import '../app_button.dart';
 import '../app_card.dart';
 import '../app_dialog.dart';
 import '../glass.dart';
 import '../pressable.dart';
+import '../share/share_sheet.dart';
 import 'flame_style.dart';
 import 'header_chips.dart';
 
@@ -31,7 +33,22 @@ class _ProgressSheetContent extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Your progress', style: AppType.title()),
+          Row(
+            children: [
+              Expanded(child: Text('Your progress', style: AppType.title())),
+              if (progress != null)
+                Semantics(
+                  button: true,
+                  label: 'Share progress',
+                  child: AppIconButton(
+                    icon: CupertinoIcons.share,
+                    size: 36,
+                    iconSize: 16,
+                    onPressed: () => showShareProgressSheet(context),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.lg),
           if (progress == null)
             const Padding(

@@ -12,6 +12,7 @@ import '../app_card.dart';
 import '../app_dialog.dart';
 import '../glass.dart';
 import '../pressable.dart';
+import '../share/share_sheet.dart';
 import 'weight_chart.dart';
 
 enum _Range {
@@ -151,6 +152,19 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
               height: 46,
               onPressed: () => showWeightHistorySheet(context),
             ),
+            if (h.entries.length > 1) ...[
+              const SizedBox(width: AppSpacing.sm),
+              Semantics(
+                button: true,
+                label: 'Share weight progress',
+                child: AppIconButton(
+                  icon: CupertinoIcons.share,
+                  size: 46,
+                  iconSize: 18,
+                  onPressed: () => showShareProgressSheet(context, includeWeight: true),
+                ),
+              ),
+            ],
           ],
         ),
       ],
