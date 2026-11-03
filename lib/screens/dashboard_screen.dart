@@ -10,6 +10,7 @@ import '../providers/food_log_provider.dart';
 import '../providers/progress_provider.dart';
 import '../models/progress.dart';
 import '../providers/user_provider.dart';
+import '../services/day_log_service.dart';
 import '../services/log_cache_reader.dart';
 import '../services/photo_estimation.dart';
 import '../services/server_handshake.dart';
@@ -222,15 +223,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     setState(() {
       _pastDay = day;
+      _pastEntries = const []; // never show the previous day's food under this date
       _loadingPast = true;
     });
-    final entries = await LogCacheReader.entriesFor(day);
-    if (!mounted) return;
+
+    // The device cache answers instantly; the server is the source of truth
+    // and fills in days this device never saw (a new phone or browser).
+    final cached = await LogCacheReader.entriesFor(day);
+    if (!mounted || !_isViewing(day)) return;
     setState(() {
-      _pastEntries = entries;
+      _pastEntries = cached;
+      _loadingPast = cached.isEmpty;
+    });
+
+    final fresh = await DayLogService().fetch(day);
+    if (!mounted || !_isViewing(day)) return;
+    setState(() {
+      if (fresh != null) _pastEntries = fresh;
       _loadingPast = false;
     });
   }
+
+  /// Whether [day] is still the past day on screen: the user may have moved
+  /// on while a load was in flight.
+  bool _isViewing(DateTime day) => _pastDay != null && LogCacheReader.isSameDay(_pastDay!, day);
 
   Future<MealType?> _showMealPicker(BuildContext context) {
     return showAppSheet<MealType>(

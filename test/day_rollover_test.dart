@@ -75,6 +75,7 @@ void main() {
         authToken: () => 'token',
         userIdChanges: auth.stream,
         now: () => clock,
+        saveRetryDelays: const [], // these tests are about days, not retries
       );
 
   test('after midnight, adding food starts a clean day instead of reusing yesterday', () async {

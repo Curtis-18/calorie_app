@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
+import 'targets_handoff.dart';
+import 'user_cache.dart';
 
 /// Where the post-login check stands.
 enum HandshakePhase {
@@ -50,10 +52,13 @@ class ServerHandshake {
     this.attemptTimeout = const Duration(seconds: 35),
     this.retryDelay = const Duration(seconds: 2),
     this.wakingAfter = const Duration(seconds: 3),
-  }) : _tokenProvider = tokenProvider ?? supabaseToken;
+    String? Function()? currentUserId,
+  })  : _tokenProvider = tokenProvider ?? supabaseToken,
+        _currentUserId = currentUserId ?? UserCache.currentUserId;
 
   final http.Client? _client;
   final TokenProvider _tokenProvider;
+  final String? Function() _currentUserId;
   final Duration deadline;
   final Duration attemptTimeout;
   final Duration retryDelay;
@@ -99,6 +104,7 @@ class ServerHandshake {
         if (token == null) return _finish(run, HandshakePhase.signedOut);
 
         int? status;
+        String? body;
         try {
           final remaining = deadline - stopwatch.elapsed;
           final response = await client
@@ -106,12 +112,16 @@ class ServerHandshake {
                   headers: {'Authorization': 'Bearer $token'})
               .timeout(remaining < attemptTimeout ? remaining : attemptTimeout);
           status = response.statusCode;
+          body = response.body;
         } catch (_) {
           // Timeout or no connection: likely still booting. Retry below.
         }
         if (!current()) return;
 
-        if (status == 200) return _finish(run, HandshakePhase.ready);
+        if (status == 200) {
+          _handOffTargets(body);
+          return _finish(run, HandshakePhase.ready);
+        }
         if (status == 404) return _finish(run, HandshakePhase.needsOnboarding);
         if (status == 401) {
           if (refreshedAfter401) return _finish(run, HandshakePhase.signedOut);
@@ -129,6 +139,15 @@ class ServerHandshake {
     } finally {
       if (_client == null) client.close();
     }
+  }
+
+  /// Let the profile provider reuse this response instead of asking again.
+  /// Best effort: it must never affect the handshake itself.
+  void _handOffTargets(String? body) {
+    try {
+      final userId = _currentUserId();
+      if (userId != null && body != null) TargetsHandoff.offer(userId, body);
+    } catch (_) {}
   }
 
   void _finish(int run, HandshakePhase result) {

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_profile.dart';
 import '../config/api_config.dart';
+import '../services/targets_handoff.dart';
 import '../services/user_cache.dart';
 
 /// The signed-in user's profile and targets.
@@ -69,10 +70,21 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       }
     }
 
-    final remote = await _fetchRemote();
+    // Right after login, the handshake already fetched this exact response.
+    final remote = _fromHandoff(userId) ?? await _fetchRemote();
     if (remote == null || !stillCurrent()) return;
     state = remote;
     await prefs.setString(UserCache.profileKey(userId), jsonEncode(remote.toJson()));
+  }
+
+  UserProfile? _fromHandoff(String userId) {
+    final body = TargetsHandoff.take(userId);
+    if (body == null) return null;
+    try {
+      return UserProfile.fromTargetsJson(jsonDecode(body) as Map<String, dynamic>);
+    } catch (_) {
+      return null; // fall back to asking the server
+    }
   }
 
   /// Re-read targets from the server, e.g. after a weigh-in changed them.

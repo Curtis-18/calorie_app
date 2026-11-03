@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:calorie_app/services/server_handshake.dart';
+import 'package:calorie_app/services/targets_handoff.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:calorie_app/widgets/waking_up_view.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,6 +24,7 @@ ServerHandshake _handshake(
       attemptTimeout: const Duration(milliseconds: 80),
       retryDelay: const Duration(milliseconds: 10),
       wakingAfter: const Duration(milliseconds: 40),
+      currentUserId: () => 'user-a',
     );
 
 /// Every phase the handshake passes through, in order.
@@ -41,6 +43,17 @@ void main() {
     final fresh = _handshake(MockClient((_) async => http.Response('{}', 404)));
     await fresh.start();
     expect(fresh.phase.value, HandshakePhase.needsOnboarding);
+  });
+
+  test('a 200 hands the targets response over; a 404 does not', () async {
+    TargetsHandoff.clear();
+    final fresh = _handshake(MockClient((_) async => http.Response('{"x":1}', 404)));
+    await fresh.start();
+    expect(TargetsHandoff.take('user-a'), isNull);
+
+    final ready = _handshake(MockClient((_) async => http.Response('{"calorie_target":2000}', 200)));
+    await ready.start();
+    expect(TargetsHandoff.take('user-a'), '{"calorie_target":2000}');
   });
 
   test('a cold start (503s, then 200) shows waking and ends ready', () async {

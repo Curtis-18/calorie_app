@@ -22,6 +22,8 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     String? Function()? authToken,
     Stream<String?>? userIdChanges,
     DateTime Function()? now,
+    this.saveRetryDelays = defaultSaveRetryDelays,
+    this.saveTimeout = const Duration(seconds: 20),
   })  : _currentUserId = currentUserId ?? UserCache.currentUserId,
         _authToken = authToken ?? _supabaseToken,
         _now = now ?? DateTime.now,
@@ -31,6 +33,18 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     _onUser(_currentUserId());
     _scheduleMidnightRollover();
   }
+
+  /// Pauses before each retry of a failed save, so its length is the number
+  /// of retries. Retrying is safe: the backend treats a repeated id from the
+  /// same user as a successful save, so a retry after a lost response can't
+  /// log the food twice.
+  static const defaultSaveRetryDelays = [Duration(seconds: 1), Duration(seconds: 3)];
+
+  final List<Duration> saveRetryDelays;
+
+  /// Per attempt. Long enough that the first try rides out most of a Render
+  /// cold start, and the retries cover the rest.
+  final Duration saveTimeout;
 
   final http.Client? _client;
   final String? Function() _currentUserId;
@@ -145,35 +159,65 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       throw Exception('Not logged in - Session expired or not found');
     }
 
+    final userId = _userId;
     try {
-      final response = await _http.post(
-        Uri.parse('${ApiConfig.baseUrl}/logs'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'id': entry.id,
-          'name': entry.name,
-          'calories': entry.calories,
-          'protein_g': entry.proteinG,
-          'carbs_g': entry.carbsG,
-          'fat_g': entry.fatG,
-          'meal_type': entry.mealType.name,
-          'source': entry.source.name,
-          'timestamp': entry.timestamp.toIso8601String(),
-          'log_date': logDate,
-        }),
-      ).timeout(const Duration(seconds: 15));
-
-      if (response.statusCode != 201 && response.statusCode != 200) {
-        _rollback(previous, logDate);
-        throw Exception('Failed to save entry: ${response.body}');
-      }
-      await _persistCache(_userId);
+      await _postWithRetry(entry, logDate, userId);
+      await _persistCache(userId);
     } catch (e) {
       _rollback(previous, logDate);
       rethrow;
+    }
+  }
+
+  /// POST the entry, retrying timeouts, dropped connections and 5xx answers.
+  /// A 4xx means the server understood and refused, so retrying can't help.
+  /// The entry stays on screen while this runs; the caller rolls it back only
+  /// if every attempt fails.
+  Future<void> _postWithRetry(FoodEntry entry, String logDate, String? userId) async {
+    final body = jsonEncode({
+      'id': entry.id,
+      'name': entry.name,
+      'calories': entry.calories,
+      'protein_g': entry.proteinG,
+      'carbs_g': entry.carbsG,
+      'fat_g': entry.fatG,
+      'meal_type': entry.mealType.name,
+      'source': entry.source.name,
+      'timestamp': entry.timestamp.toIso8601String(),
+      'log_date': logDate,
+    });
+
+    for (var attempt = 0;; attempt++) {
+      final retriesLeft = attempt < saveRetryDelays.length;
+      // A fresh token each time: the session may have refreshed meanwhile.
+      final token = _authToken();
+      if (token == null) throw Exception('Not logged in - Session expired or not found');
+
+      try {
+        final response = await _http.post(
+          Uri.parse('${ApiConfig.baseUrl}/logs'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: body,
+        ).timeout(saveTimeout);
+
+        if (response.statusCode == 201 || response.statusCode == 200) return;
+        final transient = response.statusCode >= 500;
+        if (!transient || !retriesLeft) {
+          throw Exception('Failed to save entry: ${response.body}');
+        }
+      } on TimeoutException {
+        if (!retriesLeft) rethrow;
+      } on http.ClientException {
+        if (!retriesLeft) rethrow;
+      }
+
+      await Future<void>.delayed(saveRetryDelays[attempt]);
+      // Signed out or switched user while waiting: stop, so one user's food
+      // is never sent with another user's token.
+      if (!mounted || _userId != userId) throw Exception('Signed out before the entry could be saved');
     }
   }
 
