@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/profile_copy.dart';
 import '../models/user_profile.dart';
 import '../providers/user_provider.dart';
 import '../screens/onboarding_screen.dart';
@@ -84,7 +85,7 @@ class _ProfileContent extends StatelessWidget {
                   Text('${p.age} years old', style: AppType.headline()),
                   const SizedBox(height: 2),
                   Text(
-                    '${_label(p.goal)} goal · ${_label(p.activityLevel)}',
+                    '${p.goal.title} · ${p.activityLevel.title}',
                     style: AppType.callout(),
                   ),
                 ],
@@ -109,13 +110,13 @@ class _ProfileContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Row(
           children: [
-            Expanded(child: _Metric(label: 'BMR', value: p.bmr?.round().toString() ?? '—', sub: 'kcal base')),
-            Expanded(child: _Metric(label: 'TDEE', value: p.tdee?.round().toString() ?? '—', sub: 'kcal burn')),
+            Expanded(child: _Metric(label: 'At rest', value: p.bmr?.round().toString() ?? '—', sub: 'calories burned')),
+            Expanded(child: _Metric(label: 'Per day', value: p.tdee?.round().toString() ?? '—', sub: 'calories burned')),
             Expanded(
               child: _Metric(
                 label: 'Target',
                 value: (p.calorieTarget ?? 0).toString(),
-                sub: 'kcal / day',
+                sub: 'calories a day',
                 accent: TrackerColors.accentStart,
               ),
             ),
@@ -164,9 +165,6 @@ class _ProfileContent extends StatelessWidget {
       ],
     );
   }
-
-  static String _label(Object value) =>
-      value.toString().split('.').last.replaceAll('_', ' ');
 }
 
 class _Metric extends StatelessWidget {

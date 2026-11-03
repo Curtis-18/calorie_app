@@ -68,7 +68,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay> {
             if (_step == 2)
               SplitText(
                 key: const ValueKey(2),
-                text: "Let's get you started.",
+                text: "Let's build your plan in a minute.",
                 style: AppType.body(size: 18, color: TrackerColors.textSecondary),
                 onComplete: _next,
               ),
