@@ -127,4 +127,49 @@ void main() {
     expect(backend.calls, 2);
     expect(n.state.value?.narrative, 'insights for a');
   });
+
+  group('after the food log changes', () {
+    test('reloads quietly: the old insights stay on screen until the new ones land', () async {
+      final n = build(initialUser: 'a');
+      await _settle();
+      expect(backend.calls, 1);
+
+      backend.holdResponses = true;
+      n.reloadSoon(debounce: const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(backend.calls, 2);
+      expect(n.state.isLoading, isFalse, reason: 'no skeleton flash');
+      expect(n.state.value?.narrative, 'insights for a');
+
+      backend.pending.single.complete(_insights('you logged a meal'));
+      await _settle();
+      expect(n.state.value?.narrative, 'you logged a meal');
+    });
+
+    test('a burst of changes makes one request', () async {
+      final n = build(initialUser: 'a');
+      await _settle();
+      for (var i = 0; i < 4; i++) {
+        n.reloadSoon(debounce: const Duration(milliseconds: 20));
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(backend.calls, 2);
+    });
+
+    test('a failed quiet reload keeps what is already shown', () async {
+      final failing = InsightsNotifier(
+        fetch: ({bool refresh = false}) async {
+          backend.calls++;
+          if (backend.calls > 1) throw Exception('offline');
+          return _insights('first');
+        },
+        currentUserId: () => 'a',
+        userIdChanges: auth.stream,
+      );
+      await _settle();
+      failing.reloadSoon(debounce: Duration.zero);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(failing.state.value?.narrative, 'first');
+    });
+  });
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/insights.dart';
 import '../services/insights_service.dart';
+import 'food_log_provider.dart';
 
 typedef InsightsFetcher = Future<InsightsData> Function({bool refresh});
 
@@ -54,26 +55,43 @@ class InsightsNotifier extends StateNotifier<AsyncValue<InsightsData>> {
     load();
   }
 
-  Future<void> load({bool refresh = false}) async {
+  Timer? _debounceTimer;
+
+  /// Reload after a short pause, once the food log has changed. Quiet: the
+  /// screen keeps showing the current insights until the new ones arrive,
+  /// instead of flashing a skeleton. Coalesces a burst of changes into one
+  /// request (each reload can cost a Gemini call).
+  void reloadSoon({Duration debounce = const Duration(seconds: 3)}) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(debounce, () => load(quiet: true));
+  }
+
+  Future<void> load({bool refresh = false, bool quiet = false}) async {
     if (_userId == null) return; // nothing to load while signed out
     final generation = ++_generation;
-    state = const AsyncValue.loading();
+    if (!quiet || !state.hasValue) state = const AsyncValue.loading();
     try {
       final data = await _fetch(refresh: refresh);
       if (mounted && generation == _generation) state = AsyncValue.data(data);
     } catch (e, st) {
-      if (mounted && generation == _generation) state = AsyncValue.error(e, st);
+      if (!mounted || generation != _generation) return;
+      // A failed quiet reload keeps the insights already on screen.
+      if (quiet && state.hasValue) return;
+      state = AsyncValue.error(e, st);
     }
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _authSubscription?.cancel();
     super.dispose();
   }
 }
 
-final insightsProvider =
-    StateNotifierProvider<InsightsNotifier, AsyncValue<InsightsData>>(
-  (ref) => InsightsNotifier(),
-);
+final insightsProvider = StateNotifierProvider<InsightsNotifier, AsyncValue<InsightsData>>((ref) {
+  final notifier = InsightsNotifier();
+  // Logging a meal changes what Insights should say.
+  ref.listen<List<Object>>(foodLogProvider, (_, _) => notifier.reloadSoon());
+  return notifier;
+});
