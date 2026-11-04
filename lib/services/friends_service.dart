@@ -55,7 +55,9 @@ class FriendsService {
   /// Friends, requests and the user's own username, loaded together.
   Future<FriendsData> load() async {
     final results = await Future.wait([
-      _send((c, h) => c.get(_uri('/friends'), headers: h)),
+      _send((c, h) => c.get(
+          _uri('/friends').replace(queryParameters: {'date': DateTime.now().toIso8601String().substring(0, 10)}),
+          headers: h)),
       _send((c, h) => c.get(_uri('/me'), headers: h)),
     ]);
     final friends = results[0];

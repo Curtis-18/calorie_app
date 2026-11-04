@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/friends_provider.dart';
+import '../providers/snaps_provider.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/tracker_colors.dart';
@@ -33,7 +34,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final waiting = ref.watch(pendingRequestCountProvider);
+    final waiting = ref.watch(pendingRequestCountProvider) + ref.watch(unseenSnapCountProvider);
     return CupertinoTabScaffold(
       backgroundColor: TrackerColors.background,
       tabBar: CupertinoTabBar(

@@ -1,8 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../models/friends.dart';
+import '../models/snaps.dart';
+import '../providers/snaps_provider.dart';
+import '../widgets/snaps/flame.dart';
+import 'snap_compose_screen.dart';
+import 'snap_viewer_screen.dart';
 import '../models/username_rules.dart';
 import '../providers/friends_provider.dart';
 import '../services/friends_service.dart';
@@ -22,7 +28,10 @@ import '../widgets/shimmer.dart';
 /// Friends tab: your username, add someone by theirs, answer requests, and
 /// see who you're connected with. Snaps and shared streaks build on this.
 class FriendsScreen extends ConsumerStatefulWidget {
-  const FriendsScreen({super.key});
+  const FriendsScreen({super.key, this.pickPhoto});
+
+  /// Replaces the camera; for tests.
+  final Future<XFile?> Function()? pickPhoto;
 
   @override
   ConsumerState<FriendsScreen> createState() => _FriendsScreenState();
@@ -34,6 +43,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   bool _copied = false;
   String? _notice;
   bool _noticeIsError = false;
+  int _embers = 0;
 
   @override
   void dispose() {
@@ -72,6 +82,60 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  /// Open the camera (no gallery: snaps are food you're eating right now),
+  /// then compose. [to] pre-selects a friend.
+  Future<void> _snap({String? to}) async {
+    final XFile? photo;
+    try {
+      photo = await (widget.pickPhoto ?? _takePhoto)();
+    } catch (_) {
+      if (!mounted) return;
+      await showAppDialog(
+        context: context,
+        title: "Couldn't open the camera",
+        message: 'Allow camera access in Settings to send snaps.',
+      );
+      return;
+    }
+    if (photo == null || !mounted) return;
+    final bytes = await photo.readAsBytes();
+    if (!mounted) return;
+    final results = await Navigator.of(context).push<List<SendOutcome>>(
+      CupertinoPageRoute(builder: (_) => SnapComposeScreen(image: bytes, preselect: to)),
+    );
+    if (results == null || !mounted) return;
+    ref.read(friendsProvider.notifier).load();
+    final lit = results.where((r) => r.completedToday).toList();
+    setState(() => _embers++);
+    if (lit.isNotEmpty) {
+      final best = lit.reduce((a, b) => a.streak >= b.streak ? a : b);
+      await showStreakCelebration(context, username: best.username, streak: best.streak);
+    } else {
+      _say(results.length == 1 ? 'Sent to @${results.first.username}.' : 'Sent to ${results.length} friends.');
+    }
+  }
+
+  static Future<XFile?> _takePhoto() => ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1080,
+        maxHeight: 1350,
+        imageQuality: 82,
+      );
+
+  void _openInbox(List<InboxSnap> snaps, int index) {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: true,
+        transitionDuration: AppMotion.medium,
+        pageBuilder: (_, _, _) => SnapViewerScreen(snaps: snaps, startAt: index),
+        transitionsBuilder: (_, animation, _, child) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(scale: Tween(begin: 0.94, end: 1.0).animate(animation), child: child),
+        ),
+      ),
+    );
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -151,6 +215,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return CupertinoPageScaffold(
+      child: Stack(
+        children: [
+          Positioned.fill(child: _page(friends, notifier, bottomInset)),
+          if (_embers > 0) Positioned.fill(child: EmberBurst(key: ValueKey(_embers))),
+        ],
+      ),
+    );
+  }
+
+  Widget _page(AsyncValue<FriendsData> friends, FriendsNotifier notifier, double bottomInset) {
+    return CupertinoPageScaffold(
       child: DecoratedBox(
         decoration: BoxDecoration(color: TrackerColors.background),
         child: Column(
@@ -183,7 +258,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 slivers: [
-                  CupertinoSliverRefreshControl(onRefresh: notifier.load),
+                  CupertinoSliverRefreshControl(
+                    onRefresh: () => Future.wait([notifier.load(), ref.read(snapInboxProvider.notifier).load()]),
+                  ),
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(24, 18, 24, AppSpacing.tabBarClearance + bottomInset),
                     sliver: SliverList(
@@ -205,13 +282,32 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final data = friends.valueOrNull;
     final notifier = ref.read(friendsProvider.notifier);
 
+    final inbox = ref.watch(snapInboxProvider).valueOrNull ?? const <InboxSnap>[];
     return [
+      if (data != null && data.friends.isNotEmpty) ...[
+        _SnapHero(onTap: () => _snap()),
+        const SizedBox(height: AppSpacing.lg),
+      ],
+      if (inbox.isNotEmpty) ...[
+        SectionHeader(label: 'Snaps from friends', trailing: _count(inbox.length)),
+        const SizedBox(height: AppSpacing.md),
+        SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: inbox.length,
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+            itemBuilder: (_, i) => _InboxBubble(snap: inbox[i], onTap: () => _openInbox(inbox, i)),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+      ],
       if (data?.myUsername != null) ...[
         AppCard(
           glow: TrackerColors.accentStart,
           child: Row(
             children: [
-              _Avatar(username: data!.myUsername!, size: 46),
+              FriendAvatar(username: data!.myUsername!, size: 46),
               const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
@@ -339,14 +435,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           icon: CupertinoIcons.person_2,
           title: 'No friends yet',
           message: 'Add a friend with their username, or share yours. '
-              "Food snaps and shared streaks are coming.",
+              'Then send each other food snaps to build a streak.',
         )
       else
         for (final p in data.friends)
           _PersonRow(
             person: p,
-            subtitle: 'friends since ${_shortDate(p.since)}',
-            actions: [_MoreButton(onTap: () => _more(p, isFriend: true))],
+            subtitle: _friendSubtitle(p),
+            actions: [
+              if (p.streak > 0) StreakBadge(count: p.streak, lit: p.sentToday && p.theySentToday),
+              _Pill(label: 'Snap', icon: CupertinoIcons.camera_fill, primary: true, onTap: () => _snap(to: p.userId)),
+              _MoreButton(onTap: () => _more(p, isFriend: true)),
+            ],
           ),
       const SizedBox(height: AppSpacing.xl),
       Center(
@@ -365,6 +465,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       Text('$n', style: AppType.caption(color: TrackerColors.textTertiary, size: 11));
 }
 
+String _friendSubtitle(Person p) {
+  if (p.theySentToday && !p.sentToday) return 'sent you a snap today. Send one back!';
+  if (p.sentToday && !p.theySentToday) return p.streak > 0 ? 'waiting on them to keep the streak' : 'waiting on their snap';
+  if (p.sentToday && p.theySentToday) return 'streak is safe today';
+  return p.streak > 0 ? 'send a snap to keep your streak' : 'friends since ${_shortDate(p.since)}';
+}
+
 String _shortDate(DateTime d) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   final local = d.toLocal();
@@ -372,8 +479,8 @@ String _shortDate(DateTime d) {
 }
 
 /// A round initial on a colour chosen from the name, so a person always looks the same.
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.username, this.size = 42});
+class FriendAvatar extends StatelessWidget {
+  const FriendAvatar({super.key, required this.username, this.size = 42});
 
   final String username;
   final double size;
@@ -415,7 +522,7 @@ class _PersonRow extends StatelessWidget {
         decoration: AppDecor.card(borderRadius: AppRadii.buttonAll),
         child: Row(
           children: [
-            _Avatar(username: person.username),
+            FriendAvatar(username: person.username),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -558,6 +665,108 @@ class _BlockedSheetState extends State<_BlockedSheet> {
                   subtitle: 'blocked',
                   actions: [_Pill(label: 'Unblock', onTap: () => _unblock(p))],
                 ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// The big invitation to snap your food.
+class _SnapHero extends StatelessWidget {
+  const _SnapHero({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      borderRadius: AppRadii.containerAll,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: TrackerColors.calorieGradient,
+          borderRadius: AppRadii.containerAll,
+          boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 26, opacity: 0.35),
+        ),
+        child: Row(
+          children: [
+            const Text('📸', style: TextStyle(fontSize: 34)),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Snap your food', style: AppType.headline(color: TrackerColors.onAccent)),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Send a meal to friends and keep your streaks lit.',
+                    style: AppType.caption(color: TrackerColors.alpha(TrackerColors.onAccent, 0.85), size: 12.5),
+                  ),
+                ],
+              ),
+            ),
+            Icon(CupertinoIcons.chevron_right, color: TrackerColors.onAccent, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A friend's snap waiting in the strip: a glowing ring until you open it.
+class _InboxBubble extends StatelessWidget {
+  const _InboxBubble({required this.snap, required this.onTap});
+
+  final InboxSnap snap;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: snap.viewed ? null : TrackerColors.calorieGradient,
+                border: snap.viewed ? Border.all(color: TrackerColors.border, width: 2) : null,
+                boxShadow: snap.viewed ? null : AppDecor.glow(TrackerColors.accentStart, blur: 14, opacity: 0.35),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: TrackerColors.background),
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: snap.imageUrl == null
+                        ? FriendAvatar(username: snap.senderUsername, size: 52)
+                        : Image.network(
+                            snap.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => FriendAvatar(username: snap.senderUsername, size: 52),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              snap.senderUsername,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(
+                color: snap.viewed ? TrackerColors.textTertiary : TrackerColors.textPrimary,
+                size: 11.5,
+              ),
+            ),
           ],
         ),
       ),

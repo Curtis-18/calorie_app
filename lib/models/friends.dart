@@ -5,7 +5,15 @@ class Person {
     required this.username,
     required this.since,
     this.friendshipId,
+    this.streak = 0,
+    this.sentToday = false,
+    this.theySentToday = false,
   });
+
+  /// Days in a row you have both sent each other a snap. Only set on friends.
+  final int streak;
+  final bool sentToday;
+  final bool theySentToday;
 
   /// What to send back to accept, decline, remove or block. Null for blocks.
   final String? friendshipId;
@@ -18,6 +26,9 @@ class Person {
         userId: json['user_id'] as String,
         username: json['username'] as String,
         since: DateTime.parse(json['since'] as String),
+        streak: (json['streak'] as num?)?.toInt() ?? 0,
+        sentToday: json['sent_today'] as bool? ?? false,
+        theySentToday: json['they_sent_today'] as bool? ?? false,
       );
 }
 

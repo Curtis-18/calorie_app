@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:calorie_app/models/friends.dart';
 import 'package:calorie_app/providers/friends_provider.dart';
+import 'package:calorie_app/providers/snaps_provider.dart';
+import 'package:calorie_app/services/snaps_service.dart';
 import 'package:calorie_app/screens/friends_screen.dart';
 import 'package:calorie_app/services/friends_service.dart';
 import 'package:calorie_app/theme/app_theme.dart';
@@ -172,7 +174,14 @@ void main() {
       addTearDown(tester.view.reset);
       final notifier = _notifier(server);
       await tester.pumpWidget(ProviderScope(
-        overrides: [friendsProvider.overrideWith((ref) => notifier)],
+        overrides: [
+          friendsProvider.overrideWith((ref) => notifier),
+          snapInboxProvider.overrideWith((ref) => SnapInboxNotifier(
+                service: SnapsService(client: MockClient((_) async => http.Response('[]', 200)), tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+        ],
         child: CupertinoApp(theme: AppTheme.cupertino, home: const FriendsScreen()),
       ));
       for (var i = 0; i < 10; i++) {
