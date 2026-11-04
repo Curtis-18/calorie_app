@@ -159,12 +159,7 @@ class FoodSearchService {
           if (results.isEmpty) return;
 
           final match = _bestMatch(results, item.name);
-          item
-            ..caloriesPer100g = match.caloriesPer100g
-            ..proteinPer100g = match.proteinPer100g
-            ..carbsPer100g = match.carbsPer100g
-            ..fatPer100g = match.fatPer100g
-            ..matched = true;
+          item.applyMatch(match);
         } catch (_) {
           // leave unmatched, don't let one bad lookup kill the others
         }

@@ -122,7 +122,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Edit the first portion with a comma decimal.
-      await tester.enterText(find.byType(CupertinoTextField).first, '200,5');
+      await tester.enterText(find.byType(CupertinoTextField).at(1), '200,5'); // row 1: name, then grams
       await tester.pump();
       expect(find.text('~261 kcal'), findsOneWidget); // 130 x 2.005
 

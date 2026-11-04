@@ -35,14 +35,20 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
   List<DetectedFood> get _matched => _items.where((i) => i.matched).toList();
   int get _unmatchedCount => _items.length - _matched.length;
 
+  void _updateName(int index, String value) {
+    final name = value.trim();
+    if (name.isEmpty) return; // keep the last valid name
+    _items[index].name = name;
+  }
+
   void _updateGrams(int index, String value) {
     final grams = parseGrams(value);
     if (grams == null) return; // keep the last valid amount
     setState(() => _items[index].estimatedGrams = grams);
   }
 
-  /// Let the user pick the right food for something the scan couldn't match,
-  /// keeping the estimated grams.
+  /// Let the user pick the right food, for something the scan couldn't match
+  /// or matched wrongly. The grams and the name they see are kept.
   Future<void> _findMatch(int index) async {
     final item = _items[index];
     final picked = await Navigator.push<FoodItem>(
@@ -52,14 +58,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
       ),
     );
     if (picked == null || !mounted) return;
-    setState(() {
-      item
-        ..caloriesPer100g = picked.caloriesPer100g
-        ..proteinPer100g = picked.proteinPer100g
-        ..carbsPer100g = picked.carbsPer100g
-        ..fatPer100g = picked.fatPer100g
-        ..matched = true;
-    });
+    setState(() => item.applyMatch(picked));
   }
 
   void _removeItem(int index) {
@@ -120,7 +119,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'These are estimates. Adjust quantity or remove anything that looks wrong before saving.',
+                      'These are estimates. Check each food and its amount. Tap Change if the match looks wrong, or remove it.',
                       style: AppType.callout(size: 12),
                     ),
                   ),
@@ -140,7 +139,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                       child: ListView.builder(
                         physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                        key: ValueKey(_items.map((item) => item.name).join('|')),
+                        key: ValueKey(_items.map((item) => identityHashCode(item)).join('|')),
                         itemCount: _items.length,
                         itemBuilder: (context, index) {
                           final item = _items[index];
@@ -157,12 +156,22 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          item.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppType.body(size: 14),
+                                        _NameField(
+                                          key: ValueKey('name_${identityHashCode(item)}'),
+                                          name: item.name,
+                                          onChanged: (value) => _updateName(index, value),
                                         ),
+                                        if (item.matched && item.matchedDescription != null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              'Matched: ${item.matchedDescription}',
+                                              key: ValueKey('matched_${identityHashCode(item)}'),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: AppType.caption(size: 11),
+                                            ),
+                                          ),
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
@@ -171,11 +180,20 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                               onChanged: (value) => _updateGrams(index, value),
                                             ),
                                             const SizedBox(width: AppSpacing.md),
+                                            if (item.matched) ...[
+                                              _Chip(
+                                                label: '~${item.estimatedCalories} kcal',
+                                                color: TrackerColors.accentStartText,
+                                              ),
+                                              const SizedBox(width: 6),
+                                            ],
                                             Flexible(
                                               child: item.matched
                                                   ? _Chip(
-                                                      label: '~${item.estimatedCalories} kcal',
-                                                      color: TrackerColors.accentStartText,
+                                                      label: 'Change',
+                                                      color: TrackerColors.textSecondary,
+                                                      icon: CupertinoIcons.search,
+                                                      onTap: () => _findMatch(index),
                                                     )
                                                   : _Chip(
                                                       label: 'No match · Find',
@@ -225,6 +243,40 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The name shown in the log; editable and independent of the USDA match.
+class _NameField extends StatefulWidget {
+  const _NameField({super.key, required this.name, required this.onChanged});
+
+  final String name;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_NameField> createState() => _NameFieldState();
+}
+
+class _NameFieldState extends State<_NameField> {
+  late final TextEditingController _controller = TextEditingController(text: widget.name);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoTextField(
+      controller: _controller,
+      maxLength: 60,
+      style: AppType.body(size: 14),
+      cursorColor: TrackerColors.accentStart,
+      padding: EdgeInsets.zero,
+      decoration: null,
+      onChanged: widget.onChanged,
     );
   }
 }
