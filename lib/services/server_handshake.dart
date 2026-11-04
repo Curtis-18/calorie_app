@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -22,6 +23,11 @@ enum HandshakePhase {
 
   /// Signed in but no targets yet: go to onboarding.
   needsOnboarding,
+
+  /// Signed in but hasn't picked a username yet (everyone who joined before
+  /// usernames existed, and brand-new sign-ups). Resolved by
+  /// [ServerHandshake.usernameChosen].
+  needsUsername,
 
   /// The session is no longer valid even after a refresh: sign in again.
   signedOut,
@@ -70,6 +76,9 @@ class ServerHandshake {
   DateTime startedAt = DateTime.now();
 
   int _run = 0;
+
+  /// Where to go once the username is picked.
+  HandshakePhase _afterUsername = HandshakePhase.ready;
   Timer? _wakingTimer;
   bool _disposed = false;
 
@@ -118,11 +127,15 @@ class ServerHandshake {
         }
         if (!current()) return;
 
-        if (status == 200) {
-          _handOffTargets(body);
-          return _finish(run, HandshakePhase.ready);
+        if (status == 200 || status == 404) {
+          if (status == 200) _handOffTargets(body);
+          final next = status == 200 ? HandshakePhase.ready : HandshakePhase.needsOnboarding;
+          if (await _lacksUsername(client, token) && current()) {
+            _afterUsername = next;
+            return _finish(run, HandshakePhase.needsUsername);
+          }
+          return _finish(run, next);
         }
-        if (status == 404) return _finish(run, HandshakePhase.needsOnboarding);
         if (status == 401) {
           if (refreshedAfter401) return _finish(run, HandshakePhase.signedOut);
           refreshedAfter401 = true; // one more go with a freshly refreshed token
@@ -138,6 +151,28 @@ class ServerHandshake {
       if (current()) _finish(run, HandshakePhase.unreachable);
     } finally {
       if (_client == null) client.close();
+    }
+  }
+
+  /// The username was saved: carry on to where the user was headed.
+  void usernameChosen() {
+    if (_disposed || phase.value != HandshakePhase.needsUsername) return;
+    phase.value = _afterUsername;
+  }
+
+  /// True only when the server says this user has no username. Anything
+  /// else (an older backend without the field, a slow or failed request)
+  /// counts as "fine", so this can never lock someone out of the app.
+  Future<bool> _lacksUsername(http.Client client, String token) async {
+    try {
+      final response = await client
+          .get(Uri.parse('${ApiConfig.baseUrl}/me'), headers: {'Authorization': 'Bearer $token'})
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return false;
+      final json = jsonDecode(response.body);
+      return json is Map && json.containsKey('username') && json['username'] == null;
+    } catch (_) {
+      return false;
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -14,6 +15,8 @@ class AppField extends StatelessWidget {
     this.keyboardType,
     this.suffix,
     this.autofocus = false,
+    this.inputFormatters,
+    this.onChanged,
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
   });
 
@@ -24,6 +27,8 @@ class AppField extends StatelessWidget {
   final TextInputType? keyboardType;
   final Widget? suffix;
   final bool autofocus;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onChanged;
   final EdgeInsetsGeometry padding;
 
   @override
@@ -37,6 +42,8 @@ class AppField extends StatelessWidget {
       obscureText: obscure,
       keyboardType: keyboardType,
       autofocus: autofocus,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged,
       padding: padding,
       suffix: suffix == null
           ? null

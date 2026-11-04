@@ -7,6 +7,7 @@ import '../widgets/waking_up_view.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'signup_screen.dart';
+import 'username_screen.dart';
 
 /// Routes a signed-in user to the app or to onboarding, after making sure
 /// the backend is awake. See [ServerHandshake] for the connection logic and
@@ -87,6 +88,11 @@ class _AuthGateState extends State<AuthGate> {
                 return WakingUpView(startedAt: handshake.startedAt);
               case HandshakePhase.ready:
                 return const MainShell();
+              case HandshakePhase.needsUsername:
+                return UsernameScreen(
+                  onDone: (_) => handshake.usernameChosen(),
+                  onSignOut: _signOut,
+                );
               case HandshakePhase.needsOnboarding:
                 return const OnboardingScreen();
               case HandshakePhase.signedOut:

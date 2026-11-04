@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 
 import 'package:calorie_app/services/server_handshake.dart';
@@ -33,6 +34,8 @@ List<HandshakePhase> _record(ServerHandshake h) {
   h.phase.addListener(() => seen.add(h.phase.value));
   return seen;
 }
+
+const _skip = Object();
 
 void main() {
   test('200 means ready, 404 means onboarding', () async {
@@ -70,10 +73,61 @@ void main() {
 
     await h.start();
 
-    expect(calls, 4);
+    expect(calls, 5, reason: '3 x 503, then /targets, then /me');
     expect(phases.first, HandshakePhase.checking);
     expect(phases, contains(HandshakePhase.waking));
     expect(phases.last, HandshakePhase.ready);
+  });
+
+  group('username', () {
+    MockClient server({required int targets, Object? me = _skip}) => MockClient((request) async {
+          if (request.url.path == '/me') {
+            if (me == _skip) return http.Response('boom', 500);
+            return http.Response(jsonEncode(me), 200);
+          }
+          return http.Response('{}', targets);
+        });
+
+    test('an onboarded user without a username is asked, then goes on to the app', () async {
+      final h = _handshake(server(targets: 200, me: {'user_id': 'u', 'username': null}));
+      await h.start();
+      expect(h.phase.value, HandshakePhase.needsUsername);
+
+      h.usernameChosen();
+      expect(h.phase.value, HandshakePhase.ready);
+    });
+
+    test('a brand-new user picks a username first, then onboards', () async {
+      final h = _handshake(server(targets: 404, me: {'user_id': 'u', 'username': null}));
+      await h.start();
+      expect(h.phase.value, HandshakePhase.needsUsername);
+
+      h.usernameChosen();
+      expect(h.phase.value, HandshakePhase.needsOnboarding);
+    });
+
+    test('a user who has one goes straight on', () async {
+      final h = _handshake(server(targets: 200, me: {'user_id': 'u', 'username': 'sam'}));
+      await h.start();
+      expect(h.phase.value, HandshakePhase.ready);
+    });
+
+    test('an older backend (no username field) or a failing /me never blocks the app', () async {
+      final old = _handshake(server(targets: 200, me: {'user_id': 'u'}));
+      await old.start();
+      expect(old.phase.value, HandshakePhase.ready);
+
+      final broken = _handshake(server(targets: 200));
+      await broken.start();
+      expect(broken.phase.value, HandshakePhase.ready);
+    });
+
+    test('usernameChosen does nothing outside the username phase', () async {
+      final h = _handshake(server(targets: 200, me: {'username': 'sam'}));
+      await h.start();
+      h.usernameChosen();
+      expect(h.phase.value, HandshakePhase.ready);
+    });
   });
 
   test('gives up at the deadline, and Retry really retries', () async {
@@ -112,7 +166,7 @@ void main() {
     await h.start();
 
     expect(tokenCalls, [false, true]);
-    expect(calls, 2);
+    expect(calls, 3, reason: '401, /targets, then /me');
     expect(h.phase.value, HandshakePhase.ready);
   });
 
