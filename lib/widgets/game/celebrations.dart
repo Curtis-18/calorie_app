@@ -255,7 +255,9 @@ class _CelebrationCard extends StatelessWidget {
             curve: AppMotion.spring,
             builder: (context, t, child) => Transform.scale(scale: 0.85 + 0.15 * t, child: child),
             child: FrostedGlass(
-              opacity: 0.12,
+              // Light mode needs a solid card: 12% white over the dark scrim is
+              // a dark card, and the dark text on it can't be read.
+              opacity: TrackerColors.isDark ? 0.12 : 0.97,
               tint: TrackerColors.surface,
               borderRadius: AppRadii.containerAll,
               border: Border.all(color: TrackerColors.borderStrong, width: 1),

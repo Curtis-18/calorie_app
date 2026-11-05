@@ -84,7 +84,7 @@ class MealSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppRadii.pill),
                       border: Border.all(color: TrackerColors.alpha(accent, 0.28), width: 1),
                     ),
-                    child: Icon(CupertinoIcons.add, size: 15, color: accent),
+                    child: Icon(CupertinoIcons.add, size: 15, color: TrackerColors.ink(accent)),
                   ),
                 ),
               ],

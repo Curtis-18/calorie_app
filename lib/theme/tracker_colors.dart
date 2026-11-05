@@ -275,6 +275,14 @@ class TrackerColors {
 
   static List<BoxShadow> get cardShadow => _palette.cardShadow;
 
+  /// [c] as text or an icon: the brand accents swap to their deeper light-mode
+  /// inks (lime on white is unreadable); any other colour is returned as is.
+  static Color ink(Color c) {
+    if (c == accentStart) return accentStartText;
+    if (c == accentEnd) return accentEndText;
+    return c;
+  }
+
   /// Alpha helper that keeps precision on 8-bit channels.
   static Color alpha(Color color, double opacity) => color.withValues(alpha: opacity.clamp(0.0, 1.0));
 }

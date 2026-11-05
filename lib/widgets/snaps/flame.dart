@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../../theme/app_motion.dart';
 import '../../theme/app_typography.dart';
+import '../../models/progress.dart';
 import '../../theme/tracker_colors.dart';
+import '../game/flame_style.dart';
 
 /// A small flame with the streak count, shown on a friend's row.
 /// Lit (warm) once you've both sent today; dimmer while the day is still open.
@@ -17,7 +19,7 @@ class StreakBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = lit ? TrackerColors.flameStart : TrackerColors.textTertiary;
+    final color = lit ? FlameStyle.of(FlameTier.flame).color : TrackerColors.textTertiary;
     return Semantics(
       label: '$count day streak',
       child: Container(

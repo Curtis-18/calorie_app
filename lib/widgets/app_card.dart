@@ -101,13 +101,13 @@ class AppPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: dense ? 11 : 13, color: filled ? TrackerColors.background : color),
+            Icon(icon, size: dense ? 11 : 13, color: filled ? TrackerColors.background : TrackerColors.ink(color)),
             SizedBox(width: dense ? 4 : 5),
           ],
           Text(
             label,
             style: AppType.caption(
-              color: filled ? TrackerColors.background : color,
+              color: filled ? TrackerColors.background : TrackerColors.ink(color),
               size: dense ? 11 : 12,
             ).copyWith(fontWeight: FontWeight.w800),
           ),
