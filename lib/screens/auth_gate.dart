@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/password_recovery.dart';
 import '../services/server_handshake.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/animated_logo.dart';
 import '../widgets/waking_up_view.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
+import 'reset_password_screen.dart';
 import 'signup_screen.dart';
 import 'username_screen.dart';
 
@@ -59,6 +61,25 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    // Arrived through a reset link: choose a new password before anything else.
+    return ValueListenableBuilder<bool>(
+      valueListenable: PasswordRecovery.pending,
+      builder: (context, recovering, _) {
+        if (recovering && Supabase.instance.client.auth.currentSession != null) {
+          return ResetPasswordScreen(
+            onDone: PasswordRecovery.clear,
+            onCancel: () async {
+              PasswordRecovery.clear();
+              await _signOut();
+            },
+          );
+        }
+        return _gate(context);
+      },
+    );
+  }
+
+  Widget _gate(BuildContext context) {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {

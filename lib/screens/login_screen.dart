@@ -6,6 +6,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_field.dart';
+import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -109,25 +110,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     loading: _isLoading,
                     onPressed: _isLoading ? null : _logIn,
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: AppDivider(),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('or', style: AppType.caption(size: 12)),
-                      ),
-                      const Expanded(child: AppDivider()),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  AppButton.glass(
-                    label: 'Continue with Google',
-                    icon: CupertinoIcons.globe,
-                    onPressed: () async {
-                      // Google sign-in logic
+                  const SizedBox(height: AppSpacing.sm),
+                  AppButton(
+                    label: 'Forgot password?',
+                    style: AppButtonStyle.quiet,
+                    height: 44,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => ForgotPasswordScreen(initialEmail: _emailController.text.trim()),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: AppSpacing.sm),

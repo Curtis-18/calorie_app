@@ -6,6 +6,7 @@ import 'config/supabase_config.dart';
 import 'providers/appearance_provider.dart';
 import 'screens/auth_gate.dart';
 import 'screens/main_shell.dart';
+import 'services/password_recovery.dart';
 import 'services/server_handshake.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_shapes.dart';
@@ -41,6 +42,7 @@ Future<void> main() async {
       url: SupabaseConfig.url,
       publishableKey: SupabaseConfig.anonKey,
     );
+    PasswordRecovery.start(Supabase.instance.client.auth.onAuthStateChange);
   }
 
   // Open in the user's chosen mode from the very first frame.
