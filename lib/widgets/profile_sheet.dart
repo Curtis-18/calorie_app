@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/profile_copy.dart';
 import '../models/user_profile.dart';
 import '../providers/user_provider.dart';
+import '../screens/notification_settings_screen.dart';
 import '../screens/onboarding_screen.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -157,6 +158,18 @@ class _ProfileContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.xl),
         const AppearancePicker(),
         const SizedBox(height: AppSpacing.xl),
+        AppButton.glass(
+          key: const ValueKey('open_notifications'),
+          label: 'Notifications',
+          icon: CupertinoIcons.bell,
+          onPressed: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).push(
+              CupertinoPageRoute(builder: (_) => const NotificationSettingsScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.sm),
         AppButton.glass(
           label: 'Edit profile',
           icon: CupertinoIcons.pencil,
