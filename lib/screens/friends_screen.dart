@@ -478,6 +478,20 @@ String _shortDate(DateTime d) {
   return '${months[local.month - 1]} ${local.day}';
 }
 
+/// Avatar colours: cool, saturated pairs that sit with the lime/aqua brand and
+/// keep white initials readable. Deliberately no orange, red or yellow, so a
+/// friend's avatar can never be mistaken for a flame or a warning.
+const _avatarGradients = <List<Color>>[
+  [Color(0xFF7C4DFF), Color(0xFFE040FB)], // violet to magenta
+  [Color(0xFF3D5AFE), Color(0xFF00B0FF)], // indigo to sky
+  [Color(0xFF00BFA5), Color(0xFF00897B)], // teal
+  [Color(0xFF00A86B), Color(0xFF0D9488)], // emerald to teal
+  [Color(0xFFD81B8A), Color(0xFF7E3FF2)], // pink to violet
+  [Color(0xFF2979FF), Color(0xFF00C2B8)], // blue to aqua
+  [Color(0xFF5E35B1), Color(0xFF3949AB)], // deep purple to indigo
+  [Color(0xFF8E24AA), Color(0xFFEC407A)], // purple to rose
+];
+
 /// A round initial on a colour chosen from the name, so a person always looks the same.
 class FriendAvatar extends StatelessWidget {
   const FriendAvatar({super.key, required this.username, this.size = 42});
@@ -487,16 +501,15 @@ class FriendAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hue = (username.toLowerCase().codeUnits.fold<int>(7, (h, c) => (h * 31 + c) & 0xFFFF) % 360).toDouble();
-    final a = HSLColor.fromAHSL(1, hue, 0.75, 0.55).toColor();
-    final b = HSLColor.fromAHSL(1, (hue + 40) % 360, 0.8, 0.45).toColor();
+    final pair = _avatarGradients[
+        username.toLowerCase().codeUnits.fold<int>(7, (h, c) => (h * 31 + c) & 0xFFFF) % _avatarGradients.length];
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [a, b]),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: pair),
       ),
       child: Text(
         username.isEmpty ? '?' : username[0].toUpperCase(),
