@@ -98,7 +98,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
       backgroundColor: TrackerColors.background,
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
-        middle: Text('Send a snap', style: AppType.headline()),
+        middle: Text('Send a bite', style: AppType.headline()),
         border: Border(bottom: BorderSide(color: TrackerColors.border)),
       ),
       child: SafeArea(
@@ -139,7 +139,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   if (friends.isEmpty)
                     Text(
-                      'Add a friend first, then you can send them snaps.',
+                      'Add a friend first, then you can send them bites.',
                       style: AppType.body(color: TrackerColors.textSecondary),
                     )
                   else

@@ -6,6 +6,7 @@ import 'app_button.dart';
 import 'dashboard_header_bits.dart';
 import 'game/header_chips.dart';
 import 'game/progress_sheet.dart';
+import '../screens/notification_settings_screen.dart';
 import 'profile_sheet.dart';
 
 /// Minimal top bar: greeting with the level badge, the streak flame, date
@@ -83,7 +84,17 @@ class DashboardHeader extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+          AppIconButton(
+            key: const ValueKey('header_notifications'),
+            icon: CupertinoIcons.bell,
+            size: 44,
+            iconSize: 22,
+            color: TrackerColors.textPrimary,
+            onPressed: () => Navigator.of(context).push(
+              CupertinoPageRoute(builder: (_) => const NotificationSettingsScreen()),
+            ),
+          ),
           AppIconButton(
             icon: CupertinoIcons.person_crop_circle,
             size: 44,

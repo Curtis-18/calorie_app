@@ -1,3 +1,16 @@
+/// When a bite was sent, in the viewer's own time: "3:42 PM", or
+/// "Yesterday 9:10 PM" if it was sent on an earlier calendar day.
+/// Bites only live 24 hours, so nothing older than that is ever shown.
+String biteSentLabel(DateTime sentAt, {DateTime? now}) {
+  final t = sentAt.toLocal();
+  final n = (now ?? DateTime.now()).toLocal();
+  final hour12 = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  final minute = t.minute.toString().padLeft(2, '0');
+  final time = '$hour12:$minute ${t.hour < 12 ? 'AM' : 'PM'}';
+  final sameDay = t.year == n.year && t.month == n.month && t.day == n.day;
+  return sameDay ? time : 'Yesterday $time';
+}
+
 /// The five reactions a friend can send back, matching the backend.
 const snapReactions = ['🔥', '😋', '😮', '❤️', '👏'];
 

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/friends.dart';
 import '../models/snaps.dart';
+import 'bite_camera_screen.dart';
 import '../providers/snaps_provider.dart';
 import '../widgets/snaps/flame.dart';
 import 'snap_compose_screen.dart';
@@ -84,7 +85,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     }
   }
 
-  /// Open the camera (no gallery: snaps are food you're eating right now),
+  /// Open the camera (no gallery: bites are food you're eating right now),
   /// then compose. [to] pre-selects a friend.
   Future<void> _snap({String? to}) async {
     final XFile? photo;
@@ -95,7 +96,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       await showAppDialog(
         context: context,
         title: "Couldn't open the camera",
-        message: 'Allow camera access in Settings to send snaps.',
+        message: 'Allow camera access in Settings to send bites.',
       );
       return;
     }
@@ -117,12 +118,21 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     }
   }
 
-  static Future<XFile?> _takePhoto() => ImagePicker().pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1080,
-        maxHeight: 1350,
-        imageQuality: 82,
-      );
+  /// The food camera (plate guide + meal stamp). If the live camera can't
+  /// start, the system camera takes over so sending a bite never dead-ends.
+  Future<XFile?> _takePhoto() async {
+    final result = await Navigator.of(context).push<BiteCameraResult>(
+      CupertinoPageRoute(fullscreenDialog: true, builder: (_) => const BiteCameraScreen()),
+    );
+    if (result == null) return null; // closed without a photo
+    if (result.bytes != null) return XFile.fromData(result.bytes!, mimeType: 'image/jpeg', name: 'bite.jpg');
+    return ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1080,
+      maxHeight: 1350,
+      imageQuality: 82,
+    );
+  }
 
   void _openInbox(List<InboxSnap> snaps, int index) {
     Navigator.of(context).push(
@@ -289,10 +299,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         const SizedBox(height: AppSpacing.lg),
       ],
       if (inbox.isNotEmpty) ...[
-        SectionHeader(label: 'Snaps from friends', trailing: _count(inbox.length)),
+        SectionHeader(label: 'Bites from friends', trailing: _count(inbox.length)),
         const SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 96,
+          height: 112,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: inbox.length,
@@ -435,7 +445,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           icon: CupertinoIcons.person_2,
           title: 'No friends yet',
           message: 'Add a friend with their username, or share yours. '
-              'Then send each other food snaps to build a streak.',
+              'Then send each other food bites to build a streak.',
         )
       else
         for (final p in data.friends)
@@ -444,7 +454,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             subtitle: _friendSubtitle(p),
             actions: [
               if (p.streak > 0) StreakBadge(count: p.streak, lit: p.sentToday && p.theySentToday),
-              _Pill(label: 'Snap', icon: CupertinoIcons.camera_fill, primary: true, onTap: () => _snap(to: p.userId)),
+              _Pill(label: 'Bite', icon: CupertinoIcons.camera_fill, primary: true, onTap: () => _snap(to: p.userId)),
               _MoreButton(onTap: () => _more(p, isFriend: true)),
             ],
           ),
@@ -466,10 +476,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 }
 
 String _friendSubtitle(Person p) {
-  if (p.theySentToday && !p.sentToday) return 'sent you a snap today. Send one back!';
-  if (p.sentToday && !p.theySentToday) return p.streak > 0 ? 'waiting on them to keep the streak' : 'waiting on their snap';
+  if (p.theySentToday && !p.sentToday) return 'sent you a bite today. Send one back!';
+  if (p.sentToday && !p.theySentToday) return p.streak > 0 ? 'waiting on them to keep the streak' : 'waiting on their bite';
   if (p.sentToday && p.theySentToday) return 'streak is safe today';
-  return p.streak > 0 ? 'send a snap to keep your streak' : 'friends since ${_shortDate(p.since)}';
+  return p.streak > 0 ? 'send a bite to keep your streak' : 'friends since ${_shortDate(p.since)}';
 }
 
 String _shortDate(DateTime d) {
@@ -712,7 +722,7 @@ class _SnapHero extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Snap your food', style: AppType.headline(color: TrackerColors.onAccent)),
+                  Text('Share your meal', style: AppType.headline(color: TrackerColors.onAccent)),
                   const SizedBox(height: 2),
                   Text(
                     'Send a meal to friends and keep your streaks lit.',
@@ -779,6 +789,11 @@ class _InboxBubble extends StatelessWidget {
                 color: snap.viewed ? TrackerColors.textTertiary : TrackerColors.textPrimary,
                 size: 11.5,
               ),
+            ),
+            Text(
+              biteSentLabel(snap.createdAt),
+              maxLines: 1,
+              style: AppType.caption(color: TrackerColors.textTertiary, size: 10),
             ),
           ],
         ),

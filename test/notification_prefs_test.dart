@@ -29,7 +29,7 @@ Map<String, Object?> _json({
       'quiet_end': quietEnd,
       'utc_offset_minutes': 180,
       'paused_until': pausedUntil,
-      'daily_cap': 2,
+      'daily_cap': 3,
     };
 
 NotificationPrefsService _service(MockClient client) =>
@@ -39,7 +39,7 @@ void main() {
   group('model', () {
     test('reads the server shape and falls back to the defaults', () {
       final p = NotificationPrefs.fromJson(_json(nudge: 13, pausedUntil: '2099-01-01T00:00:00Z'));
-      expect((p.friendSnaps, p.mealNudgeHour, p.quietStart, p.quietEnd, p.dailyCap), (true, 13, 22, 8, 2));
+      expect((p.friendSnaps, p.mealNudgeHour, p.quietStart, p.quietEnd, p.dailyCap), (true, 13, 22, 8, 3));
       expect(p.isPausedAt(DateTime(2026, 11, 5)), isTrue);
       expect(NotificationPrefs.fromJson(const {}).friendSnaps, isTrue);
       expect(NotificationPrefs.fromJson(const {}).mealNudgeHour, isNull);
@@ -170,10 +170,10 @@ void main() {
 
     testWidgets('shows the promise and the honest "not live yet" note', (tester) async {
       await pump(tester);
-      expect(find.textContaining('At most 2 a day'), findsOneWidget);
+      expect(find.textContaining('At most 3 a day'), findsOneWidget);
       expect(find.textContaining('never about your weight or calories'), findsOneWidget);
       expect(find.byKey(const ValueKey('push_not_live')), findsOneWidget);
-      expect(find.text('Friend snaps'), findsOneWidget);
+      expect(find.text('Friend bites'), findsOneWidget);
       expect(find.byKey(const ValueKey('quiet_summary')), findsOneWidget);
       expect(find.textContaining('between 10 PM and 8 AM'), findsOneWidget);
     }, variant: ios);

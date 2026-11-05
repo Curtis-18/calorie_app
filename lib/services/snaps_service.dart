@@ -93,18 +93,18 @@ class SnapsService {
           .map((e) => SendOutcome.fromJson(e as Map<String, dynamic>))
           .toList();
     }
-    throw SnapsException(_detail(r, "Couldn't send your snap. Please try again."));
+    throw SnapsException(_detail(r, "Couldn't send your bite. Please try again."));
   }
 
   Future<List<InboxSnap>> inbox() async {
     final r = await _send((c, h) => c.get(_uri('/snaps/inbox'), headers: h));
-    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load your snaps."));
+    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load your bites."));
     return (jsonDecode(r.body) as List).map((e) => InboxSnap.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<List<SentSnap>> sent() async {
     final r = await _send((c, h) => c.get(_uri('/snaps/sent'), headers: h));
-    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load the snaps you sent."));
+    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load the bites you sent."));
     return (jsonDecode(r.body) as List).map((e) => SentSnap.fromJson(e as Map<String, dynamic>)).toList();
   }
 
@@ -115,7 +115,7 @@ class SnapsService {
   }
 
   Future<void> markViewed(String snapId) =>
-      _action((c, h) => c.post(_uri('/snaps/$snapId/view'), headers: h), "Couldn't mark that snap as seen.");
+      _action((c, h) => c.post(_uri('/snaps/$snapId/view'), headers: h), "Couldn't mark that bite as seen.");
 
   Future<void> react(String snapId, String emoji) => _action(
       (c, h) => c.post(_uri('/snaps/$snapId/react'), headers: h, body: jsonEncode({'emoji': emoji})),
@@ -126,5 +126,5 @@ class SnapsService {
       "Couldn't send your report.");
 
   Future<void> delete(String snapId) =>
-      _action((c, h) => c.delete(_uri('/snaps/$snapId'), headers: h), "Couldn't delete that snap.");
+      _action((c, h) => c.delete(_uri('/snaps/$snapId'), headers: h), "Couldn't delete that bite.");
 }

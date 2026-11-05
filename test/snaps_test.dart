@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:calorie_app/models/snaps.dart';
 import 'package:calorie_app/providers/friends_provider.dart';
 import 'package:calorie_app/providers/snaps_provider.dart';
 import 'package:calorie_app/screens/friends_screen.dart';
@@ -34,6 +35,7 @@ Map<String, dynamic> _inbox(String id, String from, {bool viewed = false}) => {
 SnapsService _service(MockClient client) => SnapsService(client: client, tokenProvider: () => 't');
 
 void main() {
+  biteTimeTests();
   group('service', () {
     test('snap ids are valid v4 uuids and differ', () {
       final a = newSnapId(), b = newSnapId();
@@ -244,13 +246,13 @@ void main() {
       }
     }
 
-    testWidgets('friend rows show the streak and who owes a snap; unseen snaps show up', (tester) async {
+    testWidgets('friend rows show the streak and who owes a bite; unseen bites show up', (tester) async {
       await open(tester, backend(inbox: [_inbox('a', 'sam')]));
-      expect(find.text('Snap your food'), findsOneWidget);
-      expect(find.text('SNAPS FROM FRIENDS'), findsOneWidget);
+      expect(find.text('Share your meal'), findsOneWidget);
+      expect(find.text('BITES FROM FRIENDS'), findsOneWidget);
       expect(find.text('5'), findsOneWidget); // streak badge
-      expect(find.text('sent you a snap today. Send one back!'), findsOneWidget);
-      expect(find.text('Snap'), findsNWidgets(2));
+      expect(find.text('sent you a bite today. Send one back!'), findsOneWidget);
+      expect(find.text('Bite'), findsNWidgets(2));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('taking a photo, picking a friend and sending reports the result', (tester) async {
@@ -258,10 +260,10 @@ void main() {
       final file = XFile.fromData(Uint8List.fromList(_png), name: 'a.png');
       await open(tester, backend(sends: sends), pick: () async => file);
 
-      await tester.tap(find.text('Snap').first);
+      await tester.tap(find.text('Bite').first);
       await settle(tester);
       // Compose screen, with the tapped friend already ticked.
-      expect(find.text('Send a snap'), findsOneWidget);
+      expect(find.text('Send a bite'), findsOneWidget);
       expect(find.text('Send to 1 friend'), findsOneWidget);
 
       await tester.tap(find.text('@bea'));
@@ -278,9 +280,9 @@ void main() {
     testWidgets('cancelling the camera sends nothing', (tester) async {
       final sends = <String>[];
       await open(tester, backend(sends: sends), pick: () async => null);
-      await tester.tap(find.text('Snap your food'));
+      await tester.tap(find.text('Share your meal'));
       await settle(tester);
-      expect(find.text('Send a snap'), findsNothing);
+      expect(find.text('Send a bite'), findsNothing);
       expect(sends, isEmpty);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -304,5 +306,21 @@ void main() {
       await settle(tester);
       expect(find.text('Pick who gets it'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  });
+}
+
+void biteTimeTests() {
+  group('biteSentLabel', () {
+    final now = DateTime(2026, 11, 5, 18, 0);
+    test('same day shows just the time', () {
+      expect(biteSentLabel(DateTime(2026, 11, 5, 15, 42), now: now), '3:42 PM');
+    });
+    test('midnight and noon use 12', () {
+      expect(biteSentLabel(DateTime(2026, 11, 5, 0, 5), now: now), '12:05 AM');
+      expect(biteSentLabel(DateTime(2026, 11, 5, 12, 0), now: now), '12:00 PM');
+    });
+    test('an earlier day says Yesterday', () {
+      expect(biteSentLabel(DateTime(2026, 11, 4, 21, 10), now: now), 'Yesterday 9:10 PM');
+    });
   });
 }

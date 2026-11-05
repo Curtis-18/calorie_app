@@ -80,7 +80,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
           CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, 'report'),
-            child: const Text('Report this snap'),
+            child: const Text('Report this bite'),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
@@ -124,7 +124,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                 key: ValueKey(snap.id),
                 child: snap.imageUrl == null
                     ? const Center(
-                        child: Text("This snap couldn't be loaded.", style: TextStyle(color: Color(0xFFFFFFFF))),
+                        child: Text("This bite couldn't be loaded.", style: TextStyle(color: Color(0xFFFFFFFF))),
                       )
                     : Image.network(
                         snap.imageUrl!,
@@ -132,7 +132,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                         loadingBuilder: (context, child, progress) =>
                             progress == null ? child : const Center(child: CupertinoActivityIndicator(radius: 14)),
                         errorBuilder: (_, _, _) => const Center(
-                          child: Text("This snap couldn't be loaded.", style: TextStyle(color: Color(0xFFFFFFFF))),
+                          child: Text("This bite couldn't be loaded.", style: TextStyle(color: Color(0xFFFFFFFF))),
                         ),
                       ),
               ),
@@ -164,9 +164,19 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
               right: 8,
               child: Row(
                 children: [
-                  Text(
-                    '@${snap.senderUsername}',
-                    style: AppType.headline(color: const Color(0xFFFFFFFF)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '@${snap.senderUsername}',
+                        style: AppType.headline(color: const Color(0xFFFFFFFF)),
+                      ),
+                      Text(
+                        biteSentLabel(snap.createdAt),
+                        key: const ValueKey('bite_sent_time'),
+                        style: AppType.caption(color: const Color(0xCCFFFFFF), size: 12),
+                      ),
+                    ],
                   ),
                   const Spacer(),
                   Pressable(

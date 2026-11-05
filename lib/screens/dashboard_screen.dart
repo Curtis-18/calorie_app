@@ -187,7 +187,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         TourStep(
           targetKey: _cameraButtonKey,
           icon: CupertinoIcons.camera_fill,
-          title: 'Or just snap a photo',
+          title: 'Or just take a photo',
           body: "Take a picture of your plate. We'll spot the foods and estimate "
               'portions for you to check before saving.',
           shape: TourShape.circle,

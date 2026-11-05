@@ -24,7 +24,7 @@ class WakingUpView extends StatefulWidget {
   final DateTime startedAt;
 
   static const tips = [
-    'Snap a photo of your plate to log a whole meal in seconds.',
+    'Take a photo of your plate to log a whole meal in seconds.',
     'Use the arrows next to the date to look back at earlier days.',
     'Insights turns your week into a few simple, personal tips.',
     'Logging as you eat keeps the ring accurate all day.',

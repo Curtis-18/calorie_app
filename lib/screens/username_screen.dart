@@ -135,7 +135,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
                 Text('Pick your username', style: AppType.navLargeTitle(size: 28)),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'This is how friends will find you and send you food snaps. '
+                  'This is how friends will find you and send you food bites. '
                   'You can change it once every 30 days.',
                   style: AppType.body(color: TrackerColors.textSecondary),
                 ),

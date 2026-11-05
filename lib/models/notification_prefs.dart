@@ -13,7 +13,7 @@ class NotificationPrefs {
     this.quietEnd = 8,
     this.utcOffsetMinutes = 0,
     this.pausedUntil,
-    this.dailyCap = 2,
+    this.dailyCap = 3,
   });
 
   /// Flip to true when push delivery ships (iOS build with Apple/Firebase
@@ -70,7 +70,7 @@ class NotificationPrefs {
         quietEnd: (j['quiet_end'] as num?)?.toInt() ?? 8,
         utcOffsetMinutes: (j['utc_offset_minutes'] as num?)?.toInt() ?? 0,
         pausedUntil: j['paused_until'] == null ? null : DateTime.parse(j['paused_until'] as String).toLocal(),
-        dailyCap: (j['daily_cap'] as num?)?.toInt() ?? 2,
+        dailyCap: (j['daily_cap'] as num?)?.toInt() ?? 3,
       );
 }
 

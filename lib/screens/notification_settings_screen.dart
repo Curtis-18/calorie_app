@@ -83,8 +83,6 @@ class _Settings extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Nudges that are actually fun', style: AppType.title()),
-        const SizedBox(height: 6),
         Text(
           'At most ${prefs.dailyCap} a day, quiet at night, and never about your weight or calories.',
           style: AppType.callout(),
@@ -110,8 +108,8 @@ class _Settings extends StatelessWidget {
             _SwitchRow(
               keyName: 'friend_snaps',
               emoji: '📸',
-              title: 'Friend snaps',
-              subtitle: 'When a friend sends you a snap',
+              title: 'Friend bites',
+              subtitle: 'When a friend sends you a bite',
               value: prefs.friendSnaps,
               onChanged: (v) => _set(prefs.copyWith(friendSnaps: v), {'friend_snaps': v}),
             ),
@@ -120,7 +118,7 @@ class _Settings extends StatelessWidget {
               keyName: 'reactions',
               emoji: '🔥',
               title: 'Reactions',
-              subtitle: 'When someone reacts to your snap',
+              subtitle: 'When someone reacts to your bite',
               value: prefs.reactions,
               onChanged: (v) => _set(prefs.copyWith(reactions: v), {'reactions': v}),
             ),
@@ -128,8 +126,8 @@ class _Settings extends StatelessWidget {
             _SwitchRow(
               keyName: 'streak_reminders',
               emoji: '⏳',
-              title: 'Streak saves',
-              subtitle: 'One evening reminder when a streak is about to end',
+              title: 'Logging and streak reminders',
+              subtitle: "If you haven't logged today, or your streak is about to end",
               value: prefs.streakReminders,
               onChanged: (v) => _set(prefs.copyWith(streakReminders: v), {'streak_reminders': v}),
             ),
