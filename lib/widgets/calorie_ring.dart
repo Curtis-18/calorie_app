@@ -15,7 +15,7 @@ class CalorieRing extends StatelessWidget {
     required this.target,
     this.size = 244,
     this.strokeWidth = 18,
-    this.showTicks = true,
+    this.showTicks = false,
   });
 
   final int consumed;
@@ -194,13 +194,13 @@ class _RingPainter extends CustomPainter {
       cap,
       strokeWidth * 0.5,
       Paint()
-        ..color = TrackerColors.onAccent
+        ..color = const Color(0xFFFFFFFF)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
     canvas.drawCircle(
       cap,
       strokeWidth * 0.26,
-      Paint()..color = TrackerColors.onAccent,
+      Paint()..color = const Color(0xFFFFFFFF),
     );
   }
 

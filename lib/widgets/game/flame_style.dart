@@ -48,34 +48,34 @@ class FlameStyle {
     }
     return switch (tier) {
       FlameTier.spark => const FlameStyle(
-        gradient: LinearGradient(colors: [Color(0xFFFFB86B), TrackerColors.accentEnd]),
+        gradient: LinearGradient(colors: [Color(0xFFFFB86B), TrackerColors.flameEnd]),
         color: Color(0xFFFFB86B),
         glow: 0.25,
       ),
       FlameTier.ember => const FlameStyle(
-        gradient: LinearGradient(colors: [TrackerColors.accentEnd, Color(0xFFFFB340)]),
-        color: TrackerColors.accentEnd,
+        gradient: LinearGradient(colors: [TrackerColors.flameEnd, Color(0xFFFFB340)]),
+        color: TrackerColors.flameEnd,
         glow: 0.45,
       ),
       FlameTier.flame => const FlameStyle(
-        gradient: TrackerColors.calorieGradient,
-        color: TrackerColors.accentStart,
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [TrackerColors.flameStart, TrackerColors.flameEnd]),
+        color: TrackerColors.flameStart,
         glow: 0.6,
       ),
       FlameTier.blaze => const FlameStyle(
         gradient: LinearGradient(
           begin: Alignment.bottomLeft,
           end: Alignment.topRight,
-          colors: [TrackerColors.accentStart, TrackerColors.accentEnd, Color(0xFFFFD60A)],
+          colors: [TrackerColors.flameStart, TrackerColors.flameEnd, Color(0xFFFFD60A)],
         ),
-        color: TrackerColors.accentStart,
+        color: TrackerColors.flameStart,
         glow: 0.8,
       ),
       FlameTier.inferno => const FlameStyle(
         gradient: LinearGradient(
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
-          colors: [_infernoRed, TrackerColors.accentStart, Color(0xFFFFD60A)],
+          colors: [_infernoRed, TrackerColors.flameStart, Color(0xFFFFD60A)],
         ),
         color: _infernoRed,
         glow: 1,

@@ -12,8 +12,8 @@ import '../app_button.dart';
 import '../glass.dart';
 
 const _emberColors = [
-  TrackerColors.accentStart,
-  TrackerColors.accentEnd,
+  TrackerColors.flameStart,
+  TrackerColors.flameEnd,
   Color(0xFFFFD60A),
   Color(0xFFFFB86B),
 ];

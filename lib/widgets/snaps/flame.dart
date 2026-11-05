@@ -17,7 +17,7 @@ class StreakBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = lit ? TrackerColors.accentStart : TrackerColors.textTertiary;
+    final color = lit ? TrackerColors.flameStart : TrackerColors.textTertiary;
     return Semantics(
       label: '$count day streak',
       child: Container(

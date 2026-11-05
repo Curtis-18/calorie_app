@@ -58,7 +58,7 @@ class AppDecor {
         color: color ?? (gradient == null ? TrackerColors.surface : null),
         gradient: gradient,
         borderRadius: borderRadius ?? AppRadii.containerAll,
-        border: border ?? Border.all(color: TrackerColors.border, width: 1),
+        border: border ?? (TrackerColors.isDark ? Border.all(color: TrackerColors.border, width: 1) : null),
         // Light mode lifts cards with a soft shadow (none in dark mode).
         boxShadow: shadow == null ? TrackerColors.cardShadow : [...TrackerColors.cardShadow, ...shadow],
       );

@@ -110,12 +110,12 @@ class TrackerPalette {
     textTertiary: Color(0xFF636366),
     accentStartText: TrackerColors.accentStart,
     accentEndText: TrackerColors.accentEnd,
-    accentGlow: Color(0x40FF5E3A),
-    accentGlowSoft: Color(0x1FFFA060),
+    accentGlow: Color(0x407CF542),
+    accentGlowSoft: Color(0x1F17D9C0),
     accentWash: Color(0x1AFFFFFF),
-    macroProtein: Color(0xFF30D158), // iOS Mint
+    macroProtein: Color(0xFF9B7BFF), // Electric Violet
     macroCarbs: Color(0xFFFFD60A), // Warm Gold
-    macroFat: Color(0xFFBF5AF2), // Soft Violet
+    macroFat: Color(0xFFFF5CAA), // Hot Pink
     success: Color(0xFF30D158),
     warning: Color(0xFFFFD60A),
     error: Color(0xFFFF453A),
@@ -136,24 +136,24 @@ class TrackerPalette {
   /// the surfaces it is used on (checked in `test/theme_mode_test.dart`).
   static const light = TrackerPalette(
     brightness: Brightness.light,
-    background: Color(0xFFF7F4F0),
+    background: Color(0xFFF4F7F5),
     surface: Color(0xFFFFFFFF),
-    surfaceElevated: Color(0xFFF2EEE8),
-    surfaceHigh: Color(0xFFE8E3DC),
-    border: Color(0x1A140F0A), // warm black at 10%
-    borderStrong: Color(0x29140F0A), // 16%
-    divider: Color(0x14140F0A), // 8%
-    textPrimary: Color(0xFF1A1714),
-    textSecondary: Color(0xFF5C554D),
-    textTertiary: Color(0xFF6B645B),
-    accentStartText: Color(0xFFC93216),
-    accentEndText: Color(0xFFA8480A),
-    accentGlow: Color(0x33FF5E3A),
-    accentGlowSoft: Color(0x1AFF8A50),
-    accentWash: Color(0x0F140F0A),
-    macroProtein: Color(0xFF126B31),
+    surfaceElevated: Color(0xFFEDF1EF),
+    surfaceHigh: Color(0xFFE0E7E4),
+    border: Color(0x1A1F2937), // charcoal at 10%
+    borderStrong: Color(0x291F2937), // 16%
+    divider: Color(0x141F2937), // 8%
+    textPrimary: Color(0xFF1F2937),
+    textSecondary: Color(0xFF4B5563),
+    textTertiary: Color(0xFF5B6675),
+    accentStartText: Color(0xFF2B7A0B),
+    accentEndText: Color(0xFF0A7468),
+    accentGlow: Color(0x337CF542),
+    accentGlowSoft: Color(0x1A17D9C0),
+    accentWash: Color(0x0F1F2937),
+    macroProtein: Color(0xFF6D3FE0),
     macroCarbs: Color(0xFF9A5F00),
-    macroFat: Color(0xFF8E3BC4),
+    macroFat: Color(0xFFB81C6B),
     success: Color(0xFF126B31),
     warning: Color(0xFF9A5F00),
     error: Color(0xFFC62419),
@@ -162,13 +162,13 @@ class TrackerPalette {
     glassFillStrong: Color(0xD9FFFFFF),
     glassTint: Color(0x0DFFFFFF),
     navFill: Color(0xEBFFFFFF), // rgba(255, 255, 255, 0.92)
-    sheetFill: Color(0xF7FBF9F6),
+    sheetFill: Color(0xF7F9FBFA),
     streakFill: Color(0x1FFF9500),
-    shimmerBase: Color(0xFFEDE8E1),
-    shimmerHighlight: Color(0xFFF8F5F0),
+    shimmerBase: Color(0xFFE9EEEC),
+    shimmerHighlight: Color(0xFFF6F9F8),
     cardShadow: [
-      BoxShadow(color: Color(0x0F2A1A0A), blurRadius: 2, offset: Offset(0, 1)),
-      BoxShadow(color: Color(0x142A1A0A), blurRadius: 24, offset: Offset(0, 8)),
+      BoxShadow(color: Color(0x0D1F2937), blurRadius: 2, offset: Offset(0, 1)),
+      BoxShadow(color: Color(0x141F2937), blurRadius: 20, spreadRadius: -2, offset: Offset(0, 4)),
     ],
   );
 }
@@ -206,14 +206,18 @@ class TrackerColors {
 
   /// Energizing Coral and Amber. Use these for fills, gradients and glows.
   /// For coloured *text or icons*, use [accentStartText] / [accentEndText].
-  static const Color accentStart = Color(0xFFFF5E3A);
-  static const Color accentEnd = Color(0xFFFF9500);
+  static const Color accentStart = Color(0xFF7CF542);
+  static const Color accentEnd = Color(0xFF17D9C0);
   static const Color primary = accentStart;
   static const Color secondary = accentEnd;
 
+  /// Fire stays warm whatever the brand colour is: streak flames and embers.
+  static const Color flameStart = Color(0xFFFF5E3A);
+  static const Color flameEnd = Color(0xFFFF9500);
+
   /// What sits on top of an accent fill or gradient. Always white, whatever
   /// the mode, because the gradient is always vivid.
-  static const Color onAccent = Color(0xFFFFFFFF);
+  static const Color onAccent = Color(0xFF062B1E);
 
   static const LinearGradient calorieGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -221,12 +225,11 @@ class TrackerColors {
     colors: [accentStart, accentEnd],
   );
 
+  /// Seamless: the colours wrap round, so there is no hard edge anywhere.
   static const SweepGradient calorieSweep = SweepGradient(
-    startAngle: -3 * 0.7853981634, // -135deg
-    endAngle: 3 * 0.7853981634, // +135deg
-    colors: [accentEnd, accentStart, accentStart, accentEnd],
-    stops: [0.0, 0.28, 0.72, 1.0],
-    tileMode: TileMode.clamp,
+    startAngle: 0,
+    endAngle: 2 * 3.1415926536,
+    colors: [accentStart, accentEnd, accentStart],
   );
 
   // --- Mode-dependent ------------------------------------------------------

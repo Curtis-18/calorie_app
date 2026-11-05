@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/friends_provider.dart';
 import '../providers/snaps_provider.dart';
 import '../theme/app_motion.dart';
-import '../theme/app_shapes.dart';
 import '../theme/tracker_colors.dart';
 import 'dashboard_screen.dart';
 import 'friends_screen.dart';
@@ -51,7 +50,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         items: [
           for (var i = 0; i < _tabs.length; i++)
             BottomNavigationBarItem(
-              icon: _TabIcon(
+              icon: TabIcon(
                 key: i == 1 ? MainShell.insightsTabKey : null,
                 icon: _tabs[i].icon,
                 active: i == _index,
@@ -66,9 +65,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 }
 
-/// Floating glass pill behind the active tab icon.
-class _TabIcon extends StatelessWidget {
-  const _TabIcon({
+/// Tab icon: the active one is tinted and a touch larger (no pill behind it).
+@visibleForTesting
+class TabIcon extends StatelessWidget {
+  const TabIcon({
     super.key,
     required this.icon,
     required this.active,
@@ -86,22 +86,11 @@ class _TabIcon extends StatelessWidget {
     return AnimatedContainer(
       duration: AppMotion.quick,
       curve: AppMotion.standard,
-      width: active ? 56 : 40,
+      width: 40,
       height: 32,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: active
-            ? TrackerColors.alpha(TrackerColors.accentStart, 0.16)
-            : const Color(0x00000000),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: active ? TrackerColors.alpha(TrackerColors.accentStart, 0.28) : const Color(0x00000000),
-          width: 1,
-        ),
-        boxShadow: active
-            ? AppDecor.glow(TrackerColors.accentStart, blur: 14, opacity: 0.3)
-            : null,
-      ),
+      transform: Matrix4.diagonal3Values(active ? 1.12 : 1.0, active ? 1.12 : 1.0, 1),
+      transformAlignment: Alignment.center,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
