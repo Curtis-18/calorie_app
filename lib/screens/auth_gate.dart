@@ -8,7 +8,7 @@ import '../widgets/waking_up_view.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'reset_password_screen.dart';
-import 'signup_screen.dart';
+import 'login_screen.dart';
 import 'username_screen.dart';
 
 /// Routes a signed-in user to the app or to onboarding, after making sure
@@ -89,7 +89,7 @@ class _AuthGateState extends State<AuthGate> {
           _retire(_handshake);
           _handshake = null;
           _userId = null;
-          return const SignUpScreen();
+          return const LoginScreen();
         }
 
         final handshake = _ensureHandshake(session);
