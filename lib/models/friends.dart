@@ -37,6 +37,49 @@ class Person {
       );
 }
 
+/// How someone found by search stands with you.
+enum Relation {
+  none,
+  friend,
+
+  /// You asked them; waiting for their answer.
+  requested,
+
+  /// They asked you; adding them accepts.
+  wantsYou;
+
+  static Relation fromApi(String? value) => switch (value) {
+        'friend' => Relation.friend,
+        'requested' => Relation.requested,
+        'wants_you' => Relation.wantsYou,
+        _ => Relation.none,
+      };
+}
+
+/// A suggestion shown while typing a username.
+class PersonFound {
+  const PersonFound({required this.userId, required this.username, this.avatarUrl, this.relation = Relation.none});
+
+  final String userId;
+  final String username;
+  final String? avatarUrl;
+  final Relation relation;
+
+  factory PersonFound.fromJson(Map<String, dynamic> json) => PersonFound(
+        userId: json['user_id'] as String,
+        username: json['username'] as String,
+        avatarUrl: json['avatar_url'] as String?,
+        relation: Relation.fromApi(json['relation'] as String?),
+      );
+}
+
+/// What to send to the people search for [typed], or null when it is too
+/// short or can't be part of a username (so no request is made).
+String? peopleSearchQuery(String typed) {
+  final text = typed.trim().replaceFirst(RegExp(r'^@'), '').toLowerCase();
+  return RegExp(r'^[a-z0-9_]{2,20}$').hasMatch(text) ? text : null;
+}
+
 /// The people you have the longest streaks with come first, always; equal
 /// streaks go by name. The server sends this order too; doing it here as well
 /// means every list in the app agrees whatever the server version.

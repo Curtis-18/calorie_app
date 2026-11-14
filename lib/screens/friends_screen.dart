@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,7 @@ import 'story_viewer_screen.dart';
 import '../widgets/snaps/story_tray.dart';
 import '../models/username_rules.dart';
 import '../providers/friends_provider.dart';
+import '../providers/shell_provider.dart';
 import '../services/friends_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
@@ -51,10 +54,77 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   bool _noticeIsError = false;
   int _embers = 0;
 
+  // Suggestions while typing a username.
+  List<PersonFound> _found = const [];
+  String? _foundFor; // the query the list on screen answers
+  Timer? _searchDebounce;
+  int _searchRun = 0;
+
+  // Keeping the page current without pulling down: requests and bites from
+  // other people arrive while this screen is open.
+  static const _refreshEvery = Duration(seconds: 45);
+  Timer? _refreshTimer;
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _refreshQuietly);
+    _refreshTimer = Timer.periodic(_refreshEvery, (_) => _refreshQuietly());
+  }
+
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _refreshTimer?.cancel();
+    _lifecycle.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Reload friends, requests and bites in the background, but only while
+  /// this tab is the one on screen.
+  void _refreshQuietly() {
+    if (!mounted || !TickerMode.valuesOf(context).enabled) return;
+    ref.read(friendsProvider.notifier).load();
+    ref.read(snapInboxProvider.notifier).load();
+  }
+
+  /// Search as you type: wait for a short pause, then ask for people whose
+  /// username starts with what is in the field.
+  void _onNameChanged(String text) {
+    if (_notice != null) setState(() => _notice = null);
+    _searchDebounce?.cancel();
+    final query = peopleSearchQuery(text);
+    if (query == null) {
+      _searchRun++; // drop any answer still on its way
+      if (_found.isNotEmpty || _foundFor != null) {
+        setState(() {
+          _found = const [];
+          _foundFor = null;
+        });
+      }
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () => _search(query));
+  }
+
+  Future<void> _search(String query) async {
+    final run = ++_searchRun;
+    final found = await ref.read(friendsProvider.notifier).service.search(query);
+    // A newer keystroke has taken over, or the field was cleared.
+    if (!mounted || run != _searchRun) return;
+    setState(() {
+      _found = found;
+      _foundFor = query;
+    });
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _searchRun++;
+    _found = const [];
+    _foundFor = null;
   }
 
   void _say(String text, {bool error = false}) => setState(() {
@@ -62,9 +132,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         _noticeIsError = error;
       });
 
-  Future<void> _add() async {
+  Future<void> _add([String? picked]) async {
     if (_sending) return;
-    final name = _controller.text.trim().replaceFirst(RegExp(r'^@'), '');
+    final name = picked ?? _controller.text.trim().replaceFirst(RegExp(r'^@'), '');
     if (name.isEmpty) return;
     final problem = validateUsername(name);
     if (problem != null) {
@@ -77,6 +147,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       _controller.clear();
+      _clearSearch();
       _say(switch (result.outcome) {
         RequestOutcome.sent => 'Request sent to @${result.username}.',
         RequestOutcome.accepted => 'You and @${result.username} are now friends!',
@@ -262,6 +333,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Coming back to this tab shows what arrived meanwhile.
+    ref.listen<ShellTab>(shellTabProvider, (previous, tab) {
+      if (tab == ShellTab.friends && previous != ShellTab.friends) {
+        ref.read(friendsProvider.notifier).load();
+        ref.read(snapInboxProvider.notifier).load();
+      }
+    });
     final friends = ref.watch(friendsProvider);
     final notifier = ref.read(friendsProvider.notifier);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -412,9 +490,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_@]')),
                         LengthLimitingTextInputFormatter(usernameMaxLength + 1),
                       ],
-                      onChanged: (_) {
-                        if (_notice != null) setState(() => _notice = null);
-                      },
+                      onChanged: _onNameChanged,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -423,6 +499,27 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                     child: AppButton(label: _sending ? '…' : 'Add', onPressed: _sending ? null : _add),
                   ),
                 ],
+              ),
+              AnimatedSize(
+                duration: AppMotion.quick,
+                alignment: Alignment.topCenter,
+                child: _found.isEmpty
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.sm),
+                        child: Column(
+                          key: const ValueKey('people_suggestions'),
+                          children: [
+                            for (final person in _found)
+                              _SuggestionRow(
+                                key: ValueKey('suggest_${person.username}'),
+                                person: person,
+                                busy: _sending,
+                                onAdd: () => _add(person.username),
+                              ),
+                          ],
+                        ),
+                      ),
               ),
               AnimatedSize(
                 duration: AppMotion.quick,
@@ -669,6 +766,54 @@ class _PersonRow extends StatelessWidget {
             for (final a in actions) ...[const SizedBox(width: 6), a],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// One person in the list that narrows as you type: tap Add to send the
+/// request without finishing the name.
+class _SuggestionRow extends StatelessWidget {
+  const _SuggestionRow({super.key, required this.person, required this.onAdd, this.busy = false});
+
+  final PersonFound person;
+  final VoidCallback onAdd;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = switch (person.relation) {
+      Relation.friend => 'Friends',
+      Relation.requested => 'Requested',
+      _ => null,
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          FriendAvatar(username: person.username, size: 36, imageUrl: person.avatarUrl),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              '@${person.username}',
+              style: AppType.body(size: 15),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (status != null)
+            Text(status, style: AppType.caption(color: TrackerColors.textTertiary, size: 12.5))
+          else
+            Opacity(
+              opacity: busy ? 0.5 : 1,
+              child: _Pill(
+                label: person.relation == Relation.wantsYou ? 'Accept' : 'Add',
+                icon: CupertinoIcons.person_add_solid,
+                primary: true,
+                onTap: busy ? () {} : onAdd,
+              ),
+            ),
+        ],
       ),
     );
   }

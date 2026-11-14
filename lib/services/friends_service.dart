@@ -75,6 +75,20 @@ class FriendsService {
     );
   }
 
+  /// People whose username starts with [query], for suggestions while
+  /// typing. Suggestions are a convenience: any failure (offline, an older
+  /// server without this route) is an empty list, and adding by exact name
+  /// still works.
+  Future<List<PersonFound>> search(String query) async {
+    try {
+      final r = await _send((c, h) => c.get(_uri('/friends/search').replace(queryParameters: {'q': query}), headers: h));
+      if (r.statusCode != 200) return const [];
+      return (jsonDecode(r.body) as List).map((e) => PersonFound.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<RequestResult> sendRequest(String username) async {
     final r = await _send((c, h) =>
         c.post(_uri('/friends/requests'), headers: h, body: jsonEncode({'username': username.trim()})));

@@ -31,6 +31,12 @@ class _Server {
   List<String> friends, incoming, outgoing;
   final String me = 'River_Song';
   final calls = <String>[];
+
+  /// Everyone the search can find, what was searched for, and an optional
+  /// delay per query (to make an old answer arrive after a newer one).
+  List<String> everyone = const [];
+  final searches = <String>[];
+  Duration Function(String q)? searchDelay;
   http.Response? Function(http.Request)? onRequest;
 
   MockClient get client => MockClient((r) async {
@@ -45,6 +51,29 @@ class _Server {
               'outgoing': outgoing.map(_person).toList(),
               'limit': 100,
             }),
+            200,
+          );
+        }
+        if (r.url.path == '/friends/search') {
+          final q = r.url.queryParameters['q']!.toLowerCase();
+          searches.add(q);
+          if (searchDelay != null) await Future<void>.delayed(searchDelay!(q));
+          return http.Response(
+            jsonEncode([
+              for (final name in everyone.where((n) => n.toLowerCase().startsWith(q)))
+                {
+                  'user_id': 'u-$name',
+                  'username': name,
+                  'avatar_url': null,
+                  'relation': friends.contains(name)
+                      ? 'friend'
+                      : outgoing.contains(name)
+                          ? 'requested'
+                          : incoming.contains(name)
+                              ? 'wants_you'
+                              : 'none',
+                },
+            ]),
             200,
           );
         }
@@ -93,6 +122,24 @@ void main() {
         () => _service(server).sendRequest('ghost'),
         throwsA(isA<FriendsException>().having((e) => e.message, 'message', "We couldn't find anyone with that username.")),
       );
+    });
+
+    test('search reads suggestions; any failure is just an empty list', () async {
+      final found = await _service(_Server(outgoing: ['Sammy'])..everyone = ['Sam', 'Sammy']).search('sa');
+      expect(found.map((p) => p.username), ['Sam', 'Sammy']);
+      expect(found.map((p) => p.relation), [Relation.none, Relation.requested]);
+
+      final old = _Server()..onRequest = (_) => http.Response('{"detail":"Not Found"}', 404);
+      expect(await _service(old).search('sa'), isEmpty);
+      final offline = MockClient((_) async => throw http.ClientException('x'));
+      expect(await FriendsService(client: offline, tokenProvider: () => 't').search('sa'), isEmpty);
+    });
+
+    test('what is typed becomes a search only when it could be a username', () {
+      expect(peopleSearchQuery(' @Sa '), 'sa');
+      expect(peopleSearchQuery('s'), isNull);
+      expect(peopleSearchQuery('sam!'), isNull);
+      expect(peopleSearchQuery(''), isNull);
     });
 
     test('accepting an already-gone request says so instead of a generic failure', () async {
@@ -237,6 +284,88 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       expect(find.textContaining('must start with a letter'), findsOneWidget);
       expect(server.calls.length, before);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    Future<void> type(WidgetTester tester, String text) async {
+      await tester.enterText(find.byType(CupertinoTextField), text);
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    testWidgets('suggestions appear as you type and narrow with each letter', (tester) async {
+      final server = await open(tester, _Server()..everyone = ['Sam', 'Sammy', 'Sara', 'Bea']);
+      await type(tester, 's');
+      expect(server.searches, isEmpty, reason: 'one letter is too little to search on');
+      expect(find.byKey(const ValueKey('people_suggestions')), findsNothing);
+
+      await type(tester, 'sa');
+      expect(find.text('@Sam'), findsOneWidget);
+      expect(find.text('@Sammy'), findsOneWidget);
+      expect(find.text('@Sara'), findsOneWidget);
+      expect(find.text('@Bea'), findsNothing);
+
+      await type(tester, 'sam');
+      expect(find.text('@Sara'), findsNothing);
+      expect(find.text('@Sammy'), findsOneWidget);
+
+      await type(tester, 'sammy');
+      expect(find.text('@Sam'), findsNothing);
+      expect(find.text('@Sammy'), findsOneWidget);
+
+      await type(tester, '');
+      expect(find.byKey(const ValueKey('people_suggestions')), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('tapping Add on a suggestion sends the request and the page refreshes by itself', (tester) async {
+      final server = await open(tester, _Server()..everyone = ['Sam', 'Sammy']);
+      await type(tester, 'sam');
+      await tester.tap(find.descendant(of: find.byKey(const ValueKey('suggest_Sammy')), matching: find.text('Add')));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(server.calls, contains('POST /friends/requests'));
+      expect(find.text('Request sent to @Sammy.'), findsOneWidget);
+      // No pull to refresh: they are already under "Waiting for a reply".
+      expect(find.text('request sent'), findsOneWidget);
+      expect(find.byKey(const ValueKey('people_suggestions')), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('people you already know are labelled instead of offered', (tester) async {
+      await open(tester, _Server(friends: ['Sam'], outgoing: ['Sammy'], incoming: ['Sara'])..everyone = ['Sam', 'Sammy', 'Sara']);
+      await type(tester, 'sa');
+      final list = find.byKey(const ValueKey('people_suggestions'));
+      expect(find.descendant(of: list, matching: find.text('Friends')), findsOneWidget);
+      expect(find.descendant(of: list, matching: find.text('Requested')), findsOneWidget);
+      expect(find.descendant(of: list, matching: find.text('Accept')), findsOneWidget);
+      expect(find.descendant(of: list, matching: find.text('Add')), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a slow answer for an earlier spelling never replaces a newer one', (tester) async {
+      final server = _Server()
+        ..everyone = ['Sam', 'Sara']
+        ..searchDelay = (q) => Duration(milliseconds: q == 'sa' ? 900 : 0);
+      await open(tester, server);
+      await tester.enterText(find.byType(CupertinoTextField), 'sa');
+      await tester.pump(const Duration(milliseconds: 350)); // "sa" is asked, answer is slow
+      await tester.enterText(find.byType(CupertinoTextField), 'sam');
+      for (var i = 0; i < 15; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(server.searches, ['sa', 'sam']);
+      expect(find.text('@Sam'), findsOneWidget);
+      expect(find.text('@Sara'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the page refreshes itself while open, so a new request shows up without pulling', (tester) async {
+      final server = await open(tester, _Server(friends: ['Sam']));
+      expect(find.text('wants to be your friend'), findsNothing);
+      server.incoming = ['Bea']; // someone asks while the screen is open
+      await tester.pump(const Duration(seconds: 46));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('wants to be your friend'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('an empty list invites the user to add someone', (tester) async {
