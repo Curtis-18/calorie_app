@@ -262,7 +262,8 @@ void main() {
               child: MealSection(
                 title: 'lunch',
                 entries: [_rice()],
-                onAdd: () {},
+                onPhoto: () {},
+                onSearch: () {},
                 onRemove: (_) {},
                 onEdit: editable ? (e) => tapped.add(e.id) : null,
               ),

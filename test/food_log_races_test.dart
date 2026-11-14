@@ -153,7 +153,7 @@ void main() {
   testWidgets('a past day is read-only: no add button and no swipe to delete', (tester) async {
     await tester.pumpWidget(CupertinoApp(
       home: CupertinoPageScaffold(
-        child: MealSection(title: 'lunch', entries: [_entry('a')], onAdd: null, onRemove: null),
+        child: MealSection(title: 'lunch', entries: [_entry('a')], onPhoto: null, onSearch: null, onRemove: null),
       ),
     ));
     expect(find.byIcon(CupertinoIcons.add), findsNothing);

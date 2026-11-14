@@ -6,13 +6,12 @@ import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import 'app_button.dart';
 import 'glass.dart';
 import 'pressable.dart';
 
 /// How the person wants to add food.
 enum LogMethod { photo, search }
-
-typedef LogFoodChoice = ({MealType meal, LogMethod method});
 
 /// The meal most people are eating at [hour] (0-23), preselected in the sheet.
 MealType mealForHour(int hour) {
@@ -31,19 +30,21 @@ IconData mealIcon(MealType meal) => switch (meal) {
 
 String _title(MealType meal) => '${meal.name[0].toUpperCase()}${meal.name.substring(1)}';
 
-/// One sheet for logging: pick the meal (already set from the time of day),
-/// then take a photo or search. Replaces two floating buttons that each
-/// opened a separate meal picker first.
-Future<LogFoodChoice?> showLogFoodSheet(BuildContext context, {MealType? initialMeal}) {
-  return showAppSheet<LogFoodChoice>(
+/// Which meal is this for? Shown before the camera opens (or the search),
+/// with the meal already set from the time of day, so it is usually one tap.
+Future<MealType?> showLogFoodSheet(BuildContext context, {required LogMethod method, MealType? initialMeal}) {
+  return showAppSheet<MealType>(
     context: context,
-    builder: (_) => AppSheet(child: _LogFoodSheet(initial: initialMeal ?? mealForHour(DateTime.now().hour))),
+    builder: (_) => AppSheet(
+      child: _LogFoodSheet(method: method, initial: initialMeal ?? mealForHour(DateTime.now().hour)),
+    ),
   );
 }
 
 class _LogFoodSheet extends StatefulWidget {
-  const _LogFoodSheet({required this.initial});
+  const _LogFoodSheet({required this.method, required this.initial});
 
+  final LogMethod method;
   final MealType initial;
 
   @override
@@ -53,20 +54,24 @@ class _LogFoodSheet extends StatefulWidget {
 class _LogFoodSheetState extends State<_LogFoodSheet> {
   late MealType _meal = widget.initial;
 
-  void _choose(LogMethod method) {
-    HapticFeedback.lightImpact();
-    Navigator.of(context).pop((meal: _meal, method: method));
-  }
-
   @override
   Widget build(BuildContext context) {
+    final photo = widget.method == LogMethod.photo;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Log food', style: AppType.title(), textAlign: TextAlign.center),
-        const SizedBox(height: AppSpacing.lg),
-        Text('MEAL', style: AppType.sectionLabel()),
+        Text(photo ? 'Snap your meal' : 'Search for a food', style: AppType.title(), textAlign: TextAlign.center),
+        const SizedBox(height: 4),
+        Text(
+          photo
+              ? "We'll spot the foods and estimate portions for you to check."
+              : 'Find a food by name and enter how much you had.',
+          style: AppType.callout(),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        Text('WHICH MEAL?', style: AppType.sectionLabel()),
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
@@ -87,22 +92,20 @@ class _LogFoodSheetState extends State<_LogFoodSheet> {
           ],
         ),
         const SizedBox(height: AppSpacing.xl),
-        _MethodTile(
-          key: const ValueKey('log_photo'),
-          icon: CupertinoIcons.camera_fill,
-          title: 'Take a photo',
-          subtitle: 'We spot the foods and estimate portions',
-          primary: true,
-          onTap: () => _choose(LogMethod.photo),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        _MethodTile(
-          key: const ValueKey('log_search'),
-          icon: CupertinoIcons.search,
-          title: 'Search by name',
-          subtitle: 'Find a food and enter how much you had',
-          onTap: () => _choose(LogMethod.search),
-        ),
+        if (photo)
+          AppButton(
+            key: const ValueKey('log_continue'),
+            label: 'Open camera',
+            icon: CupertinoIcons.camera_fill,
+            onPressed: () => Navigator.of(context).pop(_meal),
+          )
+        else
+          AppButton.glass(
+            key: const ValueKey('log_continue'),
+            label: 'Search',
+            icon: CupertinoIcons.search,
+            onPressed: () => Navigator.of(context).pop(_meal),
+          ),
       ],
     );
   }
@@ -156,76 +159,6 @@ class _MealChip extends StatelessWidget {
                   ).copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MethodTile extends StatelessWidget {
-  const _MethodTile({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.primary = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  /// The headline way to log: drawn on the brand gradient.
-  final bool primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final ink = primary ? TrackerColors.onAccent : TrackerColors.textPrimary;
-    final quiet = primary ? TrackerColors.alpha(TrackerColors.onAccent, 0.8) : TrackerColors.textSecondary;
-    return Semantics(
-      button: true,
-      child: Pressable(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: primary ? TrackerColors.calorieGradient : null,
-            color: primary ? null : TrackerColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(20),
-            border: primary ? null : Border.all(color: TrackerColors.border, width: 1),
-            boxShadow: primary ? AppDecor.glow(TrackerColors.accentStart, blur: 22, opacity: 0.3) : null,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: primary
-                      ? TrackerColors.alpha(TrackerColors.onAccent, 0.12)
-                      : TrackerColors.alpha(TrackerColors.textPrimary, 0.07),
-                  borderRadius: AppRadii.smallAll,
-                ),
-                child: Icon(icon, size: 21, color: ink),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppType.headline(color: ink)),
-                    const SizedBox(height: 2),
-                    Text(subtitle, style: AppType.caption(color: quiet, size: 12.5)),
-                  ],
-                ),
-              ),
-              Icon(CupertinoIcons.chevron_right, size: 15, color: quiet),
             ],
           ),
         ),

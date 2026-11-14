@@ -61,7 +61,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   // First-run tour targets.
   final _ringKey = GlobalKey(debugLabel: 'tourRing');
-  final _addButtonKey = GlobalKey(debugLabel: 'tourAddButton');
+  final _cameraButtonKey = GlobalKey(debugLabel: 'tourCamera');
+  final _searchButtonKey = GlobalKey(debugLabel: 'tourSearch');
   final _scroll = ScrollController();
   bool _tourScheduled = false;
 
@@ -172,7 +173,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// "Replay the tutorial" in Settings: show it again from the top, whether
   /// or not it was seen before.
   Future<void> _replayTour() async {
-    if (_pastDay != null) await _selectDay(DateTime.now()); // the + button only shows on today
+    if (_pastDay != null) await _selectDay(DateTime.now()); // the camera button only shows on today
     // Let Settings finish closing and the tab switch settle.
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
@@ -183,7 +184,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     await TourService.markSeen(TourService.dashboard);
   }
 
-  List<TourStep> _tourSteps() => dashboardTourSteps(ringKey: _ringKey, addButtonKey: _addButtonKey);
+  List<TourStep> _tourSteps() => dashboardTourSteps(
+        ringKey: _ringKey,
+        cameraButtonKey: _cameraButtonKey,
+        searchButtonKey: _searchButtonKey,
+      );
 
   Future<void> _refreshStreak() async {
     final streak = await LogCacheReader.currentStreak();
@@ -229,16 +234,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// on while a load was in flight.
   bool _isViewing(DateTime day) => _pastDay != null && LogCacheReader.isSameDay(_pastDay!, day);
 
-  /// The + button: one sheet to pick the meal and how to log it.
-  Future<void> _startAdd(BuildContext context) async {
-    final choice = await showLogFoodSheet(context);
-    if (choice == null || !context.mounted) return;
-    switch (choice.method) {
-      case LogMethod.photo:
-        await _captureAndAnalyze(context, choice.meal);
-      case LogMethod.search:
-        await _openFoodSearch(context, choice.meal);
-    }
+  /// The camera button: the main way to log. Confirm the meal (preset from
+  /// the time of day), then straight to the camera.
+  Future<void> _startScan(BuildContext context) async {
+    final meal = await showLogFoodSheet(context, method: LogMethod.photo);
+    if (meal == null || !context.mounted) return;
+    await _captureAndAnalyze(context, meal);
+  }
+
+  /// The smaller search button: log by name instead.
+  Future<void> _startManualAdd(BuildContext context) async {
+    final meal = await showLogFoodSheet(context, method: LogMethod.search);
+    if (meal == null || !context.mounted) return;
+    await _openFoodSearch(context, meal);
   }
 
   Future<void> _captureAndAnalyze(BuildContext context, MealType meal) async {
@@ -492,7 +500,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   title: meal.name,
                                   entries: entries.forMeal(meal),
                                   // Past days are read-only.
-                                  onAdd: _isToday ? () => _openFoodSearch(context, meal) : null,
+                                  onPhoto: _isToday ? () => _captureAndAnalyze(context, meal) : null,
+                                  onSearch: _isToday ? () => _openFoodSearch(context, meal) : null,
                                   onRemove: _isToday ? (id) => _removeEntry(context, id) : null,
                                   onEdit: _isToday ? (entry) => _editEntry(context, entry) : null,
                                 ),
@@ -537,20 +546,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Positioned(
               right: 24,
               bottom: bottomInset + 18,
-              child: Semantics(
-                button: true,
-                label: 'Log food',
-                child: KeyedSubtree(
-                  key: _addButtonKey,
-                  child: AppFab(
-                    key: const ValueKey('log_food'),
-                    icon: CupertinoIcons.add,
-                    size: 62,
-                    iconSize: 28,
-                    gradient: TrackerColors.calorieGradient,
-                    onPressed: () => _startAdd(context),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Secondary: search by name.
+                  Semantics(
+                    button: true,
+                    label: 'Search for a food',
+                    child: KeyedSubtree(
+                      key: _searchButtonKey,
+                      child: AppFab(
+                        key: const ValueKey('log_search'),
+                        icon: CupertinoIcons.search,
+                        size: 48,
+                        iconSize: 20,
+                        onPressed: () => _startManualAdd(context),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  // Primary: photograph the meal. This is what the app is for.
+                  Semantics(
+                    button: true,
+                    label: 'Take a photo of your meal',
+                    child: KeyedSubtree(
+                      key: _cameraButtonKey,
+                      child: AppFab(
+                        key: const ValueKey('log_photo'),
+                        icon: CupertinoIcons.camera_fill,
+                        size: 66,
+                        iconSize: 28,
+                        gradient: TrackerColors.calorieGradient,
+                        onPressed: () => _startScan(context),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -560,9 +591,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 }
 
 /// The first-run walk through the app, in the order the screen is laid out:
-/// the ring, the one button that logs food, then the tabs worth knowing.
+/// the ring, the camera (the main way to log), search, then the tabs.
 @visibleForTesting
-List<TourStep> dashboardTourSteps({required GlobalKey ringKey, required GlobalKey addButtonKey}) => [
+List<TourStep> dashboardTourSteps({
+  required GlobalKey ringKey,
+  required GlobalKey cameraButtonKey,
+  required GlobalKey searchButtonKey,
+}) =>
+    [
       TourStep(
         targetKey: ringKey,
         icon: CupertinoIcons.flame_fill,
@@ -573,13 +609,21 @@ List<TourStep> dashboardTourSteps({required GlobalKey ringKey, required GlobalKe
         padding: 6,
       ),
       TourStep(
-        targetKey: addButtonKey,
-        icon: CupertinoIcons.add,
-        title: 'Log a meal here',
-        body: "Tap + and take a photo of your plate: we'll spot the foods and estimate "
-            'portions for you to check. Or search for a food by name.',
+        targetKey: cameraButtonKey,
+        icon: CupertinoIcons.camera_fill,
+        title: 'Snap your meal',
+        body: "Take a picture of your plate. We'll spot the foods and estimate "
+            'portions for you to check before saving. Each meal has its own camera button too.',
         shape: TourShape.circle,
         padding: 6,
+      ),
+      TourStep(
+        targetKey: searchButtonKey,
+        icon: CupertinoIcons.search,
+        title: 'Or search by name',
+        body: 'No photo? Search for any food, then enter how much you had.',
+        shape: TourShape.circle,
+        padding: 5,
       ),
       TourStep(
         targetKey: MainShell.insightsTabKey,

@@ -13,6 +13,7 @@ import 'package:calorie_app/services/tour_service.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:calorie_app/widgets/dashboard_header.dart';
 import 'package:calorie_app/widgets/log_food_sheet.dart';
+import 'package:calorie_app/widgets/meal_section.dart';
 import 'package:calorie_app/widgets/page_header.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,11 +85,11 @@ void main() {
       expect(mealForHour(2), MealType.snack);
     });
 
-    Future<List<LogFoodChoice?>> open(WidgetTester tester) async {
+    Future<List<MealType?>> open(WidgetTester tester, LogMethod method) async {
       tester.view.physicalSize = const Size(750, 1334);
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
-      final results = <LogFoodChoice?>[];
+      final results = <MealType?>[];
       await tester.pumpWidget(CupertinoApp(
         theme: AppTheme.cupertino,
         home: Builder(
@@ -96,7 +97,8 @@ void main() {
             child: Center(
               child: CupertinoButton(
                 child: const Text('open'),
-                onPressed: () async => results.add(await showLogFoodSheet(context, initialMeal: MealType.lunch)),
+                onPressed: () async =>
+                    results.add(await showLogFoodSheet(context, method: method, initialMeal: MealType.lunch)),
               ),
             ),
           ),
@@ -107,22 +109,47 @@ void main() {
       return results;
     }
 
-    testWidgets('one sheet picks the meal and the way to log', (tester) async {
-      final results = await open(tester);
-      expect(find.text('Log food'), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('meal_dinner')));
+    testWidgets('the camera sheet keeps the preselected meal and opens the camera in one tap', (tester) async {
+      final results = await open(tester, LogMethod.photo);
+      expect(find.text('Snap your meal'), findsOneWidget);
+      await tester.tap(find.text('Open camera'));
       await settle(tester);
-      await tester.tap(find.byKey(const ValueKey('log_search')));
-      await settle(tester);
-      expect(results, [(meal: MealType.dinner, method: LogMethod.search)]);
+      expect(results, [MealType.lunch]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-    testWidgets('taking a photo keeps the preselected meal', (tester) async {
-      final results = await open(tester);
-      await tester.tap(find.byKey(const ValueKey('log_photo')));
+    testWidgets('the search sheet lets you pick another meal', (tester) async {
+      final results = await open(tester, LogMethod.search);
+      expect(find.text('Search for a food'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('meal_dinner')));
       await settle(tester);
-      expect(results, [(meal: MealType.lunch, method: LogMethod.photo)]);
+      await tester.tap(find.byKey(const ValueKey('log_continue')));
+      await settle(tester);
+      expect(results, [MealType.dinner]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  });
+
+  testWidgets('each meal has a camera button first and a quieter search button', (tester) async {
+    final taps = <String>[];
+    await tester.pumpWidget(CupertinoApp(
+      theme: AppTheme.cupertino,
+      home: CupertinoPageScaffold(
+        child: Center(
+          child: MealSection(
+            title: 'lunch',
+            entries: const [],
+            onPhoto: () => taps.add('photo'),
+            onSearch: () => taps.add('search'),
+            onRemove: (_) {},
+          ),
+        ),
+      ),
+    ));
+    expect(find.byIcon(CupertinoIcons.camera_fill), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.add), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('meal_photo_lunch')));
+    await tester.tap(find.byKey(const ValueKey('meal_search_lunch')));
+    await settle(tester);
+    expect(taps, ['photo', 'search']);
   });
 
   group('settings', () {
@@ -211,18 +238,20 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
-  test('the tutorial follows the layout: ring, the + button, then Insights, Friends and Profile', () {
+  test('the tutorial follows the layout: ring, camera, search, then Insights, Friends and Profile', () {
     final ring = GlobalKey();
-    final add = GlobalKey();
-    final steps = dashboardTourSteps(ringKey: ring, addButtonKey: add);
+    final camera = GlobalKey();
+    final search = GlobalKey();
+    final steps = dashboardTourSteps(ringKey: ring, cameraButtonKey: camera, searchButtonKey: search);
     expect(steps.map((s) => s.targetKey), [
       ring,
-      add,
+      camera,
+      search,
       MainShell.insightsTabKey,
       MainShell.friendsTabKey,
       MainShell.profileTabKey,
     ]);
-    expect(steps[1].body, contains('photo'));
+    expect(steps[1].icon, CupertinoIcons.camera_fill);
     expect(steps.last.body, contains('Settings'));
   });
 }

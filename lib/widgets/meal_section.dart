@@ -8,14 +8,15 @@ import '../theme/tracker_colors.dart';
 import 'app_card.dart';
 import 'pressable.dart';
 
-/// Meal card: title + kcal total + add button, then food rows with a
+/// Meal card: title + kcal total + camera and search buttons, then food rows with a
 /// right-aligned calorie pill. Tap a row to edit it, swipe it to delete.
 class MealSection extends StatelessWidget {
   const MealSection({
     super.key,
     required this.title,
     required this.entries,
-    required this.onAdd,
+    required this.onPhoto,
+    required this.onSearch,
     required this.onRemove,
     this.onEdit,
     this.accent = TrackerColors.accentStart,
@@ -23,9 +24,14 @@ class MealSection extends StatelessWidget {
 
   final String title;
   final List<FoodEntry> entries;
-  /// Null hides the add button and the swipe to delete (a past day, which is
-  /// read-only: both used to act on today's log while showing another day).
-  final VoidCallback? onAdd;
+  /// Photograph this meal: the app's main way to log, so it is the filled
+  /// button. Null hides both buttons and the swipe to delete (a past day,
+  /// which is read-only: they used to act on today's log while showing
+  /// another day).
+  final VoidCallback? onPhoto;
+
+  /// Search for a food by name: the quieter, secondary button.
+  final VoidCallback? onSearch;
   final void Function(String id)? onRemove;
 
   /// Tapping a row; null makes rows read-only (a past day).
@@ -74,25 +80,56 @@ class MealSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (onAdd != null) Pressable(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onAdd!();
-                  },
-                  haptics: true,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: TrackerColors.alpha(accent, 0.12),
+                if (onSearch != null)
+                  Semantics(
+                    button: true,
+                    label: 'Search for a food for $title',
+                    child: Pressable(
+                      key: ValueKey('meal_search_$title'),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onSearch!();
+                      },
                       borderRadius: BorderRadius.circular(AppRadii.pill),
-                      border: Border.all(color: TrackerColors.alpha(accent, 0.28), width: 1),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: TrackerColors.alpha(TrackerColors.textPrimary, 0.06),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: TrackerColors.border, width: 1),
+                        ),
+                        child: Icon(CupertinoIcons.search, size: 15, color: TrackerColors.textSecondary),
+                      ),
                     ),
-                    child: Icon(CupertinoIcons.add, size: 15, color: TrackerColors.ink(accent)),
                   ),
-                ),
+                if (onPhoto != null) ...[
+                  const SizedBox(width: 8),
+                  Semantics(
+                    button: true,
+                    label: 'Take a photo of your $title',
+                    child: Pressable(
+                      key: ValueKey('meal_photo_$title'),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onPhoto!();
+                      },
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: TrackerColors.calorieGradient,
+                          shape: BoxShape.circle,
+                          boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 12, opacity: 0.3),
+                        ),
+                        child: const Icon(CupertinoIcons.camera_fill, size: 18, color: TrackerColors.onAccent),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -101,7 +138,7 @@ class MealSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
               child: Text(
-                onAdd == null ? 'Nothing was logged for this meal.' : 'Tap + to search for something to eat.',
+                onPhoto == null ? 'Nothing was logged for this meal.' : 'Take a photo of your meal, or search by name.',
                 style: AppType.caption(color: TrackerColors.textTertiary, size: 12),
               ),
             )
