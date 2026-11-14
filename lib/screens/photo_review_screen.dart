@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../models/detected_food.dart';
 import '../models/food_entry.dart';
+import '../services/snaps_service.dart' show newSnapId;
 import '../models/food_item.dart';
 import '../models/portion.dart';
 import '../theme/app_motion.dart';
@@ -70,13 +71,12 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
     // Only foods with nutrition data. An unmatched food used to be saved as
     // 0 kcal, which undercounted the day (and the server rejected it, so the
     // whole scan showed an error).
-    final stamp = DateTime.now().microsecondsSinceEpoch;
-    var n = 0;
     final entries = _matched
         .map((item) => FoodEntry(
-              // Index included: on web, microseconds have millisecond
-              // resolution, so two same-name items could share an id.
-              id: '${stamp}_${n++}_${item.name}',
+              // A random id. It used to contain the food's name, and a name
+              // with "/", "?" or "#" in it made an entry that could not be
+              // edited or deleted (the id is part of the request path).
+              id: newSnapId(),
               name: item.name,
               calories: item.estimatedCalories,
               proteinG: item.estimatedProtein,

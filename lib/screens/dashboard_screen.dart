@@ -415,8 +415,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       CupertinoPageRoute(builder: (context) => FoodSearchScreen(mealType: meal)),
     );
     if (entry == null) return;
-    await ref.read(foodLogProvider.notifier).addEntry(entry);
-    _refreshStreak();
+    // A failed save used to be an unhandled error: the food just vanished
+    // from the list again with no explanation.
+    try {
+      await ref.read(foodLogProvider.notifier).addEntry(entry);
+      _refreshStreak();
+    } catch (_) {
+      if (!context.mounted) return;
+      await showAppDialog(
+        context: context,
+        title: "Couldn't save that food",
+        message: 'It was not added to your log. Check your connection and try again.',
+      );
+    }
+  }
+
+  Future<void> _removeEntry(BuildContext context, String id) async {
+    try {
+      await ref.read(foodLogProvider.notifier).removeEntry(id);
+    } catch (_) {
+      if (!context.mounted) return;
+      await showAppDialog(
+        context: context,
+        title: "Couldn't delete that food",
+        message: 'It is still in your log. Check your connection and try again.',
+      );
+    }
   }
 
   /// Correct an entry in today's log. The change shows at once; if the
@@ -437,7 +461,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _logout(BuildContext context) async {
-    await Supabase.instance.client.auth.signOut();
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } catch (_) {
+      // Offline, or the session is already gone on the server: the default
+      // sign-out throws and left the person signed in. Sign out on this
+      // device regardless.
+      try {
+        await Supabase.instance.client.auth.signOut(scope: SignOutScope.local);
+      } catch (_) {}
+    }
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       CupertinoPageRoute(builder: (_) => const AuthGate()),
@@ -575,9 +608,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 child: MealSection(
                                   title: meal.name,
                                   entries: entries.forMeal(meal),
-                                  onAdd: () => _openFoodSearch(context, meal),
-                                  onRemove: (id) =>
-                                      ref.read(foodLogProvider.notifier).removeEntry(id),
+                                  // Past days are read-only.
+                                  onAdd: _isToday ? () => _openFoodSearch(context, meal) : null,
+                                  onRemove: _isToday ? (id) => _removeEntry(context, id) : null,
                                   onEdit: _isToday ? (entry) => _editEntry(context, entry) : null,
                                 ),
                               ),

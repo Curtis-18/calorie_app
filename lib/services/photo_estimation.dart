@@ -129,6 +129,8 @@ class PhotoEstimationService {
       case 400:
       case 422:
         return unreadableMessage;
+      case 429:
+        return "You've scanned a lot of photos. Try again in a little while.";
       case 502:
       case 503:
       case 504:

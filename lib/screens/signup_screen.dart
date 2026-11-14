@@ -47,7 +47,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
       }
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = e.message);
+    } catch (_) {
+      // No connection, DNS failure, a timeout: these are not AuthExceptions,
+      // so the spinner used to stop with no message at all.
+      if (mounted) setState(() => _errorMessage = "Couldn't sign you up. Check your connection and try again.");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

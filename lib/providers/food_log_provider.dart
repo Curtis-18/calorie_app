@@ -62,6 +62,29 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
   /// those entries back on screen.
   int _generation = 0;
 
+  /// Changes still on their way to the server: entries being added or edited
+  /// (by id) and ids being deleted. A reload that lands meanwhile (the
+  /// session token refreshing is enough to trigger one) used to replace the
+  /// list with the server's older copy, so a food you had just added
+  /// vanished, or one you had just deleted came back, until the next reload.
+  final Map<String, FoodEntry> _pendingSaves = {};
+  final Set<String> _pendingDeletes = {};
+
+  List<FoodEntry> _withPending(List<FoodEntry> fromServer) {
+    if (_pendingSaves.isEmpty && _pendingDeletes.isEmpty) return fromServer;
+    final seen = <String>{};
+    final merged = <FoodEntry>[];
+    for (final e in fromServer) {
+      if (_pendingDeletes.contains(e.id)) continue;
+      seen.add(e.id);
+      merged.add(_pendingSaves[e.id] ?? e);
+    }
+    for (final e in _pendingSaves.values) {
+      if (!seen.contains(e.id)) merged.add(e);
+    }
+    return merged;
+  }
+
   /// The date the current entries belong to.
   DateTime get day => DateTime.parse(_day);
 
@@ -73,6 +96,8 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     if (today == _day) return false;
     _day = today;
     _generation++;
+    _pendingSaves.clear();
+    _pendingDeletes.clear();
     state = [];
     if (_userId != null) _loadToday();
     return true;
@@ -95,6 +120,8 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     if (userId != _userId) {
       _userId = userId;
       _generation++;
+      _pendingSaves.clear();
+      _pendingDeletes.clear();
       state = [];
     }
     // Same user again (sign-in event, token refresh): just resync.
@@ -133,7 +160,7 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       if (response.statusCode == 200) {
         if (!stillCurrent()) return;
         final data = jsonDecode(response.body) as List<dynamic>;
-        state = data.map((e) => FoodEntry.fromApiJson(e as Map<String, dynamic>)).toList();
+        state = _withPending(data.map((e) => FoodEntry.fromApiJson(e as Map<String, dynamic>)).toList());
         await _persistCache(userId);
         return;
       }
@@ -160,13 +187,23 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     }
 
     final userId = _userId;
+    final generation = _generation;
+    _pendingSaves[entry.id] = entry;
     try {
       await _postWithRetry(entry, logDate, userId);
+      _settle(generation, () => _pendingSaves.remove(entry.id));
       await _persistCache(userId);
     } catch (e) {
-      _rollback(previous, logDate);
+      _settle(generation, () => _pendingSaves.remove(entry.id));
+      _rollback(state.where((x) => x.id != entry.id).toList(), logDate);
       rethrow;
     }
+  }
+
+  /// Clear a pending marker, unless the day or user changed meanwhile (the
+  /// markers were reset then, and may already belong to a newer change).
+  void _settle(int generation, void Function() clear) {
+    if (generation == _generation) clear();
   }
 
   /// POST the entry, retrying timeouts, dropped connections and 5xx answers.
@@ -247,6 +284,9 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     state = [for (final e in previous) e.id == updated.id ? updated : e];
 
     final userId = _userId;
+    final generation = _generation;
+    final before = previous.firstWhere((e) => e.id == updated.id);
+    _pendingSaves[updated.id] = updated;
     final body = jsonEncode({
       'name': updated.name,
       'calories': updated.calories,
@@ -267,9 +307,12 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
         userId: userId,
         failure: 'Failed to update entry',
       );
+      _settle(generation, () => _pendingSaves.remove(updated.id));
       await _persistCache(userId);
     } catch (e) {
-      _rollback(previous, logDate);
+      _settle(generation, () => _pendingSaves.remove(updated.id));
+      // Put back only this entry, so other changes made meanwhile survive.
+      _rollback([for (final e in state) e.id == updated.id ? before : e], logDate);
       rethrow;
     }
   }
@@ -286,25 +329,37 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       throw Exception('Not logged in');
     }
 
+    final generation = _generation;
+    _pendingDeletes.add(id);
     try {
       final response = await _http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/logs/$id'),
+        // Encoded: older entries have the food's name in their id, and a
+        // "/", "?" or "#" there sent the request to the wrong address.
+        Uri.parse('${ApiConfig.baseUrl}/logs/${Uri.encodeComponent(id)}'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 15));
 
-      if (response.statusCode != 204) {
-        _rollback(previous, logDate);
+      // 404: it is already gone on the server (an earlier attempt got through
+      // but its answer was lost), which is what was asked for.
+      if (response.statusCode != 204 && response.statusCode != 404) {
         throw Exception('Failed to remove entry: ${response.body}');
       }
+      _settle(generation, () => _pendingDeletes.remove(id));
       await _persistCache(_userId);
     } catch (e) {
-      _rollback(previous, logDate);
+      _settle(generation, () => _pendingDeletes.remove(id));
+      // Put back only this entry, where it was, so other changes made
+      // meanwhile survive.
+      final index = previous.indexWhere((e) => e.id == id);
+      if (index >= 0 && generation == _generation && !state.any((e) => e.id == id)) {
+        final restored = [...state];
+        restored.insert(index.clamp(0, restored.length), previous[index]);
+        _rollback(restored, logDate);
+      }
       rethrow;
     }
   }
 
-  /// Undo an optimistic change, unless the day rolled over meanwhile: then
-  /// [previous] is yesterday's list and must not come back.
   void _rollback(List<FoodEntry> previous, String logDate) {
     if (mounted && _day == logDate) state = previous;
   }

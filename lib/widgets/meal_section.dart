@@ -23,8 +23,10 @@ class MealSection extends StatelessWidget {
 
   final String title;
   final List<FoodEntry> entries;
-  final VoidCallback onAdd;
-  final void Function(String id) onRemove;
+  /// Null hides the add button and the swipe to delete (a past day, which is
+  /// read-only: both used to act on today's log while showing another day).
+  final VoidCallback? onAdd;
+  final void Function(String id)? onRemove;
 
   /// Tapping a row; null makes rows read-only (a past day).
   final void Function(FoodEntry entry)? onEdit;
@@ -72,10 +74,10 @@ class MealSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                Pressable(
+                if (onAdd != null) Pressable(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    onAdd();
+                    onAdd!();
                   },
                   haptics: true,
                   borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -99,7 +101,7 @@ class MealSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
               child: Text(
-                'Tap + to search for something to eat.',
+                onAdd == null ? 'Nothing was logged for this meal.' : 'Tap + to search for something to eat.',
                 style: AppType.caption(color: TrackerColors.textTertiary, size: 12),
               ),
             )
@@ -112,7 +114,9 @@ class MealSection extends StatelessWidget {
                 key: ValueKey(entries.map((entry) => entry.id).join('|')),
                 children: entries
                     .map(
-                      (entry) => Dismissible(
+                      (entry) => onRemove == null
+                          ? _FoodRow(key: ValueKey(entry.id), entry: entry)
+                          : Dismissible(
                         key: ValueKey(entry.id),
                         direction: DismissDirection.endToStart,
                         background: Container(
@@ -144,7 +148,7 @@ class MealSection extends StatelessWidget {
                         ),
                         onDismissed: (_) {
                           HapticFeedback.lightImpact();
-                          onRemove(entry.id);
+                          onRemove!(entry.id);
                         },
                         child: onEdit == null
                             ? _FoodRow(entry: entry)
@@ -166,7 +170,7 @@ class MealSection extends StatelessWidget {
 }
 
 class _FoodRow extends StatelessWidget {
-  const _FoodRow({required this.entry});
+  const _FoodRow({super.key, required this.entry});
 
   final FoodEntry entry;
 
