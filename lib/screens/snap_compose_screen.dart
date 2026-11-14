@@ -16,10 +16,31 @@ import '../widgets/pressable.dart';
 import '../widgets/snaps/flame.dart';
 import 'friends_screen.dart' show FriendAvatar;
 
-/// The photo you just took, a caption, and who gets it. Pops with the
-/// per-friend streak results once sent.
+/// What a share did: the per-friend streak results of a bite, and whether the
+/// photo also went on the person's story.
+class ComposeResult {
+  const ComposeResult({this.outcomes = const [], this.addedToStory = false});
+
+  final List<SendOutcome> outcomes;
+  final bool addedToStory;
+}
+
+/// One line saying where the photo went.
+String shareSummary(ComposeResult r) {
+  final n = r.outcomes.length;
+  if (n == 0) return 'Added to your story.';
+  final who = n == 1 ? '@${r.outcomes.first.username}' : '$n friends';
+  return r.addedToStory ? 'Sent to $who and added to your story.' : 'Sent to $who.';
+}
+
+/// The photo you just took, a caption, and who gets it: your story (every
+/// friend, for 24 hours), chosen friends, or both. Pops with a
+/// [ComposeResult] once shared.
 class SnapComposeScreen extends ConsumerStatefulWidget {
-  const SnapComposeScreen({super.key, required this.image, this.service, this.preselect});
+  const SnapComposeScreen({super.key, required this.image, this.service, this.preselect, this.toStory = false});
+
+  /// Start with "Your story" ticked.
+  final bool toStory;
 
   final Uint8List image;
   final SnapsService? service;
@@ -39,6 +60,10 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
   // One id per compose session: tapping Send again after a flaky network
   // can't deliver the same snap twice.
   final String _snapId = newSnapId();
+  final String _storyId = newSnapId();
+  late bool _story = widget.toStory;
+  // If the story went up but the bite then failed, Send again only repeats the bite.
+  bool _storyPosted = false;
   late final Set<String> _selected = {if (widget.preselect != null) widget.preselect!};
   bool _sending = false;
   String? _error;
@@ -64,29 +89,44 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
   }
 
   Future<void> _send() async {
-    if (_sending || _selected.isEmpty) return;
+    if (_sending || (_selected.isEmpty && !_story)) return;
     setState(() {
       _sending = true;
       _error = null;
     });
     try {
-      final results = await _service.send(
-        id: _snapId,
-        image: widget.image,
-        recipientIds: _selected.toList(),
-        caption: _caption.text,
-      );
+      if (_story && !_storyPosted) {
+        await _service.postStory(id: _storyId, image: widget.image, caption: _caption.text);
+        _storyPosted = true;
+      }
+      final results = _selected.isEmpty
+          ? const <SendOutcome>[]
+          : await _service.send(
+              id: _snapId,
+              image: widget.image,
+              recipientIds: _selected.toList(),
+              caption: _caption.text,
+            );
       if (!mounted) return;
       HapticFeedback.mediumImpact();
-      Navigator.of(context).pop<List<SendOutcome>>(results);
+      Navigator.of(context).pop(ComposeResult(outcomes: results, addedToStory: _story));
     } on SnapsException catch (e) {
       if (mounted) {
         setState(() {
           _sending = false;
-          _error = e.message;
+          _error = _storyPosted && _selected.isNotEmpty
+              ? "It's on your story, but the bite didn't send. ${e.message}"
+              : e.message;
         });
       }
     }
+  }
+
+  String get _label {
+    final n = _selected.length;
+    final friends = '$n ${n == 1 ? 'friend' : 'friends'}';
+    if (_story) return n == 0 ? 'Add to your story' : 'Share to story and $friends';
+    return n == 0 ? 'Pick who gets it' : 'Send to $friends';
   }
 
   @override
@@ -135,8 +175,23 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  Text('Send to', style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
+                  Text('Share to', style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
                   const SizedBox(height: AppSpacing.sm),
+                  _StoryChoice(
+                    selected: _story,
+                    // Once it is up, unticking it wouldn't take it down.
+                    onTap: _storyPosted
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _story = !_story);
+                          },
+                  ),
+                  if (friends.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text('Send as a bite', style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   if (friends.isEmpty)
                     Text(
                       'Add a friend first, then you can send them bites.',
@@ -162,17 +217,75 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                           ),
                   ),
                   AppButton(
-                    label: _selected.isEmpty
-                        ? 'Pick who gets it'
-                        : 'Send to ${_selected.length} ${_selected.length == 1 ? 'friend' : 'friends'}',
+                    label: _label,
                     icon: CupertinoIcons.paperplane_fill,
                     loading: _sending,
-                    onPressed: _selected.isEmpty ? null : _send,
+                    onPressed: _selected.isEmpty && !_story ? null : _send,
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Your story": every friend can see it for 24 hours.
+class _StoryChoice extends StatelessWidget {
+  const _StoryChoice({required this.selected, required this.onTap});
+
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Pressable(
+        key: const ValueKey('story_choice'),
+        onTap: onTap,
+        borderRadius: AppRadii.buttonAll,
+        child: AnimatedContainer(
+          duration: AppMotion.quick,
+          padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+          decoration: BoxDecoration(
+            color: selected ? TrackerColors.alpha(TrackerColors.accentStart, 0.12) : TrackerColors.surfaceElevated,
+            borderRadius: AppRadii.buttonAll,
+            border: Border.all(
+              color: selected ? TrackerColors.alpha(TrackerColors.accentStart, 0.5) : TrackerColors.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(shape: BoxShape.circle, gradient: TrackerColors.calorieGradient),
+                child: Icon(CupertinoIcons.person_2_fill, size: 16, color: TrackerColors.onAccent),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Your story', style: AppType.body(size: 15)),
+                    Text(
+                      'All your friends can see it for 24 hours',
+                      style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                selected ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
+                size: 22,
+                color: selected ? TrackerColors.accentStart : TrackerColors.textTertiary,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -205,7 +318,7 @@ class _Choice extends StatelessWidget {
           ),
           child: Row(
             children: [
-              FriendAvatar(username: person.username, size: 36),
+              FriendAvatar(username: person.username, size: 36, imageUrl: person.avatarUrl),
               const SizedBox(width: AppSpacing.md),
               Expanded(child: Text('@${person.username}', style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis)),
               if (person.streak > 0) ...[

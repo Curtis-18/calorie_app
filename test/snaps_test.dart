@@ -266,6 +266,8 @@ void main() {
       expect(find.text('Send a bite'), findsOneWidget);
       expect(find.text('Send to 1 friend'), findsOneWidget);
 
+      // The story row sits above the friends, so the second one is a scroll away.
+      await tester.scrollUntilVisible(find.text('@bea'), 120, scrollable: find.byType(Scrollable).first);
       await tester.tap(find.text('@bea'));
       await settle(tester);
       expect(find.text('Send to 2 friends'), findsOneWidget);

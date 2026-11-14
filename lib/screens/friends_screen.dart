@@ -5,12 +5,15 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/friends.dart';
 import '../models/snaps.dart';
+import '../models/stories.dart';
 import 'bite_camera_screen.dart';
 import '../providers/snaps_provider.dart';
 import '../widgets/snaps/flame.dart';
 import '../widgets/snaps/sent_bites_sheet.dart';
 import 'snap_compose_screen.dart';
 import 'snap_viewer_screen.dart';
+import 'story_viewer_screen.dart';
+import '../widgets/snaps/story_tray.dart';
 import '../models/username_rules.dart';
 import '../providers/friends_provider.dart';
 import '../services/friends_service.dart';
@@ -87,8 +90,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   }
 
   /// Open the camera (no gallery: bites are food you're eating right now),
-  /// then compose. [to] pre-selects a friend.
-  Future<void> _snap({String? to}) async {
+  /// then compose. [to] pre-selects a friend; [story] pre-selects your story.
+  Future<void> _snap({String? to, bool story = false}) async {
     final XFile? photo;
     try {
       photo = await (widget.pickPhoto ?? _takePhoto)();
@@ -104,19 +107,41 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     if (photo == null || !mounted) return;
     final bytes = await photo.readAsBytes();
     if (!mounted) return;
-    final results = await Navigator.of(context).push<List<SendOutcome>>(
-      CupertinoPageRoute(builder: (_) => SnapComposeScreen(image: bytes, preselect: to)),
+    final shared = await Navigator.of(context).push<ComposeResult>(
+      CupertinoPageRoute(builder: (_) => SnapComposeScreen(image: bytes, preselect: to, toStory: story)),
     );
-    if (results == null || !mounted) return;
-    ref.read(friendsProvider.notifier).load();
+    if (shared == null || !mounted) return;
+    final results = shared.outcomes;
+    if (results.isNotEmpty) ref.read(friendsProvider.notifier).load();
+    if (shared.addedToStory) ref.read(storiesProvider.notifier).load();
     final lit = results.where((r) => r.completedToday).toList();
     setState(() => _embers++);
     if (lit.isNotEmpty) {
       final best = lit.reduce((a, b) => a.streak >= b.streak ? a : b);
       await showStreakCelebration(context, username: best.username, streak: best.streak);
     } else {
-      _say(results.length == 1 ? 'Sent to @${results.first.username}.' : 'Sent to ${results.length} friends.');
+      _say(shareSummary(shared));
     }
+  }
+
+  /// Play stories full screen. [mine] opens your own; otherwise the tray's
+  /// friends from [index] onwards, one after another.
+  Future<void> _openStories(StoryFeed feed, {required String myUsername, String? myAvatarUrl, int? index}) async {
+    final reels = index == null
+        ? [StoryReel.mine(feed.mine, username: myUsername, avatarUrl: myAvatarUrl)]
+        : [for (final g in feed.friends) StoryReel.friend(g)];
+    final result = await Navigator.of(context, rootNavigator: true).push<String>(
+      PageRouteBuilder<String>(
+        opaque: true,
+        transitionDuration: AppMotion.medium,
+        pageBuilder: (_, _, _) => StoryViewerScreen(reels: reels, startReel: index ?? 0),
+        transitionsBuilder: (_, animation, _, child) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(scale: Tween(begin: 0.94, end: 1.0).animate(animation), child: child),
+        ),
+      ),
+    );
+    if (result == storyViewerAdd && mounted) await _snap(story: true);
   }
 
   /// The food camera (plate guide + meal stamp). If the live camera can't
@@ -169,6 +194,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             onPressed: () => Navigator.pop(context, 'remove'),
             child: Text(isFriend ? 'Remove friend' : 'Decline request'),
           ),
+          if (person.avatarUrl != null)
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context, 'report_photo'),
+              child: const Text('Report profile photo'),
+            ),
           CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, 'block'),
@@ -183,7 +213,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     );
     if (!mounted || choice == null) return;
 
-    if (choice == 'remove') {
+    if (choice == 'report_photo') {
+      await _run(() async {
+        await notifier.service.reportPhoto(person.friendshipId!);
+        if (!mounted) return;
+        await showAppDialog(
+          context: context,
+          title: 'Thanks for telling us',
+          message: "We'll take a look. You can also block @${person.username} from the same menu.",
+        );
+      });
+    } else if (choice == 'remove') {
       final sure = isFriend
           ? await showAppDialog(
               context: context,
@@ -270,7 +310,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 slivers: [
                   CupertinoSliverRefreshControl(
-                    onRefresh: () => Future.wait([notifier.load(), ref.read(snapInboxProvider.notifier).load()]),
+                    onRefresh: () => Future.wait([
+                      notifier.load(),
+                      ref.read(snapInboxProvider.notifier).load(),
+                      ref.read(storiesProvider.notifier).load(),
+                    ]),
                   ),
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(24, 18, 24, AppSpacing.tabBarClearance + bottomInset),
@@ -294,7 +338,23 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final notifier = ref.read(friendsProvider.notifier);
 
     final inbox = ref.watch(snapInboxProvider).valueOrNull ?? const <InboxSnap>[];
+    // No tray until stories have loaded: an older server, or one where they
+    // aren't set up yet, simply shows the page as it was.
+    final feed = ref.watch(storiesProvider).valueOrNull;
+    final me = data?.myUsername;
     return [
+      if (feed != null && me != null && (data!.friends.isNotEmpty || feed.mine.isNotEmpty)) ...[
+        StoryTray(
+          feed: feed,
+          myUsername: me,
+          myAvatarUrl: data.myAvatarUrl,
+          onMine: () => feed.mine.isEmpty
+              ? _snap(story: true)
+              : _openStories(feed, myUsername: me, myAvatarUrl: data.myAvatarUrl),
+          onFriend: (i) => _openStories(feed, myUsername: me, index: i),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
       if (data != null && data.friends.isNotEmpty) ...[
         _SnapHero(onTap: () => _snap()),
         Align(
@@ -335,7 +395,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           glow: TrackerColors.accentStart,
           child: Row(
             children: [
-              FriendAvatar(username: data!.myUsername!, size: 46),
+              FriendAvatar(username: data!.myUsername!, size: 46, imageUrl: data.myAvatarUrl),
               const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
@@ -520,18 +580,20 @@ const _avatarGradients = <List<Color>>[
   [Color(0xFF8E24AA), Color(0xFFEC407A)], // purple to rose
 ];
 
-/// A round initial on a colour chosen from the name, so a person always looks the same.
+/// A person's picture, or (until they set one, or if it can't load) a round
+/// initial on a colour chosen from the name, so they always look the same.
 class FriendAvatar extends StatelessWidget {
-  const FriendAvatar({super.key, required this.username, this.size = 42});
+  const FriendAvatar({super.key, required this.username, this.size = 42, this.imageUrl});
 
   final String username;
   final double size;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
     final pair = _avatarGradients[
         username.toLowerCase().codeUnits.fold<int>(7, (h, c) => (h * 31 + c) & 0xFFFF) % _avatarGradients.length];
-    return Container(
+    final initial = Container(
       width: size,
       height: size,
       alignment: Alignment.center,
@@ -542,6 +604,28 @@ class FriendAvatar extends StatelessWidget {
       child: Text(
         username.isEmpty ? '?' : username[0].toUpperCase(),
         style: AppType.headline(color: const Color(0xFFFFFFFF)).copyWith(fontSize: size * 0.42),
+      ),
+    );
+    final url = imageUrl;
+    if (url == null) return initial;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipOval(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            initial, // shows while the picture loads, and stays if it fails
+            Image.network(
+              url,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              // Decoded near the size it is drawn at, not at full resolution.
+              cacheWidth: (size * 3).round(),
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -563,7 +647,7 @@ class _PersonRow extends StatelessWidget {
         decoration: AppDecor.card(borderRadius: AppRadii.buttonAll),
         child: Row(
           children: [
-            FriendAvatar(username: person.username),
+            FriendAvatar(username: person.username, imageUrl: person.avatarUrl),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -743,7 +827,7 @@ class _SnapHero extends StatelessWidget {
                   Text('Share your meal', style: AppType.headline(color: TrackerColors.onAccent)),
                   const SizedBox(height: 2),
                   Text(
-                    'Send a meal to friends and keep your streaks lit.',
+                    'Send it to friends or add it to your story.',
                     style: AppType.caption(color: TrackerColors.alpha(TrackerColors.onAccent, 0.85), size: 12.5),
                   ),
                 ],

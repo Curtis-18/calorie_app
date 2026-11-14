@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../models/snaps.dart';
+import '../models/stories.dart';
 
 class SnapsException implements Exception {
   const SnapsException(this.message);
@@ -127,4 +128,47 @@ class SnapsService {
 
   Future<void> delete(String snapId) =>
       _action((c, h) => c.delete(_uri('/snaps/$snapId'), headers: h), "Couldn't delete that bite.");
+
+  // --- Stories: a photo every friend can see for 24 hours -----------------
+
+  /// Add [image] to your story. Safe to repeat with the same [id].
+  Future<void> postStory({required String id, required Uint8List image, String? caption}) async {
+    final trimmed = caption?.trim();
+    final r = await _send(
+      (c, h) => c.post(
+        _uri('/stories'),
+        headers: h,
+        body: jsonEncode({
+          'id': id,
+          'image': base64Encode(image),
+          if (trimmed != null && trimmed.isNotEmpty) 'caption': trimmed,
+        }),
+      ),
+      timeout: const Duration(seconds: 90),
+    );
+    if (r.statusCode == 200) return;
+    throw SnapsException(_detail(r, "Couldn't add that to your story. Please try again."));
+  }
+
+  Future<StoryFeed> stories() async {
+    final r = await _send((c, h) => c.get(
+        _uri('/stories').replace(queryParameters: {'date': DateTime.now().toIso8601String().substring(0, 10)}),
+        headers: h));
+    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load stories."));
+    return StoryFeed.fromJson(jsonDecode(utf8.decode(r.bodyBytes)) as Map<String, dynamic>);
+  }
+
+  Future<void> markStoryViewed(String storyId) =>
+      _action((c, h) => c.post(_uri('/stories/$storyId/view'), headers: h), "Couldn't mark that story as seen.");
+
+  Future<void> reactToStory(String storyId, String emoji) => _action(
+      (c, h) => c.post(_uri('/stories/$storyId/react'), headers: h, body: jsonEncode({'emoji': emoji})),
+      "Couldn't send that reaction.");
+
+  Future<void> reportStory(String storyId, {String? reason}) => _action(
+      (c, h) => c.post(_uri('/stories/$storyId/report'), headers: h, body: jsonEncode({'reason': reason})),
+      "Couldn't send your report.");
+
+  Future<void> deleteStory(String storyId) =>
+      _action((c, h) => c.delete(_uri('/stories/$storyId'), headers: h), "Couldn't delete that story.");
 }

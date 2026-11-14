@@ -62,11 +62,17 @@ class FriendsService {
     ]);
     final friends = results[0];
     if (friends.statusCode != 200) throw const FriendsException("Couldn't load your friends. Please try again.");
-    String? mine;
+    String? mine, myPhoto;
     if (results[1].statusCode == 200) {
-      mine = (jsonDecode(results[1].body) as Map<String, dynamic>)['username'] as String?;
+      final me = jsonDecode(results[1].body) as Map<String, dynamic>;
+      mine = me['username'] as String?;
+      myPhoto = me['avatar_url'] as String?;
     }
-    return FriendsData.fromJson(jsonDecode(friends.body) as Map<String, dynamic>, myUsername: mine);
+    return FriendsData.fromJson(
+      jsonDecode(friends.body) as Map<String, dynamic>,
+      myUsername: mine,
+      myAvatarUrl: myPhoto,
+    );
   }
 
   Future<RequestResult> sendRequest(String username) async {
@@ -97,6 +103,11 @@ class FriendsService {
 
   Future<void> block(String friendshipId) => _action(
       (c, h) => c.post(_uri('/friends/$friendshipId/block'), headers: h), "Couldn't block them. Please try again.");
+
+  /// Report the profile picture of a friend or of someone in a request.
+  Future<void> reportPhoto(String friendshipId) => _action(
+      (c, h) => c.post(_uri('/friends/$friendshipId/report-photo'), headers: h, body: jsonEncode({})),
+      "Couldn't send your report.");
 
   Future<List<Person>> blocks() async {
     final r = await _send((c, h) => c.get(_uri('/blocks'), headers: h));

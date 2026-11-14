@@ -66,6 +66,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo from your library to use as your profile picture.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>NuStreak uses the camera to photograph your meals so you can log them and share them with friends.</string>
 </dict>

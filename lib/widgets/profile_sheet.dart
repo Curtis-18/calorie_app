@@ -14,6 +14,7 @@ import 'app_button.dart';
 import 'appearance_picker.dart';
 import 'delete_account.dart';
 import 'glass.dart';
+import 'profile_photo.dart';
 
 /// The profile surface: targets from [userProfileProvider], appearance,
 /// notifications, and the account actions (username, delete account).
@@ -27,7 +28,9 @@ Future<void> showProfileSheet(BuildContext context) {
         builder: (context, ref, _) => ProfileContent(
           profile: ref.watch(userProfileProvider),
           username: ref.watch(friendsProvider).valueOrNull?.myUsername,
+          avatarUrl: ref.watch(friendsProvider).valueOrNull?.myAvatarUrl,
           onUsernameChanged: () => ref.read(friendsProvider.notifier).load(),
+          onPhotoChanged: () => ref.read(friendsProvider.notifier).load(),
         ),
       ),
     ),
@@ -39,9 +42,19 @@ class ProfileContent extends StatelessWidget {
     super.key,
     required this.profile,
     this.username,
+    this.avatarUrl,
     this.onUsernameChanged,
+    this.onPhotoChanged,
     this.onDeleteAccount,
+    this.photoButton,
   });
+
+  /// The person's profile picture, if they set one.
+  final String? avatarUrl;
+  final VoidCallback? onPhotoChanged;
+
+  /// Replaces the photo button; for tests.
+  final Widget? photoButton;
 
   final UserProfile? profile;
 
@@ -128,29 +141,43 @@ class ProfileContent extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                gradient: TrackerColors.calorieGradient,
-                borderRadius: AppRadii.buttonAll,
-                boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 18, opacity: 0.3),
+            // Their picture once they have a username (it is shown to friends
+            // next to it); before that, the old initial.
+            if (username != null)
+              photoButton ??
+                  ProfilePhotoButton(
+                    key: const ValueKey('profile_photo'),
+                    username: username!,
+                    imageUrl: avatarUrl,
+                    onChanged: onPhotoChanged,
+                  )
+            else
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: TrackerColors.calorieGradient,
+                  borderRadius: AppRadii.buttonAll,
+                  boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 18, opacity: 0.3),
+                ),
+                child: Text(
+                  p.gender == Gender.female ? 'F' : 'M',
+                  style: AppType.button(color: TrackerColors.onAccent, size: 22).copyWith(fontWeight: FontWeight.w800),
+                ),
               ),
-              child: Text(
-                p.gender == Gender.female ? 'F' : 'M',
-                style: AppType.button(color: TrackerColors.onAccent, size: 22).copyWith(fontWeight: FontWeight.w800),
-              ),
-            ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${p.age} years old', style: AppType.headline()),
+                  Text(username != null ? '@$username' : '${p.age} years old',
+                      style: AppType.headline(), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
                   Text(
-                    '${p.goal.title} · ${p.activityLevel.title}',
+                    username != null
+                        ? '${p.age} years old · ${p.goal.title}'
+                        : '${p.goal.title} · ${p.activityLevel.title}',
                     style: AppType.callout(),
                   ),
                 ],
