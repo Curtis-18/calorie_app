@@ -5,6 +5,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_card.dart';
+import 'glass.dart';
 
 /// Fibre, sugar, sodium, iron and calcium for the day on screen.
 ///
@@ -12,15 +13,16 @@ import 'app_card.dart';
 /// no advice. The numbers only count foods that have nutrient data, and the
 /// card says so when some of the day's foods don't.
 class NutrientsCard extends StatelessWidget {
-  const NutrientsCard({super.key, required this.summary});
+  const NutrientsCard({super.key, required this.summary, this.bare = false});
 
   final NutrientSummary summary;
 
+  /// Without its own card, for when it already sits in a sheet.
+  final bool bare;
+
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-      child: Column(
+    final content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -52,7 +54,11 @@ class NutrientsCard extends StatelessWidget {
             ),
           ],
         ],
-      ),
+      );
+    if (bare) return content;
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      child: content,
     );
   }
 }
@@ -118,4 +124,67 @@ class _NutrientRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The slim "View nutrients" row under the macros: the five numbers take up a
+/// lot of room, so Today shows only this and the card opens on tap.
+class NutrientsRow extends StatelessWidget {
+  const NutrientsRow({super.key, required this.summary, required this.onTap});
+
+  final NutrientSummary summary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'View nutrients',
+      child: AppCard(
+        key: const ValueKey('nutrients_row'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: TrackerColors.alpha(TrackerColors.success, 0.14),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(CupertinoIcons.leaf_arrow_circlepath, size: 17, color: TrackerColors.success),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('View nutrients', style: AppType.body(size: 15.5).copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Fibre, sugar, sodium, iron and calcium',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppType.caption(color: TrackerColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Icon(CupertinoIcons.chevron_right, size: 14, color: TrackerColors.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The day's nutrients in a bottom sheet.
+Future<void> showNutrientsSheet(BuildContext context, NutrientSummary summary) {
+  return showAppSheet<void>(
+    context: context,
+    builder: (_) => AppSheet(child: NutrientsCard(summary: summary, bare: true)),
+  );
 }

@@ -8,6 +8,7 @@ import 'package:calorie_app/screens/friends_screen.dart';
 import 'package:calorie_app/screens/snap_compose_screen.dart';
 import 'package:calorie_app/services/friends_service.dart';
 import 'package:calorie_app/services/snaps_service.dart';
+import 'package:calorie_app/services/tour_service.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // A 1x1 transparent PNG.
 final _png = base64Decode(
@@ -176,6 +178,9 @@ void main() {
   });
 
   group('screens', () {
+    // The share tip remembers being dismissed; start every test unseen.
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
     final friendsJson = {
       'friends': [
         {
@@ -194,8 +199,18 @@ void main() {
       'limit': 100,
     };
 
-    MockClient backend({List<Map<String, dynamic>> inbox = const [], List<String>? sends}) => MockClient((r) async {
-          if (r.url.path == '/friends') return http.Response(jsonEncode(friendsJson), 200);
+    // Someone who has never sent a bite: no streak, nothing sent today.
+    final newcomerJson = {
+      ...friendsJson,
+      'friends': [
+        {'friendship_id': 'f-sam', 'user_id': 'u-sam', 'username': 'sam', 'since': '2026-11-01T00:00:00Z'},
+        {'friendship_id': 'f-bea', 'user_id': 'u-bea', 'username': 'bea', 'since': '2026-11-01T00:00:00Z'},
+      ],
+    };
+
+    MockClient backend({List<Map<String, dynamic>> inbox = const [], List<String>? sends, bool newcomer = false}) =>
+        MockClient((r) async {
+          if (r.url.path == '/friends') return http.Response(jsonEncode(newcomer ? newcomerJson : friendsJson), 200);
           if (r.url.path == '/me') return http.Response(jsonEncode({'username': 'river'}), 200);
           if (r.url.path == '/snaps/inbox') return http.Response(jsonEncode(inbox), 200);
           if (r.url.path == '/snaps' && r.method == 'POST') {
@@ -248,7 +263,7 @@ void main() {
 
     testWidgets('friend rows show the streak and who owes a bite; unseen bites show up', (tester) async {
       await open(tester, backend(inbox: [_inbox('a', 'sam')]));
-      expect(find.text('Share your meal'), findsOneWidget);
+      expect(find.text('Share your meal'), findsNothing, reason: 'they already swap bites, so no tip');
       expect(find.text('BITES FROM FRIENDS'), findsOneWidget);
       expect(find.text('5'), findsOneWidget); // streak badge
       expect(find.text('sent you a bite today. Send one back!'), findsOneWidget);
@@ -281,11 +296,62 @@ void main() {
 
     testWidgets('cancelling the camera sends nothing', (tester) async {
       final sends = <String>[];
-      await open(tester, backend(sends: sends), pick: () async => null);
+      await open(tester, backend(sends: sends, newcomer: true), pick: () async => null);
       await tester.tap(find.text('Share your meal'));
       await settle(tester);
       expect(find.text('Send a bite'), findsNothing);
       expect(sends, isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a new person sees the share tip once, and dismissing it keeps it away', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await open(tester, backend(newcomer: true));
+      expect(find.byKey(const ValueKey('share_tip')), findsOneWidget);
+      expect(find.text('TIP'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('dismiss_share_tip')));
+      await settle(tester);
+      expect(find.byKey(const ValueKey('share_tip')), findsNothing);
+      expect(await TourService.hasSeen(TourService.shareTip), isTrue);
+
+      // Back on the tab later (a new screen): still gone.
+      await tester.pumpWidget(const SizedBox());
+      await open(tester, backend(newcomer: true));
+      expect(find.byKey(const ValueKey('share_tip')), findsNothing);
+      // Bites stay one tap away on each friend.
+      expect(find.text('Bite'), findsNWidgets(2));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('sharing from the tip hides it afterwards', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final file = XFile.fromData(Uint8List.fromList(_png), name: 'a.png');
+      await open(tester, backend(newcomer: true), pick: () async => file);
+      await tester.tap(find.text('Share your meal'));
+      await settle(tester);
+      expect(find.text('Send a bite'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('@sam'), 120, scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.text('@sam'));
+      await settle(tester);
+      await tester.tap(find.text('Send to 1 friend'));
+      await settle(tester);
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.byKey(const ValueKey('share_tip')), findsNothing);
+      expect(await TourService.hasSeen(TourService.shareTip), isTrue);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('no tip while there are no friends to share with', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await open(
+        tester,
+        MockClient((r) async {
+          if (r.url.path == '/friends') {
+            return http.Response(jsonEncode({'friends': [], 'incoming': [], 'outgoing': [], 'limit': 100}), 200);
+          }
+          if (r.url.path == '/me') return http.Response(jsonEncode({'username': 'river'}), 200);
+          return http.Response('[]', 200);
+        }),
+      );
+      expect(find.byKey(const ValueKey('share_tip')), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('send is disabled until a friend is picked', (tester) async {

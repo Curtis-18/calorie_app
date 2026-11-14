@@ -6,8 +6,11 @@ import 'package:calorie_app/providers/snaps_provider.dart';
 import 'package:calorie_app/services/snaps_service.dart';
 import 'package:calorie_app/screens/friends_screen.dart';
 import 'package:calorie_app/services/friends_service.dart';
+import 'package:calorie_app/services/profile_link.dart';
+import 'package:calorie_app/widgets/profile_link_sheet.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -104,6 +107,36 @@ FriendsNotifier _notifier(_Server s) => FriendsNotifier(
     );
 
 void main() {
+  group('profile links', () {
+    test('a link is the app address plus /u/<username>, shown without https', () {
+      expect(ProfileLink.urlFor('river', base: 'https://nustreak.app'), 'https://nustreak.app/u/river');
+      expect(ProfileLink.display('river', base: 'https://nustreak.app'), 'nustreak.app/u/river');
+    });
+
+    test('only /u/<valid username> is a profile link', () {
+      String? name(String url) => ProfileLink.usernameFrom(Uri.parse(url));
+      expect(name('https://x.app/u/River_Song'), 'River_Song');
+      expect(name('https://x.app/u/River_Song/'), 'River_Song');
+      expect(name('https://x.app/'), isNull);
+      expect(name('https://x.app/u/'), isNull);
+      expect(name('https://x.app/u/ab'), isNull);
+      expect(name('https://x.app/u/1bad'), isNull);
+      expect(name('https://x.app/u/bad-name'), isNull);
+      expect(name('https://x.app/other/river'), isNull);
+      expect(name('https://x.app/u/river/extra'), isNull);
+    });
+
+    test('an opened link waits until it is dealt with', () {
+      ProfileLink.clear();
+      ProfileLink.capture(Uri.parse('https://x.app/'));
+      expect(ProfileLink.pending.value, isNull);
+      ProfileLink.capture(Uri.parse('https://x.app/u/sammy'));
+      expect(ProfileLink.pending.value, 'sammy');
+      ProfileLink.clear();
+      expect(ProfileLink.pending.value, isNull);
+    });
+  });
+
   group('service', () {
     test('load reads the lists and my username', () async {
       final data = await _service(_Server(friends: ['Sam'], incoming: ['Bea'], outgoing: ['Cy'])).load();
@@ -217,7 +250,7 @@ void main() {
   });
 
   group('screen', () {
-    Future<_Server> open(WidgetTester tester, _Server server) async {
+    Future<_Server> open(WidgetTester tester, _Server server, {Future<void> Function(String text)? share}) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -231,7 +264,7 @@ void main() {
                 userIdChanges: const Stream.empty(),
               )),
         ],
-        child: CupertinoApp(theme: AppTheme.cupertino, home: const FriendsScreen()),
+        child: CupertinoApp(theme: AppTheme.cupertino, home: FriendsScreen(share: share)),
       ));
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -241,13 +274,96 @@ void main() {
 
     testWidgets('shows my username, requests and friends', (tester) async {
       await open(tester, _Server(friends: ['Sam'], incoming: ['Bea'], outgoing: ['Cy']));
-      expect(find.text('@River_Song'), findsOneWidget);
+      expect(find.text('calorie-app-ug.vercel.app/u/River_Song'), findsOneWidget); // a link, not a name to copy
       expect(find.text('@Bea'), findsOneWidget);
       expect(find.text('wants to be your friend'), findsOneWidget);
       expect(find.text('@Cy'), findsOneWidget);
       expect(find.text('request sent'), findsOneWidget);
       expect(find.text('@Sam'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the search sits right under the story row, above requests and friends', (tester) async {
+      await open(tester, _Server(friends: ['Sam'], incoming: ['Bea']));
+      final search = tester.getTopLeft(find.text('ADD A FRIEND')).dy;
+      expect(search, lessThan(tester.getTopLeft(find.text('REQUESTS')).dy));
+      expect(search, lessThan(tester.getTopLeft(find.text('YOUR FRIENDS')).dy));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('with no friends yet the search is still the first thing on the page', (tester) async {
+      await open(tester, _Server());
+      expect(find.byKey(const ValueKey('copy_profile_link')), findsOneWidget);
+      expect(tester.getTopLeft(find.text('ADD A FRIEND')).dy, lessThan(tester.getTopLeft(find.text('YOUR FRIENDS')).dy));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('Copy link puts your profile link on the clipboard', (tester) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+      await open(tester, _Server());
+      await tester.tap(find.byKey(const ValueKey('copy_profile_link')));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(copied, 'https://calorie-app-ug.vercel.app/u/River_Song');
+      expect(find.text('Copied'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('Share hands the link to the share sheet', (tester) async {
+      final shared = <String>[];
+      await open(tester, _Server(), share: (text) async => shared.add(text));
+      await tester.tap(find.byKey(const ValueKey('share_profile_link')));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(shared.single, contains('https://calorie-app-ug.vercel.app/u/River_Song'));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    group('opening a friend\'s profile link', () {
+      Future<_Server> sheet(WidgetTester tester, _Server server, String name, {String? me}) async {
+        final notifier = _notifier(server);
+        addTearDown(notifier.dispose);
+        await tester.pumpWidget(CupertinoApp(
+          theme: AppTheme.cupertino,
+          home: CupertinoPageScaffold(
+            child: ProfileLinkContent(username: name, friends: notifier, myUsername: me),
+          ),
+        ));
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        return server;
+      }
+
+      testWidgets('shows who it is and sends the request only when you tap Add', (tester) async {
+        final server = await sheet(tester, _Server()..everyone = ['Sammy'], 'sammy');
+        expect(find.text('@Sammy'), findsOneWidget);
+        expect(server.calls, isNot(contains('POST /friends/requests')));
+        await tester.tap(find.byKey(const ValueKey('profile_link_add')));
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(server.calls, contains('POST /friends/requests'));
+        expect(find.text('Request sent to @Sammy.'), findsOneWidget);
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+      testWidgets('your own link says so and offers nothing to add', (tester) async {
+        final server = await sheet(tester, _Server(), 'river_song', me: 'River_Song');
+        expect(find.textContaining("your own link"), findsOneWidget);
+        expect(find.byKey(const ValueKey('profile_link_add')), findsNothing);
+        expect(server.searches, isEmpty);
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+      testWidgets('someone who is not found, and someone already a friend, are explained', (tester) async {
+        await sheet(tester, _Server(), 'ghosty');
+        expect(find.textContaining("couldn't find @ghosty"), findsOneWidget);
+        expect(find.byKey(const ValueKey('profile_link_add')), findsNothing);
+
+        await tester.pumpWidget(const SizedBox());
+        await sheet(tester, _Server(friends: ['Sammy'])..everyone = ['Sammy'], 'Sammy');
+        expect(find.textContaining('already friends'), findsOneWidget);
+        expect(find.byKey(const ValueKey('profile_link_add')), findsNothing);
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+    });
 
     testWidgets('accepting moves a request into friends', (tester) async {
       await open(tester, _Server(incoming: ['Bea']));

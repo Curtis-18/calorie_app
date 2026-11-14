@@ -150,7 +150,7 @@ class SettingsView extends ConsumerWidget {
                           icon: CupertinoIcons.leaf_arrow_circlepath,
                           color: TrackerColors.success,
                           title: 'Nutrients',
-                          subtitle: 'Fibre, sugar, sodium, iron and calcium',
+                          subtitle: 'A "View nutrients" row under macros',
                           value: display.showNutrients,
                           onChanged: displayNotifier.setShowNutrients,
                         ),

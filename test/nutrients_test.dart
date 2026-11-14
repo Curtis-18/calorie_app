@@ -135,6 +135,37 @@ void main() {
     });
   });
 
+  group('the View nutrients row', () {
+    testWidgets('is one slim row, and tapping it opens the numbers in a sheet', (tester) async {
+      tester.view.physicalSize = const Size(1179, 2556);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final summary = NutrientSummary.of(
+        [const Nutrients({'fiber_g': 12, 'iron_mg': 6.5})],
+        targets: {'fiber_g': 28, 'iron_mg': 18},
+      );
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: Builder(
+          builder: (context) => CupertinoPageScaffold(
+            child: Center(child: NutrientsRow(summary: summary, onTap: () => showNutrientsSheet(context, summary))),
+          ),
+        ),
+      ));
+      expect(find.text('View nutrients'), findsOneWidget);
+      expect(find.byKey(const ValueKey('nutrient_fiber_g')), findsNothing, reason: 'the numbers stay hidden until opened');
+      expect(tester.getSize(find.byKey(const ValueKey('nutrients_row'))).height, lessThan(80));
+
+      await tester.tap(find.byKey(const ValueKey('nutrients_row')));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('NUTRIENTS'), findsOneWidget);
+      expect(find.byKey(const ValueKey('nutrient_fiber_g')), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const ValueKey('nutrient_fiber_g'))).data, '12 g');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  });
+
   group('the card', () {
     Future<void> pump(WidgetTester tester, NutrientSummary summary) => tester.pumpWidget(CupertinoApp(
           theme: AppTheme.cupertino,

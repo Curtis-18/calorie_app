@@ -10,6 +10,9 @@ class TourService {
   /// The first-run dashboard spotlight tour.
   static const dashboard = 'dashboard';
 
+  /// The "Share your meal" tip at the top of the Friends tab.
+  static const shareTip = 'friends_share_tip';
+
   /// Returns true if the feature identified by [key] has already been seen.
   static Future<bool> hasSeen(String key) async {
     final prefs = await SharedPreferences.getInstance();

@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/friends_provider.dart';
+import '../services/profile_link.dart';
+import '../widgets/profile_link_sheet.dart';
 import '../providers/shell_provider.dart';
 import '../providers/snaps_provider.dart';
 import '../theme/app_motion.dart';
@@ -49,10 +51,31 @@ class _MainShellState extends ConsumerState<MainShell> {
   void initState() {
     super.initState();
     _controller.addListener(_onTabChanged);
+    ProfileLink.pending.addListener(_showLinkedProfile);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showLinkedProfile());
     // A fresh shell (after signing in again) starts on Today.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(shellTabProvider.notifier).state = ShellTab.today;
     });
+  }
+
+  /// A friend's profile link was opened: offer to add them, once the app is
+  /// settled on the main screen.
+  Future<void> _showLinkedProfile() async {
+    final name = ProfileLink.pending.value;
+    if (name == null || !mounted) return;
+    ProfileLink.clear();
+    final friends = ref.read(friendsProvider.notifier);
+    ref.read(shellTabProvider.notifier).state = ShellTab.friends;
+    // Let the first screen finish building before a sheet goes over it.
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    await showProfileLinkSheet(
+      context,
+      username: name,
+      friends: friends,
+      myUsername: ref.read(friendsProvider).valueOrNull?.myUsername,
+    );
   }
 
   void _onTabChanged() {
@@ -64,6 +87,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   void dispose() {
+    ProfileLink.pending.removeListener(_showLinkedProfile);
     _controller.dispose();
     super.dispose();
   }

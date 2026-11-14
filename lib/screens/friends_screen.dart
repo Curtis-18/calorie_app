@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/friends.dart';
 import '../models/snaps.dart';
@@ -20,6 +21,8 @@ import '../models/username_rules.dart';
 import '../providers/friends_provider.dart';
 import '../providers/shell_provider.dart';
 import '../services/friends_service.dart';
+import '../services/profile_link.dart';
+import '../services/tour_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -37,10 +40,13 @@ import '../widgets/shimmer.dart';
 /// Friends tab: your username, add someone by theirs, answer requests, and
 /// see who you're connected with. Snaps and shared streaks build on this.
 class FriendsScreen extends ConsumerStatefulWidget {
-  const FriendsScreen({super.key, this.pickPhoto});
+  const FriendsScreen({super.key, this.pickPhoto, this.share});
 
   /// Replaces the camera; for tests.
   final Future<XFile?> Function()? pickPhoto;
+
+  /// Replaces the system share sheet; for tests.
+  final Future<void> Function(String text)? share;
 
   @override
   ConsumerState<FriendsScreen> createState() => _FriendsScreenState();
@@ -70,9 +76,29 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   Timer? _refreshTimer;
   late final AppLifecycleListener _lifecycle;
 
+  /// The "Share your meal" tip is for people who haven't shared yet. Treated
+  /// as already seen until the saved choice has been read, so it never flashes.
+  bool _tipSeen = true;
+
+  Future<void> _loadTip() async {
+    try {
+      final seen = await TourService.hasSeen(TourService.shareTip);
+      if (mounted && !seen) setState(() => _tipSeen = false);
+    } catch (_) {
+      // Storage unavailable: show the tip; dismissing still works this session.
+      if (mounted) setState(() => _tipSeen = false);
+    }
+  }
+
+  void _hideTip() {
+    if (!_tipSeen) setState(() => _tipSeen = true);
+    TourService.markSeen(TourService.shareTip).catchError((_) {});
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadTip();
     _lifecycle = AppLifecycleListener(onResume: _refreshQuietly);
     _refreshTimer = Timer.periodic(_refreshEvery, (_) => _refreshQuietly());
   }
@@ -226,6 +252,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     );
     if (shared == null || !mounted) return;
     final results = shared.outcomes;
+    _hideTip(); // they have shared: the tip has done its job
     if (results.isNotEmpty) ref.read(friendsProvider.notifier).load();
     if (shared.addedToStory) ref.read(storiesProvider.notifier).load();
     final lit = results.where((r) => r.completedToday).toList();
@@ -363,14 +390,28 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     }
   }
 
-  Future<void> _copyName(String name) async {
-    await Clipboard.setData(ClipboardData(text: name));
+  /// Copy the link to your profile, to paste into a message or a bio.
+  Future<void> _copyLink(String username) async {
+    await Clipboard.setData(ClipboardData(text: ProfileLink.urlFor(username)));
     HapticFeedback.selectionClick();
     if (!mounted) return;
     setState(() => _copied = true);
     Future<void>.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _copied = false);
     });
+  }
+
+  /// Open the system share sheet with your profile link.
+  Future<void> _shareLink(String username) async {
+    final url = ProfileLink.urlFor(username);
+    try {
+      await (widget.share ?? (text) => SharePlus.instance.share(ShareParams(text: text)))(
+        'Add me on NuStreak: $url',
+      );
+    } catch (_) {
+      // No share sheet here (some desktop browsers): copying still works.
+      await _copyLink(username);
+    }
   }
 
   @override
@@ -458,8 +499,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         ),
         const SizedBox(height: AppSpacing.lg),
       ],
+      // Finding people sits right under the story row, where you look first.
+      ..._addFriend(data),
       if (data != null && data.friends.isNotEmpty) ...[
-        _SnapHero(onTap: () => _snap()),
+        // A first-time tip, not a permanent banner: gone once dismissed, once
+        // they have shared, or if they clearly already do (a streak, or a
+        // bite sent today). Bites are still one tap away on each friend, and
+        // your own bubble in the story row opens the camera.
+        if (!_tipSeen && !data.friends.any((p) => p.streak > 0 || p.sentToday)) ...[
+          _ShareTip(onTap: () => _snap(), onDismiss: _hideTip),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         Align(
           alignment: Alignment.centerRight,
           child: CupertinoButton(
@@ -494,9 +544,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         const SizedBox(height: AppSpacing.xl),
       ],
       ...friends.when(
-        loading: () => [..._addFriend(data), const SkeletonRows(count: 4)],
+        loading: () => const [SkeletonRows(count: 4)],
         error: (e, _) => [
-          ..._addFriend(data),
           AppEmptyState(
             icon: CupertinoIcons.wifi_exclamationmark,
             title: "Couldn't load your friends",
@@ -510,8 +559,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     ];
   }
 
-  /// One card for finding people: the field to add someone, and your own
-  /// username to hand out. These were two separate blocks above the lists.
+  /// One card for finding people: search as you type, and the link to your own
+  /// profile to share the way you would a LinkedIn or Instagram profile.
   List<Widget> _addFriend(FriendsData? data) => [
         const SectionHeader(label: 'Add a friend'),
         const SizedBox(height: AppSpacing.md),
@@ -606,23 +655,47 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Share yours so friends can add you',
+                            'Your profile link',
                             style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5),
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            '@${data.myUsername}',
-                            style: AppType.headline(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          // Shrinks rather than cutting off the end of the link.
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              ProfileLink.display(data.myUsername!),
+                              key: const ValueKey('my_profile_link'),
+                              style: AppType.body(size: 14).copyWith(fontWeight: FontWeight.w700),
+                              maxLines: 1,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    _Pill(
-                      label: _copied ? 'Copied' : 'Copy',
-                      icon: _copied ? CupertinoIcons.checkmark : CupertinoIcons.doc_on_doc,
-                      onTap: () => _copyName(data.myUsername!),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton.glass(
+                        key: const ValueKey('copy_profile_link'),
+                        label: _copied ? 'Copied' : 'Copy link',
+                        icon: _copied ? CupertinoIcons.checkmark : CupertinoIcons.link,
+                        height: 44,
+                        onPressed: () => _copyLink(data.myUsername!),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: AppButton(
+                        key: const ValueKey('share_profile_link'),
+                        label: 'Share',
+                        icon: CupertinoIcons.share,
+                        height: 44,
+                        onPressed: () => _shareLink(data.myUsername!),
+                      ),
                     ),
                   ],
                 ),
@@ -633,9 +706,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         const SizedBox(height: AppSpacing.xxl),
       ];
 
-  /// What needs an answer first (requests), then your friends, then adding
-  /// more, then requests you are waiting on. With no friends yet, adding
-  /// someone is the first thing on the page.
+  /// What needs an answer first (requests), then your friends, then requests
+  /// you are waiting on. Adding people is above, under the story row.
   List<Widget> _lists(FriendsData data) {
     final notifier = ref.read(friendsProvider.notifier);
     final requests = [
@@ -690,9 +762,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           ),
       const SizedBox(height: AppSpacing.xl),
     ];
-    return data.friends.isEmpty
-        ? [..._addFriend(data), ...requests, ...waiting, ...yours]
-        : [...requests, ...yours, ..._addFriend(data), ...waiting];
+    return [...requests, ...yours, ...waiting];
   }
 
   Widget _count(int n) =>
@@ -997,45 +1067,80 @@ class _BlockedSheetState extends State<_BlockedSheet> {
 }
 
 
-/// The big invitation to snap your food.
-class _SnapHero extends StatelessWidget {
-  const _SnapHero({required this.onTap});
+/// A one-time tip for new people: what bites are for. Tap it to send one;
+/// the close button hides it for good.
+class _ShareTip extends StatelessWidget {
+  const _ShareTip({required this.onTap, required this.onDismiss});
 
   final VoidCallback onTap;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      borderRadius: AppRadii.containerAll,
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: TrackerColors.calorieGradient,
+    final ink = TrackerColors.onAccent;
+    return Stack(
+      key: const ValueKey('share_tip'),
+      children: [
+        Pressable(
+          onTap: onTap,
           borderRadius: AppRadii.containerAll,
-          boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 26, opacity: 0.35),
-        ),
-        child: Row(
-          children: [
-            const Text('📸', style: TextStyle(fontSize: 34)),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Share your meal', style: AppType.headline(color: TrackerColors.onAccent)),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Send it to friends or add it to your story.',
-                    style: AppType.caption(color: TrackerColors.alpha(TrackerColors.onAccent, 0.85), size: 12.5),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(18, 18, 44, 18),
+            decoration: BoxDecoration(
+              gradient: TrackerColors.calorieGradient,
+              borderRadius: AppRadii.containerAll,
+              boxShadow: AppDecor.glow(TrackerColors.accentStart, blur: 26, opacity: 0.35),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: TrackerColors.alpha(ink, 0.12), shape: BoxShape.circle),
+                  child: Icon(CupertinoIcons.camera_fill, color: ink, size: 21),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('TIP', style: AppType.sectionLabel(color: TrackerColors.alpha(ink, 0.7))),
+                      const SizedBox(height: 2),
+                      Text('Share your meal', style: AppType.headline(color: ink)),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Send a photo of what you are eating to friends, or add it to your story. '
+                        'Swap one every day to build a streak together.',
+                        style: AppType.caption(color: TrackerColors.alpha(ink, 0.85), size: 12.5),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: Semantics(
+            button: true,
+            label: 'Dismiss tip',
+            child: Pressable(
+              key: const ValueKey('dismiss_share_tip'),
+              onTap: onDismiss,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Icon(CupertinoIcons.xmark, size: 15, color: TrackerColors.alpha(ink, 0.75)),
               ),
             ),
-            Icon(CupertinoIcons.chevron_right, color: TrackerColors.onAccent, size: 18),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

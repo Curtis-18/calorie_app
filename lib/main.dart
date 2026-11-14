@@ -7,6 +7,7 @@ import 'providers/appearance_provider.dart';
 import 'screens/auth_gate.dart';
 import 'screens/main_shell.dart';
 import 'services/password_recovery.dart';
+import 'services/profile_link.dart';
 import 'services/server_handshake.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_shapes.dart';
@@ -35,6 +36,10 @@ Future<void> main() async {
   // Start waking a sleeping backend now, so it boots while the splash and
   // login screens are up instead of after the user has signed in.
   ServerWarmup.ping();
+
+  // Someone opened a friend's profile link (https://<app>/u/<name>): remember
+  // it until they are signed in and the main screen can offer to add them.
+  ProfileLink.capture(Uri.base);
 
   final configError = SupabaseConfig.validate();
   if (configError == null) {

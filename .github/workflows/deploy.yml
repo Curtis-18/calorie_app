@@ -33,6 +33,11 @@ jobs:
           fi
           flutter build web "${args[@]}"
           
+      - name: Keep the single-page rewrite
+        # The deploy uploads build/web only, so without this vercel.json never
+        # reached Vercel and any path but "/" (profile links, /u/name) was a 404.
+        run: cp vercel.json build/web/vercel.json
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:

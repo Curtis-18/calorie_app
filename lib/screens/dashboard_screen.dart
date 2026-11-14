@@ -477,6 +477,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 fatTarget: profile?.fatTargetG ?? 0,
                               ),
                             ],
+                            // Nutrients are one slim row that opens a sheet:
+                            // five bars took up a screen's worth of room.
+                            if (display.showNutrients) ...[
+                              SizedBox(height: display.showMacros ? 10 : 14),
+                              NutrientsRow(
+                                summary: NutrientSummary.of(
+                                  entries.map((e) => e.nutrients),
+                                  targets: profile?.nutrientTargets,
+                                ),
+                                onTap: () => showNutrientsSheet(
+                                  context,
+                                  NutrientSummary.of(
+                                    entries.map((e) => e.nutrients),
+                                    targets: profile?.nutrientTargets,
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 24),
                             SectionHeader(
                               label: _isToday ? "Today's meals" : 'Meals',
@@ -519,19 +537,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                             ),
-                            // Detail, so it sits under the meals: the thing
-                            // people act on used to be below two cards of it.
-                            if (display.showNutrients) ...[
-                              const SizedBox(height: 24),
-                              const SectionHeader(label: 'Nutrients'),
-                              const SizedBox(height: 12),
-                              NutrientsCard(
-                                summary: NutrientSummary.of(
-                                  entries.map((e) => e.nutrients),
-                                  targets: profile?.nutrientTargets,
-                                ),
-                              ),
-                            ],
                             SizedBox(height: AppSpacing.tabBarClearance + bottomInset),
                           ]),
                         ),
