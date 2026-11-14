@@ -8,8 +8,8 @@ import '../theme/tracker_colors.dart';
 import 'app_card.dart';
 import 'pressable.dart';
 
-/// Meal card: title + kcal total + add button, then swipe-to-delete food rows
-/// with a right-aligned calorie pill.
+/// Meal card: title + kcal total + add button, then food rows with a
+/// right-aligned calorie pill. Tap a row to edit it, swipe it to delete.
 class MealSection extends StatelessWidget {
   const MealSection({
     super.key,
@@ -17,6 +17,7 @@ class MealSection extends StatelessWidget {
     required this.entries,
     required this.onAdd,
     required this.onRemove,
+    this.onEdit,
     this.accent = TrackerColors.accentStart,
   });
 
@@ -24,6 +25,9 @@ class MealSection extends StatelessWidget {
   final List<FoodEntry> entries;
   final VoidCallback onAdd;
   final void Function(String id) onRemove;
+
+  /// Tapping a row; null makes rows read-only (a past day).
+  final void Function(FoodEntry entry)? onEdit;
   final Color accent;
 
   @override
@@ -142,7 +146,14 @@ class MealSection extends StatelessWidget {
                           HapticFeedback.lightImpact();
                           onRemove(entry.id);
                         },
-                        child: _FoodRow(entry: entry),
+                        child: onEdit == null
+                            ? _FoodRow(entry: entry)
+                            : Pressable(
+                                key: ValueKey('edit_${entry.id}'),
+                                onTap: () => onEdit!(entry),
+                                scale: 0.99,
+                                child: _FoodRow(entry: entry),
+                              ),
                       ),
                     )
                     .toList(),

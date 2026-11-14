@@ -185,8 +185,27 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       'source': entry.source.name,
       'timestamp': entry.timestamp.toIso8601String(),
       'log_date': logDate,
+      if (entry.nutrients != null) 'nutrients': entry.nutrients!.toJson(),
     });
 
+    await _sendWithRetry(
+      (token) => _http.post(
+        Uri.parse('${ApiConfig.baseUrl}/logs'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: body,
+      ),
+      userId: userId,
+      failure: 'Failed to save entry',
+    );
+  }
+
+  /// Run a save that is safe to repeat (the server treats a repeat as already
+  /// done), retrying timeouts, dropped connections and 5xx answers.
+  Future<void> _sendWithRetry(
+    Future<http.Response> Function(String token) send, {
+    required String? userId,
+    required String failure,
+  }) async {
     for (var attempt = 0;; attempt++) {
       final retriesLeft = attempt < saveRetryDelays.length;
       // A fresh token each time: the session may have refreshed meanwhile.
@@ -194,19 +213,12 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       if (token == null) throw Exception('Not logged in - Session expired or not found');
 
       try {
-        final response = await _http.post(
-          Uri.parse('${ApiConfig.baseUrl}/logs'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: body,
-        ).timeout(saveTimeout);
+        final response = await send(token).timeout(saveTimeout);
 
         if (response.statusCode == 201 || response.statusCode == 200) return;
         final transient = response.statusCode >= 500;
         if (!transient || !retriesLeft) {
-          throw Exception('Failed to save entry: ${response.body}');
+          throw Exception('$failure: ${response.body}');
         }
       } on TimeoutException {
         if (!retriesLeft) rethrow;
@@ -218,6 +230,47 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       // Signed out or switched user while waiting: stop, so one user's food
       // is never sent with another user's token.
       if (!mounted || _userId != userId) throw Exception('Signed out before the entry could be saved');
+    }
+  }
+
+  /// Replace a saved entry with a corrected copy (same id): a new portion, a
+  /// different food, another name or meal. Shown at once and rolled back if
+  /// the server can't save it. The request carries the entry's full new
+  /// values, so repeating it after a lost response is harmless.
+  Future<void> updateEntry(FoodEntry updated) async {
+    ensureCurrentDay();
+    final logDate = _day;
+    final previous = state;
+    if (!previous.any((e) => e.id == updated.id)) {
+      throw Exception('That entry is no longer in today\'s log');
+    }
+    state = [for (final e in previous) e.id == updated.id ? updated : e];
+
+    final userId = _userId;
+    final body = jsonEncode({
+      'name': updated.name,
+      'calories': updated.calories,
+      'protein_g': updated.proteinG,
+      'carbs_g': updated.carbsG,
+      'fat_g': updated.fatG,
+      'meal_type': updated.mealType.name,
+      // Always sent: null tells the server the new food has no nutrient data.
+      'nutrients': updated.nutrients?.toJson(),
+    });
+    try {
+      await _sendWithRetry(
+        (token) => _http.patch(
+          Uri.parse('${ApiConfig.baseUrl}/logs/${Uri.encodeComponent(updated.id)}'),
+          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+          body: body,
+        ),
+        userId: userId,
+        failure: 'Failed to update entry',
+      );
+      await _persistCache(userId);
+    } catch (e) {
+      _rollback(previous, logDate);
+      rethrow;
     }
   }
 

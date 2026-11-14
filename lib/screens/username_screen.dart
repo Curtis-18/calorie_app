@@ -20,7 +20,7 @@ enum _NameStatus { empty, invalid, checking, available, unavailable, error }
 /// Shown right after sign-up for new people and on the next sign-in for
 /// everyone who joined before usernames existed.
 class UsernameScreen extends StatefulWidget {
-  const UsernameScreen({super.key, required this.onDone, this.onSignOut, this.service});
+  const UsernameScreen({super.key, required this.onDone, this.onSignOut, this.service, this.current});
 
   /// Called with the saved username.
   final ValueChanged<String> onDone;
@@ -29,6 +29,12 @@ class UsernameScreen extends StatefulWidget {
   final VoidCallback? onSignOut;
 
   final UsernameService? service;
+
+  /// The name they have now. When set this is the "change your username"
+  /// screen, opened from the profile sheet, with a way back.
+  final String? current;
+
+  bool get changing => current != null;
 
   @override
   State<UsernameScreen> createState() => _UsernameScreenState();
@@ -123,6 +129,13 @@ class _UsernameScreenState extends State<UsernameScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      navigationBar: widget.changing
+          ? CupertinoNavigationBar(
+              backgroundColor: TrackerColors.navFill,
+              border: AppDecor.hairlineTop,
+              middle: const Text('Username'),
+            )
+          : null,
       child: AppBackdrop(
         child: SafeArea(
           child: SingleChildScrollView(
@@ -130,13 +143,21 @@ class _UsernameScreenState extends State<UsernameScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Center(child: AnimatedLogo(size: 96, tile: true, sparks: false)),
-                const SizedBox(height: AppSpacing.xl),
-                Text('Pick your username', style: AppType.navLargeTitle(size: 28)),
+                if (!widget.changing) ...[
+                  const Center(child: AnimatedLogo(size: 96, tile: true, sparks: false)),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+                Text(
+                  widget.changing ? 'Change your username' : 'Pick your username',
+                  style: AppType.navLargeTitle(size: 28),
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'This is how friends will find you and send you food bites. '
-                  'You can change it once every 30 days.',
+                  widget.changing
+                      ? "You're @${widget.current} now. Friends keep you on their list and see the new name. "
+                          'You can change it once every 30 days.'
+                      : 'This is how friends will find you and send you food bites. '
+                          'You can change it once every 30 days.',
                   style: AppType.body(color: TrackerColors.textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -159,7 +180,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 AppButton(
-                  label: _saving ? 'Saving…' : 'Continue',
+                  label: _saving ? 'Saving…' : (widget.changing ? 'Save' : 'Continue'),
                   onPressed: _status == _NameStatus.available && !_saving ? _save : null,
                 ),
                 if (widget.onSignOut != null) ...[

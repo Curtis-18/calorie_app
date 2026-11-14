@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/food_entry.dart';
+import '../models/nutrients.dart';
 import '../providers/food_log_provider.dart';
 import '../providers/progress_provider.dart';
 import '../models/progress.dart';
@@ -25,10 +26,12 @@ import '../widgets/app_dialog.dart';
 import '../widgets/app_tour.dart';
 import '../widgets/calorie_ring.dart';
 import '../widgets/dashboard_header.dart';
+import '../widgets/edit_entry_sheet.dart';
 import '../widgets/game/celebrations.dart';
 import '../widgets/glass.dart';
 import '../widgets/macro_breakdown.dart';
 import '../widgets/meal_section.dart';
+import '../widgets/nutrients_card.dart';
 import '../widgets/save_toast.dart';
 import '../widgets/shimmer.dart';
 import 'auth_gate.dart';
@@ -416,6 +419,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     _refreshStreak();
   }
 
+  /// Correct an entry in today's log. The change shows at once; if the
+  /// server can't save it the old entry comes back and we say so.
+  Future<void> _editEntry(BuildContext context, FoodEntry entry) async {
+    final updated = await showEditEntrySheet(context, entry);
+    if (updated == null) return;
+    try {
+      await ref.read(foodLogProvider.notifier).updateEntry(updated);
+    } catch (_) {
+      if (!context.mounted) return;
+      await showAppDialog(
+        context: context,
+        title: "Couldn't save that change",
+        message: 'Your entry is unchanged. Check your connection and try again.',
+      );
+    }
+  }
+
   Future<void> _logout(BuildContext context) async {
     await Supabase.instance.client.auth.signOut();
     if (!context.mounted) return;
@@ -526,6 +546,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               fat: entries.totalFat,
                               fatTarget: profile?.fatTargetG ?? 0,
                             ),
+                            const SizedBox(height: 14),
+                            NutrientsCard(
+                              summary: NutrientSummary.of(
+                                entries.map((e) => e.nutrients),
+                                targets: profile?.nutrientTargets,
+                              ),
+                            ),
                             const SizedBox(height: 22),
                             SectionHeader(
                               label: _isToday ? "Today's meals" : 'Meals',
@@ -551,6 +578,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   onAdd: () => _openFoodSearch(context, meal),
                                   onRemove: (id) =>
                                       ref.read(foodLogProvider.notifier).removeEntry(id),
+                                  onEdit: _isToday ? (entry) => _editEntry(context, entry) : null,
                                 ),
                               ),
                             ),
@@ -558,7 +586,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             Center(
                               child: Text(
                                 _isToday
-                                    ? 'Swipe a food left to delete it'
+                                    ? 'Tap a food to edit it, swipe left to delete it'
                                     : 'Viewing a cached day — logging resumes on Today',
                                 style: AppType.caption(
                                   color: TrackerColors.textTertiary,

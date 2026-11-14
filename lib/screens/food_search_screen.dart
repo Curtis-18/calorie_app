@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../models/food_entry.dart';
 import '../models/food_item.dart';
+import '../models/nutrients.dart';
 import '../models/portion.dart';
 import '../services/food_search_service.dart';
 import '../theme/app_shapes.dart';
@@ -106,6 +107,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         mealType: widget.mealType,
         source: FoodSource.manual,
         timestamp: DateTime.now(),
+        nutrients: Nutrients.forPortion(item.extrasPer100g, grams),
       ),
     );
   }

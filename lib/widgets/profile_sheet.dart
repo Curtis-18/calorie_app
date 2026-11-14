@@ -2,33 +2,93 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/profile_copy.dart';
 import '../models/user_profile.dart';
+import '../providers/friends_provider.dart';
 import '../providers/user_provider.dart';
 import '../screens/notification_settings_screen.dart';
 import '../screens/onboarding_screen.dart';
+import '../screens/username_screen.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'appearance_picker.dart';
+import 'delete_account.dart';
 import 'glass.dart';
 
-/// Read-only profile surface: the data already held by [userProfileProvider].
+/// The profile surface: targets from [userProfileProvider], appearance,
+/// notifications, and the account actions (username, delete account).
 Future<void> showProfileSheet(BuildContext context) {
   return showAppSheet<void>(
     context: context,
-    builder: (sheetContext) => Consumer(
-      builder: (context, ref, _) {
-        final profile = ref.watch(userProfileProvider);
-        return _ProfileContent(profile: profile);
-      },
+    // Inside AppSheet like every other sheet: without it the content had no
+    // panel behind it, no padding, and couldn't scroll on a small phone.
+    builder: (sheetContext) => AppSheet(
+      child: Consumer(
+        builder: (context, ref, _) => ProfileContent(
+          profile: ref.watch(userProfileProvider),
+          username: ref.watch(friendsProvider).valueOrNull?.myUsername,
+          onUsernameChanged: () => ref.read(friendsProvider.notifier).load(),
+        ),
+      ),
     ),
   );
 }
 
-class _ProfileContent extends StatelessWidget {
-  const _ProfileContent({required this.profile});
+class ProfileContent extends StatelessWidget {
+  const ProfileContent({
+    super.key,
+    required this.profile,
+    this.username,
+    this.onUsernameChanged,
+    this.onDeleteAccount,
+  });
 
   final UserProfile? profile;
+
+  /// The person's current username, once known.
+  final String? username;
+  final VoidCallback? onUsernameChanged;
+
+  /// Replaces the delete-account flow; for tests.
+  final Future<void> Function(BuildContext context)? onDeleteAccount;
+
+  /// Username and delete account. Shown whether or not onboarding is done:
+  /// the stores require that anyone with an account can delete it in the app.
+  List<Widget> _accountActions(BuildContext context) => [
+        if (username != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          AppButton.glass(
+            key: const ValueKey('change_username'),
+            label: 'Change username',
+            icon: CupertinoIcons.at,
+            onPressed: () {
+              final navigator = Navigator.of(context);
+              final changed = onUsernameChanged;
+              navigator.pop();
+              navigator.push(
+                CupertinoPageRoute<void>(
+                  builder: (routeContext) => UsernameScreen(
+                    current: username,
+                    onDone: (_) {
+                      changed?.call();
+                      Navigator.of(routeContext).pop();
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        Center(
+          child: CupertinoButton(
+            key: const ValueKey('delete_account'),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            onPressed: () => (onDeleteAccount ?? confirmAndDeleteAccount)(context),
+            child: Text('Delete account', style: AppType.caption(color: TrackerColors.error, size: 13)),
+          ),
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +115,7 @@ class _ProfileContent extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
           const AppearancePicker(),
+          ..._accountActions(context),
         ],
       );
     }
@@ -101,7 +162,7 @@ class _ProfileContent extends StatelessWidget {
         Row(
           children: [
             Expanded(child: _Metric(label: 'Weight', value: '${p.weightKg.round()} kg')),
-            Expanded(child: _Metric(label: 'Height', value: '${(p.heightCm / 100).round() / 10} m')),
+            Expanded(child: _Metric(label: 'Height', value: '${(p.heightCm / 100).toStringAsFixed(2)} m')),
             Expanded(
               child: _Metric(
                 label: 'BMI',
@@ -180,6 +241,7 @@ class _ProfileContent extends StatelessWidget {
             );
           },
         ),
+        ..._accountActions(context),
       ],
     );
   }

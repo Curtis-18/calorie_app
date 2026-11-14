@@ -8,6 +8,7 @@ import '../models/snaps.dart';
 import 'bite_camera_screen.dart';
 import '../providers/snaps_provider.dart';
 import '../widgets/snaps/flame.dart';
+import '../widgets/snaps/sent_bites_sheet.dart';
 import 'snap_compose_screen.dart';
 import 'snap_viewer_screen.dart';
 import '../models/username_rules.dart';
@@ -296,7 +297,24 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     return [
       if (data != null && data.friends.isNotEmpty) ...[
         _SnapHero(onTap: () => _snap()),
-        const SizedBox(height: AppSpacing.lg),
+        Align(
+          alignment: Alignment.centerRight,
+          child: CupertinoButton(
+            key: const ValueKey('open_sent_bites'),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            minimumSize: Size.zero,
+            onPressed: () => showSentBitesSheet(context, ref.read(snapInboxProvider.notifier).service),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Bites you sent', style: AppType.caption(color: TrackerColors.textSecondary, size: 13)),
+                const SizedBox(width: 4),
+                Icon(CupertinoIcons.chevron_right, size: 12, color: TrackerColors.textTertiary),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
       ],
       if (inbox.isNotEmpty) ...[
         SectionHeader(label: 'Bites from friends', trailing: _count(inbox.length)),

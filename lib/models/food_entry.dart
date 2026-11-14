@@ -1,3 +1,5 @@
+import 'nutrients.dart';
+
 enum MealType { breakfast, lunch, dinner, snack }
 enum FoodSource { manual, photo }
 
@@ -12,6 +14,9 @@ class FoodEntry {
   final FoodSource source;
   final DateTime timestamp;
 
+  /// Fibre, sugar, sodium, iron and calcium as eaten; null when unknown.
+  final Nutrients? nutrients;
+
   FoodEntry({
     required this.id,
     required this.name,
@@ -22,7 +27,42 @@ class FoodEntry {
     required this.mealType,
     required this.source,
     required this.timestamp,
+    this.nutrients,
   });
+
+  /// A corrected copy. The id, source and time never change; pass
+  /// [clearNutrients] when the new food has no nutrient data.
+  FoodEntry copyWith({
+    String? name,
+    int? calories,
+    double? proteinG,
+    double? carbsG,
+    double? fatG,
+    MealType? mealType,
+    Nutrients? nutrients,
+    bool clearNutrients = false,
+  }) =>
+      FoodEntry(
+        id: id,
+        name: name ?? this.name,
+        calories: calories ?? this.calories,
+        proteinG: proteinG ?? this.proteinG,
+        carbsG: carbsG ?? this.carbsG,
+        fatG: fatG ?? this.fatG,
+        mealType: mealType ?? this.mealType,
+        source: source,
+        timestamp: timestamp,
+        nutrients: clearNutrients ? null : (nutrients ?? this.nutrients),
+      );
+
+  /// This entry at [factor] times the portion.
+  FoodEntry scaled(double factor) => copyWith(
+        calories: (calories * factor).round(),
+        proteinG: proteinG * factor,
+        carbsG: carbsG * factor,
+        fatG: fatG * factor,
+        nutrients: nutrients?.scaled(factor),
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -34,6 +74,7 @@ class FoodEntry {
         'mealType': mealType.name,
         'source': source.name,
         'timestamp': timestamp.toIso8601String(),
+        if (nutrients != null) 'nutrients': nutrients!.toJson(),
       };
 
   factory FoodEntry.fromJson(Map<String, dynamic> json) => FoodEntry(
@@ -46,6 +87,7 @@ class FoodEntry {
         mealType: MealType.values.byName(json['mealType']),
         source: FoodSource.values.byName(json['source']),
         timestamp: DateTime.parse(json['timestamp']),
+        nutrients: Nutrients.fromJson(json['nutrients']),
       );
 
   factory FoodEntry.fromApiJson(Map<String, dynamic> json) => FoodEntry(
@@ -58,6 +100,7 @@ class FoodEntry {
         mealType: MealType.values.byName(json['meal_type']),
         source: FoodSource.values.byName(json['source']),
         timestamp: DateTime.parse(json['timestamp']),
+        nutrients: Nutrients.fromJson(json['nutrients']),
       );
 }
 

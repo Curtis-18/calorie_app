@@ -37,6 +37,10 @@ class UserProfile {
   final int? fatTargetG;
   final int? carbsTargetG;
 
+  /// Daily reference amounts for fibre, sodium, iron and calcium, from the
+  /// server (`fiber_g`, `sodium_limit_mg`, `iron_mg`, `calcium_mg`).
+  final Map<String, int>? nutrientTargets;
+
   UserProfile({
     required this.weightKg,
     required this.heightCm,
@@ -51,7 +55,19 @@ class UserProfile {
     this.proteinTargetG,
     this.fatTargetG,
     this.carbsTargetG,
+    this.nutrientTargets,
   });
+
+  /// Parse `nutrient_targets` from a `/targets` response (null if absent).
+  static Map<String, int>? targetsFromApi(Object? json) => _targetsFrom(json);
+
+  static Map<String, int>? _targetsFrom(Object? json) {
+    if (json is! Map) return null;
+    return {
+      for (final e in json.entries)
+        if (e.value case final num value) e.key as String: value.round(),
+    };
+  }
 
   // Pure calendar math, not a business-logic formula, safe to keep local
   int get age {
@@ -80,6 +96,7 @@ class UserProfile {
     required int proteinTargetG,
     required int fatTargetG,
     required int carbsTargetG,
+    Map<String, int>? nutrientTargets,
   }) {
     return UserProfile(
       weightKg: weightKg,
@@ -95,6 +112,7 @@ class UserProfile {
       proteinTargetG: proteinTargetG,
       fatTargetG: fatTargetG,
       carbsTargetG: carbsTargetG,
+      nutrientTargets: nutrientTargets ?? this.nutrientTargets,
     );
   }
 
@@ -112,6 +130,7 @@ class UserProfile {
         'proteinTargetG': proteinTargetG,
         'fatTargetG': fatTargetG,
         'carbsTargetG': carbsTargetG,
+        if (nutrientTargets != null) 'nutrientTargets': nutrientTargets,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -128,6 +147,7 @@ class UserProfile {
         proteinTargetG: json['proteinTargetG'] as int?,
         fatTargetG: json['fatTargetG'] as int?,
         carbsTargetG: json['carbsTargetG'] as int?,
+        nutrientTargets: _targetsFrom(json['nutrientTargets']),
       );
 
   /// Rebuild a full profile from `GET /targets`, or null if the response
@@ -157,6 +177,7 @@ class UserProfile {
         proteinTargetG: (json['protein_g'] as num?)?.toInt(),
         fatTargetG: (json['fat_g'] as num?)?.toInt(),
         carbsTargetG: (json['carbs_g'] as num?)?.toInt(),
+        nutrientTargets: _targetsFrom(json['nutrient_targets']),
       );
     } catch (_) {
       return null;

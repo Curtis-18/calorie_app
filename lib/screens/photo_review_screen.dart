@@ -85,6 +85,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               mealType: widget.mealType,
               source: FoodSource.photo,
               timestamp: DateTime.now(),
+              nutrients: item.estimatedNutrients,
             ))
         .toList();
 

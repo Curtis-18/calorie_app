@@ -163,6 +163,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       proteinTargetG: data['protein_g'] as int,
       fatTargetG: data['fat_g'] as int,
       carbsTargetG: data['carbs_g'] as int,
+      nutrientTargets: UserProfile.targetsFromApi(data['nutrient_targets']),
     );
 
     final prefs = await SharedPreferences.getInstance();
