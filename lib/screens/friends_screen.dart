@@ -27,6 +27,7 @@ import '../widgets/app_dialog.dart';
 import '../widgets/app_field.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/glass.dart';
+import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 
@@ -281,29 +282,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         decoration: BoxDecoration(color: TrackerColors.background),
         child: Column(
           children: [
-            SafeArea(
-              bottom: false,
-              child: FrostedGlass(
-                opacity: 0.9,
-                tint: TrackerColors.navFill,
-                blur: 24,
-                borderRadius: BorderRadius.zero,
-                border: AppDecor.hairlineTop,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 14),
-                  child: Row(
-                    children: [
-                      Text('Friends', style: AppType.title()),
-                      const Spacer(),
-                      if (friends.hasValue)
-                        Text(
-                          '${friends.value!.friends.length} / ${friends.value!.limit}',
-                          style: AppType.caption(color: TrackerColors.textTertiary, size: 12),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+            PageHeader(
+              title: 'Friends',
+              subtitle: friends.hasValue
+                  ? '${friends.value!.friends.length} of ${friends.value!.limit} friends'
+                  : 'Share meals, keep streaks together',
             ),
             Expanded(
               child: CustomScrollView(
@@ -374,7 +357,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
       ],
       if (inbox.isNotEmpty) ...[
         SectionHeader(label: 'Bites from friends', trailing: _count(inbox.length)),
@@ -390,91 +373,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         ),
         const SizedBox(height: AppSpacing.xl),
       ],
-      if (data?.myUsername != null) ...[
-        AppCard(
-          glow: TrackerColors.accentStart,
-          child: Row(
-            children: [
-              FriendAvatar(username: data!.myUsername!, size: 46, imageUrl: data.myAvatarUrl),
-              const SizedBox(width: AppSpacing.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Your username', style: AppType.caption(color: TrackerColors.textTertiary, size: 11)),
-                    const SizedBox(height: 2),
-                    Text('@${data.myUsername}', style: AppType.headline(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-              _Pill(
-                label: _copied ? 'Copied' : 'Copy',
-                icon: _copied ? CupertinoIcons.checkmark : CupertinoIcons.doc_on_doc,
-                onTap: () => _copyName(data.myUsername!),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xl),
-      ],
-      const SectionHeader(label: 'Add a friend'),
-      const SizedBox(height: AppSpacing.md),
-      Row(
-        children: [
-          Expanded(
-            child: AppField(
-              placeholder: 'Their username',
-              controller: _controller,
-              icon: CupertinoIcons.at,
-              keyboardType: TextInputType.visiblePassword, // no autocorrect or suggestions
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_@]')),
-                LengthLimitingTextInputFormatter(usernameMaxLength + 1),
-              ],
-              onChanged: (_) {
-                if (_notice != null) setState(() => _notice = null);
-              },
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          SizedBox(
-            width: 84,
-            child: AppButton(label: _sending ? '…' : 'Add', onPressed: _sending ? null : _add),
-          ),
-        ],
-      ),
-      AnimatedSize(
-        duration: AppMotion.quick,
-        child: _notice == null
-            ? const SizedBox(width: double.infinity)
-            : Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.md),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      _noticeIsError ? CupertinoIcons.exclamationmark_circle : CupertinoIcons.checkmark_circle_fill,
-                      size: 14,
-                      color: _noticeIsError ? TrackerColors.warning : TrackerColors.accentStartText,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _notice!,
-                        style: AppType.caption(
-                          color: _noticeIsError ? TrackerColors.warning : TrackerColors.accentStartText,
-                          size: 12.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-      ),
-      const SizedBox(height: AppSpacing.xl),
       ...friends.when(
-        loading: () => const [SkeletonRows(count: 4)],
+        loading: () => [..._addFriend(data), const SkeletonRows(count: 4)],
         error: (e, _) => [
+          ..._addFriend(data),
           AppEmptyState(
             icon: CupertinoIcons.wifi_exclamationmark,
             title: "Couldn't load your friends",
@@ -488,9 +390,116 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     ];
   }
 
+  /// One card for finding people: the field to add someone, and your own
+  /// username to hand out. These were two separate blocks above the lists.
+  List<Widget> _addFriend(FriendsData? data) => [
+        const SectionHeader(label: 'Add a friend'),
+        const SizedBox(height: AppSpacing.md),
+        AppCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: AppField(
+                      placeholder: 'Their username',
+                      controller: _controller,
+                      icon: CupertinoIcons.at,
+                      keyboardType: TextInputType.visiblePassword, // no autocorrect or suggestions
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_@]')),
+                        LengthLimitingTextInputFormatter(usernameMaxLength + 1),
+                      ],
+                      onChanged: (_) {
+                        if (_notice != null) setState(() => _notice = null);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  SizedBox(
+                    width: 84,
+                    child: AppButton(label: _sending ? '…' : 'Add', onPressed: _sending ? null : _add),
+                  ),
+                ],
+              ),
+              AnimatedSize(
+                duration: AppMotion.quick,
+                child: _notice == null
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.md),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              _noticeIsError
+                                  ? CupertinoIcons.exclamationmark_circle
+                                  : CupertinoIcons.checkmark_circle_fill,
+                              size: 14,
+                              color: _noticeIsError ? TrackerColors.warning : TrackerColors.accentStartText,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _notice!,
+                                style: AppType.caption(
+                                  color: _noticeIsError ? TrackerColors.warning : TrackerColors.accentStartText,
+                                  size: 12.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+              if (data?.myUsername != null) ...[
+                const SizedBox(height: AppSpacing.lg),
+                const AppDivider(),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    FriendAvatar(username: data!.myUsername!, size: 40, imageUrl: data.myAvatarUrl),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Share yours so friends can add you',
+                            style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '@${data.myUsername}',
+                            style: AppType.headline(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    _Pill(
+                      label: _copied ? 'Copied' : 'Copy',
+                      icon: _copied ? CupertinoIcons.checkmark : CupertinoIcons.doc_on_doc,
+                      onTap: () => _copyName(data.myUsername!),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+      ];
+
+  /// What needs an answer first (requests), then your friends, then adding
+  /// more, then requests you are waiting on. With no friends yet, adding
+  /// someone is the first thing on the page.
   List<Widget> _lists(FriendsData data) {
     final notifier = ref.read(friendsProvider.notifier);
-    return [
+    final requests = [
       if (data.incoming.isNotEmpty) ...[
         SectionHeader(label: 'Requests', trailing: _count(data.incoming.length)),
         const SizedBox(height: AppSpacing.md),
@@ -503,8 +512,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               _MoreButton(onTap: () => _more(p, isFriend: false)),
             ],
           ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
       ],
+    ];
+    final waiting = [
       if (data.outgoing.isNotEmpty) ...[
         SectionHeader(label: 'Waiting for a reply', trailing: _count(data.outgoing.length)),
         const SizedBox(height: AppSpacing.md),
@@ -514,8 +525,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             subtitle: 'request sent',
             actions: [_Pill(label: 'Cancel', onTap: () => _run(() => notifier.remove(p)))],
           ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
       ],
+    ];
+    final yours = [
       SectionHeader(label: 'Your friends', trailing: data.friends.isEmpty ? null : _count(data.friends.length)),
       const SizedBox(height: AppSpacing.md),
       if (data.friends.isEmpty)
@@ -537,16 +550,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             ],
           ),
       const SizedBox(height: AppSpacing.xl),
-      Center(
-        child: CupertinoButton(
-          onPressed: () => showAppSheet<void>(
-            context: context,
-            builder: (_) => _BlockedSheet(service: ref.read(friendsProvider.notifier).service),
-          ),
-          child: Text('Blocked people', style: AppType.caption(color: TrackerColors.textTertiary, size: 13)),
-        ),
-      ),
     ];
+    return data.friends.isEmpty
+        ? [..._addFriend(data), ...requests, ...waiting, ...yours]
+        : [...requests, ...yours, ..._addFriend(data), ...waiting];
   }
 
   Widget _count(int n) =>
@@ -722,6 +729,11 @@ class _MoreButton extends StatelessWidget {
     );
   }
 }
+
+/// People you have blocked, with a way to unblock them. Opened from
+/// Settings (it used to be a small link at the bottom of this screen).
+Future<void> showBlockedPeopleSheet(BuildContext context, FriendsService service) =>
+    showAppSheet<void>(context: context, builder: (_) => _BlockedSheet(service: service));
 
 class _BlockedSheet extends StatefulWidget {
   const _BlockedSheet({required this.service});

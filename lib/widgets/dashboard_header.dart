@@ -1,17 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import '../models/progress.dart';
-import '../theme/app_typography.dart';
-import '../theme/tracker_colors.dart';
-import 'app_button.dart';
 import 'dashboard_header_bits.dart';
 import 'game/header_chips.dart';
 import 'game/progress_sheet.dart';
-import '../screens/notification_settings_screen.dart';
-import 'profile_sheet.dart';
+import 'page_header.dart';
 
-/// Minimal top bar: greeting with the level badge, the streak flame, date
-/// switcher and a profile affordance. Sits inside the frosted header of the
-/// dashboard.
+/// Today's top bar: the greeting, the day on screen with arrows to move
+/// between days, and the streak flame and level on the right (both open the
+/// progress sheet). Profile, notifications and log out live in the Profile
+/// tab now; they used to crowd this bar.
 class DashboardHeader extends StatelessWidget {
   const DashboardHeader({
     super.key,
@@ -21,7 +18,6 @@ class DashboardHeader extends StatelessWidget {
     this.onPreviousDay,
     this.onNextDay,
     this.canGoNext = false,
-    this.onProfileTap,
   });
 
   /// Local fallback streak, used until [progress] has loaded (or offline).
@@ -33,7 +29,6 @@ class DashboardHeader extends StatelessWidget {
   final VoidCallback? onPreviousDay;
   final VoidCallback? onNextDay;
   final bool canGoNext;
-  final VoidCallback? onProfileTap;
 
   String get _greeting {
     final hour = DateTime.now().hour;
@@ -44,66 +39,17 @@ class DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 6, 24, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Flexible(child: Text(_greeting, style: AppType.title(), overflow: TextOverflow.ellipsis)),
-                    if (progress != null) ...[
-                      const SizedBox(width: 10),
-                      LevelBadge(level: progress!.level, size: 30, onTap: () => showProgressSheet(context)),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    if (progress != null)
-                      FlameStreakPill(streak: progress!.streak, onTap: () => showProgressSheet(context))
-                    else
-                      StreakPill(days: streakDays),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: DateSwitcher(
-                        label: dateLabel,
-                        onPrevious: onPreviousDay,
-                        onNext: onNextDay,
-                        canGoNext: canGoNext,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          AppIconButton(
-            key: const ValueKey('header_notifications'),
-            icon: CupertinoIcons.bell,
-            size: 44,
-            iconSize: 22,
-            color: TrackerColors.textPrimary,
-            onPressed: () => Navigator.of(context).push(
-              CupertinoPageRoute(builder: (_) => const NotificationSettingsScreen()),
-            ),
-          ),
-          AppIconButton(
-            icon: CupertinoIcons.person_crop_circle,
-            size: 44,
-            iconSize: 22,
-            color: TrackerColors.textPrimary,
-            onPressed: onProfileTap ?? () => showProfileSheet(context),
-          ),
-        ],
-      ),
+    return PageHeader(
+      eyebrow: _greeting,
+      title: dateLabel,
+      titleAccessory: DayArrows(onPrevious: onPreviousDay, onNext: onNextDay, canGoNext: canGoNext),
+      actions: [
+        if (progress != null) ...[
+          FlameStreakPill(streak: progress!.streak, onTap: () => showProgressSheet(context)),
+          LevelBadge(level: progress!.level, size: 34, onTap: () => showProgressSheet(context)),
+        ] else
+          StreakPill(days: streakDays),
+      ],
     );
   }
 }

@@ -6,7 +6,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_card.dart';
 import '../widgets/empty_state.dart';
-import '../widgets/glass.dart';
+import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 import 'recipe_detail_screen.dart';
@@ -104,49 +104,27 @@ class _LibraryScreenState extends State<LibraryScreen> {
         decoration: BoxDecoration(color: TrackerColors.background),
         child: Column(
           children: [
-            SafeArea(
-              bottom: false,
-              child: FrostedGlass(
-                opacity: 0.9,
-                tint: TrackerColors.navFill,
-                blur: 24,
-                borderRadius: BorderRadius.zero,
-                border: AppDecor.hairlineTop,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text('Recipes', style: AppType.title()),
-                          const Spacer(),
-                          if (isLoading)
-                            const SkeletonBox(width: 64, height: 12),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      CupertinoSearchTextField(
-                        controller: _controller,
-                        onSubmitted: _search,
-                        onChanged: (value) {
-                          if (value.trim().isEmpty && _hasSearched) {
-                            setState(() {
-                              _hasSearched = false;
-                              _searchResults = [];
-                            });
-                          }
-                        },
-                        placeholder: 'Search recipes…',
-                        backgroundColor: TrackerColors.alpha(TrackerColors.textPrimary, 0.07),
-                        borderRadius: AppRadii.buttonAll,
-                        itemColor: TrackerColors.textSecondary,
-                        style: AppType.body(size: 15),
-                        placeholderStyle: AppType.body(size: 15, color: TrackerColors.textTertiary),
-                      ),
-                    ],
-                  ),
-                ),
+            PageHeader(
+              title: 'Recipes',
+              subtitle: 'Ideas for your next meal',
+              actions: [if (isLoading) const SkeletonBox(width: 64, height: 12)],
+              bottom: CupertinoSearchTextField(
+                controller: _controller,
+                onSubmitted: _search,
+                onChanged: (value) {
+                  if (value.trim().isEmpty && _hasSearched) {
+                    setState(() {
+                      _hasSearched = false;
+                      _searchResults = [];
+                    });
+                  }
+                },
+                placeholder: 'Search recipes…',
+                backgroundColor: TrackerColors.alpha(TrackerColors.textPrimary, 0.07),
+                borderRadius: AppRadii.buttonAll,
+                itemColor: TrackerColors.textSecondary,
+                style: AppType.body(size: 15),
+                placeholderStyle: AppType.body(size: 15, color: TrackerColors.textTertiary),
               ),
             ),
             Expanded(

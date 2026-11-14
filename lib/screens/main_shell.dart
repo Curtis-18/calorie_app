@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/friends_provider.dart';
+import '../providers/shell_provider.dart';
 import '../providers/snaps_provider.dart';
 import '../theme/app_motion.dart';
 import '../theme/tracker_colors.dart';
@@ -8,37 +9,76 @@ import 'dashboard_screen.dart';
 import 'friends_screen.dart';
 import 'insights_screen.dart';
 import 'library_screen.dart';
+import 'profile_screen.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
-  /// Tour target key for the Insights tab icon. Exposed statically so that
-  /// DashboardScreen can reference it without constructor coupling.
+  /// Tour target keys for tab icons. Exposed statically so that
+  /// DashboardScreen can reference them without constructor coupling.
   static final insightsTabKey = GlobalKey(debugLabel: 'tourInsightsTab');
+  static final friendsTabKey = GlobalKey(debugLabel: 'tourFriendsTab');
+  static final profileTabKey = GlobalKey(debugLabel: 'tourProfileTab');
 
   @override
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  int _index = 0;
-  final _screens = const [DashboardScreen(), InsightsScreen(), FriendsScreen(), LibraryScreen()];
+  // A controller, so other screens can move the person to a tab (Settings
+  // sends them to Today to replay the tutorial).
+  final _controller = CupertinoTabController();
+  final _screens = const [
+    DashboardScreen(),
+    InsightsScreen(),
+    FriendsScreen(),
+    LibraryScreen(),
+    ProfileScreen(),
+  ];
 
-  static const _tabs = [
-    (icon: CupertinoIcons.square_list, label: 'Log'),
-    (icon: CupertinoIcons.chart_bar, label: 'Insights'),
-    (icon: CupertinoIcons.person_2, label: 'Friends'),
-    (icon: CupertinoIcons.book, label: 'Recipes'),
+  // In ShellTab order.
+  static final _tabs = [
+    (icon: CupertinoIcons.square_list, label: 'Today', key: null),
+    (icon: CupertinoIcons.chart_bar, label: 'Insights', key: MainShell.insightsTabKey),
+    (icon: CupertinoIcons.person_2, label: 'Friends', key: MainShell.friendsTabKey),
+    (icon: CupertinoIcons.book, label: 'Recipes', key: null),
+    (icon: CupertinoIcons.person_crop_circle, label: 'Profile', key: MainShell.profileTabKey),
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTabChanged);
+    // A fresh shell (after signing in again) starts on Today.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(shellTabProvider.notifier).state = ShellTab.today;
+    });
+  }
+
+  void _onTabChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final tab = ShellTab.values[_controller.index];
+    if (ref.read(shellTabProvider) != tab) ref.read(shellTabProvider.notifier).state = tab;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen<ShellTab>(shellTabProvider, (_, tab) {
+      if (_controller.index != tab.index) _controller.index = tab.index;
+    });
     final waiting = ref.watch(pendingRequestCountProvider) + ref.watch(unseenSnapCountProvider);
+    final index = _controller.index;
     return CupertinoTabScaffold(
+      controller: _controller,
       backgroundColor: TrackerColors.background,
       tabBar: CupertinoTabBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
         height: 58,
         iconSize: 22,
         backgroundColor: TrackerColors.navFill,
@@ -51,10 +91,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           for (var i = 0; i < _tabs.length; i++)
             BottomNavigationBarItem(
               icon: TabIcon(
-                key: i == 1 ? MainShell.insightsTabKey : null,
+                key: _tabs[i].key,
                 icon: _tabs[i].icon,
-                active: i == _index,
-                badge: i == 2 && waiting > 0,
+                active: i == index,
+                badge: i == ShellTab.friends.index && waiting > 0,
               ),
               label: _tabs[i].label,
             ),

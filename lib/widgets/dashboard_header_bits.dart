@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -45,17 +44,11 @@ class StreakPill extends StatelessWidget {
   }
 }
 
-/// Tappable date pill with previous/next arrows.
-class DateSwitcher extends StatelessWidget {
-  const DateSwitcher({
-    super.key,
-    required this.label,
-    required this.onPrevious,
-    required this.onNext,
-    this.canGoNext = false,
-  });
+/// Previous-day / next-day arrows in a small glass pill, shown next to the
+/// day's name in the Today header. "Next" is disabled on today.
+class DayArrows extends StatelessWidget {
+  const DayArrows({super.key, required this.onPrevious, required this.onNext, this.canGoNext = false});
 
-  final String label;
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
   final bool canGoNext;
@@ -66,29 +59,24 @@ class DateSwitcher extends StatelessWidget {
       opacity: 0.07,
       borderRadius: BorderRadius.circular(AppRadii.pill),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _Arrow(icon: CupertinoIcons.chevron_left, onTap: onPrevious),
-            AnimatedSwitcher(
-              duration: AppMotion.quick,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
-                      .animate(animation),
-                  child: child,
-                ),
-              ),
-              child: Text(
-                label,
-                key: ValueKey(label),
-                style: AppType.caption(color: TrackerColors.textPrimary, size: 12)
-                    .copyWith(fontWeight: FontWeight.w700),
+            Semantics(
+              button: true,
+              label: 'Previous day',
+              child: _Arrow(key: const ValueKey('day_previous'), icon: CupertinoIcons.chevron_left, onTap: onPrevious),
+            ),
+            Semantics(
+              button: true,
+              label: 'Next day',
+              child: _Arrow(
+                key: const ValueKey('day_next'),
+                icon: CupertinoIcons.chevron_right,
+                onTap: canGoNext ? onNext : null,
               ),
             ),
-            _Arrow(icon: CupertinoIcons.chevron_right, onTap: canGoNext ? onNext : null),
           ],
         ),
       ),
@@ -97,7 +85,7 @@ class DateSwitcher extends StatelessWidget {
 }
 
 class _Arrow extends StatelessWidget {
-  const _Arrow({required this.icon, this.onTap});
+  const _Arrow({super.key, required this.icon, this.onTap});
 
   final IconData icon;
   final VoidCallback? onTap;
@@ -109,8 +97,8 @@ class _Arrow extends StatelessWidget {
       haptics: true,
       dimWhenDisabled: true,
       child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Icon(icon, size: 13, color: TrackerColors.textPrimary),
+        padding: const EdgeInsets.all(8),
+        child: Icon(icon, size: 14, color: TrackerColors.textPrimary),
       ),
     );
   }

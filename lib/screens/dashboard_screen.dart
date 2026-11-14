@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/food_entry.dart';
 import '../models/nutrients.dart';
+import '../providers/display_prefs_provider.dart';
 import '../providers/food_log_provider.dart';
 import '../providers/progress_provider.dart';
+import '../providers/shell_provider.dart';
 import '../models/progress.dart';
 import '../providers/user_provider.dart';
 import '../services/day_log_service.dart';
@@ -28,13 +28,12 @@ import '../widgets/calorie_ring.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/edit_entry_sheet.dart';
 import '../widgets/game/celebrations.dart';
-import '../widgets/glass.dart';
+import '../widgets/log_food_sheet.dart';
 import '../widgets/macro_breakdown.dart';
 import '../widgets/meal_section.dart';
 import '../widgets/nutrients_card.dart';
 import '../widgets/save_toast.dart';
 import '../widgets/shimmer.dart';
-import 'auth_gate.dart';
 import 'food_search_screen.dart';
 import 'main_shell.dart';
 import 'photo_review_screen.dart';
@@ -63,7 +62,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // First-run tour targets.
   final _ringKey = GlobalKey(debugLabel: 'tourRing');
   final _addButtonKey = GlobalKey(debugLabel: 'tourAddButton');
-  final _cameraButtonKey = GlobalKey(debugLabel: 'tourCamera');
+  final _scroll = ScrollController();
   bool _tourScheduled = false;
 
   /// Lets the splash fade, the shell's route transition finish and the ring
@@ -88,6 +87,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void dispose() {
     _lifecycle.dispose();
     _celebrationSub?.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -169,43 +169,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return shell == null || shell.isCurrent;
   }
 
-  List<TourStep> _tourSteps() => [
-        TourStep(
-          targetKey: _ringKey,
-          icon: CupertinoIcons.flame_fill,
-          title: 'Your daily budget',
-          body: 'The ring shows how many calories you have left today. '
-              'It fills up as you log meals.',
-          radius: AppRadii.container,
-          padding: 6,
-        ),
-        TourStep(
-          targetKey: _addButtonKey,
-          icon: CupertinoIcons.search,
-          title: 'Log food by name',
-          body: 'Search for any food, then enter how much you had.',
-          shape: TourShape.circle,
-          padding: 5,
-        ),
-        TourStep(
-          targetKey: _cameraButtonKey,
-          icon: CupertinoIcons.camera_fill,
-          title: 'Or just take a photo',
-          body: "Take a picture of your plate. We'll spot the foods and estimate "
-              'portions for you to check before saving.',
-          shape: TourShape.circle,
-          padding: 6,
-        ),
-        TourStep(
-          targetKey: MainShell.insightsTabKey,
-          icon: CupertinoIcons.chart_bar_alt_fill,
-          title: 'Your weekly coach',
-          body: 'Insights shows your trends and personal tips based on what '
-              "you've logged.",
-          shape: TourShape.pill,
-          padding: 6,
-        ),
-      ];
+  /// "Replay the tutorial" in Settings: show it again from the top, whether
+  /// or not it was seen before.
+  Future<void> _replayTour() async {
+    if (_pastDay != null) await _selectDay(DateTime.now()); // the + button only shows on today
+    // Let Settings finish closing and the tab switch settle.
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
+    if (_scroll.hasClients) _scroll.jumpTo(0); // the ring must be on screen to be pointed at
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || !_canShowTour()) return;
+    await AppTour.show(context, steps: _tourSteps());
+    await TourService.markSeen(TourService.dashboard);
+  }
+
+  List<TourStep> _tourSteps() => dashboardTourSteps(ringKey: _ringKey, addButtonKey: _addButtonKey);
 
   Future<void> _refreshStreak() async {
     final streak = await LogCacheReader.currentStreak();
@@ -251,61 +229,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// on while a load was in flight.
   bool _isViewing(DateTime day) => _pastDay != null && LogCacheReader.isSameDay(_pastDay!, day);
 
-  Future<MealType?> _showMealPicker(BuildContext context) {
-    return showAppSheet<MealType>(
-      context: context,
-      builder: (sheetContext) => AppSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Log a Meal', style: AppType.title(), textAlign: TextAlign.center),
-            const SizedBox(height: 4),
-            Text('Which meal are we adding to?', style: AppType.callout(), textAlign: TextAlign.center),
-            const SizedBox(height: AppSpacing.lg),
-            ...MealType.values.map(
-              (meal) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: AppButton.glass(
-                  label: meal.name,
-                  icon: _iconFor(meal),
-                  height: 50,
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.of(sheetContext).pop(meal);
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static IconData _iconFor(MealType meal) {
-    switch (meal) {
-      case MealType.breakfast:
-        return CupertinoIcons.sun_max_fill;
-      case MealType.lunch:
-        return CupertinoIcons.sun_max;
-      case MealType.dinner:
-        return CupertinoIcons.moon_stars_fill;
-      case MealType.snack:
-        return CupertinoIcons.circle_grid_hex_fill;
+  /// The + button: one sheet to pick the meal and how to log it.
+  Future<void> _startAdd(BuildContext context) async {
+    final choice = await showLogFoodSheet(context);
+    if (choice == null || !context.mounted) return;
+    switch (choice.method) {
+      case LogMethod.photo:
+        await _captureAndAnalyze(context, choice.meal);
+      case LogMethod.search:
+        await _openFoodSearch(context, choice.meal);
     }
-  }
-
-  Future<void> _startScan(BuildContext context) async {
-    final meal = await _showMealPicker(context);
-    if (meal == null || !context.mounted) return;
-    await _captureAndAnalyze(context, meal);
-  }
-
-  Future<void> _startManualAdd(BuildContext context) async {
-    final meal = await _showMealPicker(context);
-    if (meal == null || !context.mounted) return;
-    await _openFoodSearch(context, meal);
   }
 
   Future<void> _captureAndAnalyze(BuildContext context, MealType meal) async {
@@ -460,24 +393,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
-  Future<void> _logout(BuildContext context) async {
-    try {
-      await Supabase.instance.client.auth.signOut();
-    } catch (_) {
-      // Offline, or the session is already gone on the server: the default
-      // sign-out throws and left the person signed in. Sign out on this
-      // device regardless.
-      try {
-        await Supabase.instance.client.auth.signOut(scope: SignOutScope.local);
-      } catch (_) {}
-    }
-    if (!context.mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      CupertinoPageRoute(builder: (_) => const AuthGate()),
-      (route) => false,
-    );
-  }
-
   String get _dateLabel {
     final now = DateTime.now();
     final day = _viewDay;
@@ -495,10 +410,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen<List<FoodEntry>>(foodLogProvider, (previous, next) => _refreshStreak());
+    ref.listen<int>(tourReplayProvider, (previous, next) => _replayTour());
 
     final profile = ref.watch(userProfileProvider);
     final foodLog = ref.watch(foodLogProvider);
     final progress = ref.watch(progressProvider);
+    final display = ref.watch(displayPrefsProvider);
 
     final entries = _isToday ? foodLog : _pastEntries;
     final target = profile?.calorieTarget ?? 2000;
@@ -512,46 +429,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             decoration: BoxDecoration(color: TrackerColors.background),
             child: Column(
               children: [
-                SafeArea(
-                  bottom: false,
-                  child: FrostedGlass(
-                    opacity: 0.9,
-                    tint: TrackerColors.navFill,
-                    blur: 24,
-                    borderRadius: BorderRadius.zero,
-                    border: AppDecor.hairlineTop,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: DashboardHeader(
-                            streakDays: _streak,
-                            progress: progress,
-                            dateLabel: _dateLabel,
-                            canGoNext: !_isToday,
-                            onPreviousDay: () => _selectDay(
-                              _viewDay.subtract(const Duration(days: 1)),
-                            ),
-                            onNextDay: () =>
-                                _selectDay(_viewDay.add(const Duration(days: 1))),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 20, top: 6, bottom: 6),
-                          child: AppIconButton(
-                            icon: CupertinoIcons.square_arrow_right,
-                            size: 38,
-                            iconSize: 17,
-                            color: TrackerColors.textSecondary,
-                            onPressed: () => _logout(context),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                DashboardHeader(
+                  streakDays: _streak,
+                  progress: progress,
+                  dateLabel: _dateLabel,
+                  canGoNext: !_isToday,
+                  onPreviousDay: () => _selectDay(_viewDay.subtract(const Duration(days: 1))),
+                  onNextDay: () => _selectDay(_viewDay.add(const Duration(days: 1))),
                 ),
                 Expanded(
                   child: CustomScrollView(
+                    controller: _scroll,
                     physics: const BouncingScrollPhysics(
                       parent: AlwaysScrollableScrollPhysics(),
                     ),
@@ -570,23 +458,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 perfectDay: _isToday && (progress?.today.perfectDay ?? false),
                               ),
                             ),
-                            const SizedBox(height: 14),
-                            MacroBreakdownCard(
-                              protein: entries.totalProtein,
-                              proteinTarget: profile?.proteinTargetG ?? 0,
-                              carbs: entries.totalCarbs,
-                              carbsTarget: profile?.carbsTargetG ?? 0,
-                              fat: entries.totalFat,
-                              fatTarget: profile?.fatTargetG ?? 0,
-                            ),
-                            const SizedBox(height: 14),
-                            NutrientsCard(
-                              summary: NutrientSummary.of(
-                                entries.map((e) => e.nutrients),
-                                targets: profile?.nutrientTargets,
+                            if (display.showMacros) ...[
+                              const SizedBox(height: 14),
+                              MacroBreakdownCard(
+                                protein: entries.totalProtein,
+                                proteinTarget: profile?.proteinTargetG ?? 0,
+                                carbs: entries.totalCarbs,
+                                carbsTarget: profile?.carbsTargetG ?? 0,
+                                fat: entries.totalFat,
+                                fatTarget: profile?.fatTargetG ?? 0,
                               ),
-                            ),
-                            const SizedBox(height: 22),
+                            ],
+                            const SizedBox(height: 24),
                             SectionHeader(
                               label: _isToday ? "Today's meals" : 'Meals',
                               trailing: _isToday
@@ -615,18 +498,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.lg),
+                            const SizedBox(height: 2),
                             Center(
                               child: Text(
                                 _isToday
                                     ? 'Tap a food to edit it, swipe left to delete it'
-                                    : 'Viewing a cached day — logging resumes on Today',
+                                    : 'Past days are read-only. Go back to Today to log.',
                                 style: AppType.caption(
                                   color: TrackerColors.textTertiary,
                                   size: 11,
                                 ),
                               ),
                             ),
+                            // Detail, so it sits under the meals: the thing
+                            // people act on used to be below two cards of it.
+                            if (display.showNutrients) ...[
+                              const SizedBox(height: 24),
+                              const SectionHeader(label: 'Nutrients'),
+                              const SizedBox(height: 12),
+                              NutrientsCard(
+                                summary: NutrientSummary.of(
+                                  entries.map((e) => e.nutrients),
+                                  targets: profile?.nutrientTargets,
+                                ),
+                              ),
+                            ],
                             SizedBox(height: AppSpacing.tabBarClearance + bottomInset),
                           ]),
                         ),
@@ -641,28 +537,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Positioned(
               right: 24,
               bottom: bottomInset + 18,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  KeyedSubtree(
-                    key: _addButtonKey,
-                    child: AppFab(
-                      icon: CupertinoIcons.search,
-                      size: 50,
-                      iconSize: 21,
-                      onPressed: () => _startManualAdd(context),
-                    ),
+              child: Semantics(
+                button: true,
+                label: 'Log food',
+                child: KeyedSubtree(
+                  key: _addButtonKey,
+                  child: AppFab(
+                    key: const ValueKey('log_food'),
+                    icon: CupertinoIcons.add,
+                    size: 62,
+                    iconSize: 28,
+                    gradient: TrackerColors.calorieGradient,
+                    onPressed: () => _startAdd(context),
                   ),
-                  const SizedBox(width: 12),
-                  KeyedSubtree(
-                    key: _cameraButtonKey,
-                    child: AppFab(
-                      icon: CupertinoIcons.camera,
-                      gradient: TrackerColors.calorieGradient,
-                      onPressed: () => _startScan(context),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
         ],
@@ -670,6 +558,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 }
+
+/// The first-run walk through the app, in the order the screen is laid out:
+/// the ring, the one button that logs food, then the tabs worth knowing.
+@visibleForTesting
+List<TourStep> dashboardTourSteps({required GlobalKey ringKey, required GlobalKey addButtonKey}) => [
+      TourStep(
+        targetKey: ringKey,
+        icon: CupertinoIcons.flame_fill,
+        title: 'Your daily budget',
+        body: 'The ring shows how many calories you have left today. '
+            'It fills up as you log meals.',
+        radius: AppRadii.container,
+        padding: 6,
+      ),
+      TourStep(
+        targetKey: addButtonKey,
+        icon: CupertinoIcons.add,
+        title: 'Log a meal here',
+        body: "Tap + and take a photo of your plate: we'll spot the foods and estimate "
+            'portions for you to check. Or search for a food by name.',
+        shape: TourShape.circle,
+        padding: 6,
+      ),
+      TourStep(
+        targetKey: MainShell.insightsTabKey,
+        icon: CupertinoIcons.chart_bar_alt_fill,
+        title: 'Your weekly coach',
+        body: 'Insights shows your trends, your weight and personal tips based on '
+            "what you've logged.",
+        shape: TourShape.pill,
+        padding: 6,
+      ),
+      TourStep(
+        targetKey: MainShell.friendsTabKey,
+        icon: CupertinoIcons.person_2_fill,
+        title: 'Eat with friends',
+        body: 'Add friends, send each other food bites and keep a streak going together.',
+        shape: TourShape.pill,
+        padding: 6,
+      ),
+      TourStep(
+        targetKey: MainShell.profileTabKey,
+        icon: CupertinoIcons.person_crop_circle_fill,
+        title: 'Your plan and settings',
+        body: 'Profile has your targets and progress. The gear opens Settings: '
+            'appearance, notifications, your account and this tutorial again.',
+        shape: TourShape.pill,
+        padding: 6,
+      ),
+    ];
 
 class _RingCard extends StatelessWidget {
   const _RingCard({

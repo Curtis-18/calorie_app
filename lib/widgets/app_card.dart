@@ -128,7 +128,12 @@ class AppDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: indent),
-      child: Container(height: 1, color: TrackerColors.alpha(TrackerColors.border, opacity)),
+      // Scale the hairline's own alpha. Setting it to [opacity] outright made
+      // every divider a solid white (or solid ink) line.
+      child: Container(
+        height: 1,
+        color: TrackerColors.border.withValues(alpha: (TrackerColors.border.a * opacity).clamp(0.0, 1.0)),
+      ),
     );
   }
 }

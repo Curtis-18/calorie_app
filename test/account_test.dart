@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:calorie_app/models/user_profile.dart';
+import 'package:calorie_app/screens/profile_screen.dart';
+import 'package:calorie_app/screens/settings_screen.dart';
 import 'package:calorie_app/screens/username_screen.dart';
 import 'package:calorie_app/services/account_service.dart';
 import 'package:calorie_app/services/username_service.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:calorie_app/widgets/delete_account.dart';
-import 'package:calorie_app/widgets/glass.dart';
-import 'package:calorie_app/widgets/profile_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -145,7 +145,7 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
-  group('the profile sheet', () {
+  group('settings and profile', () {
     final profile = UserProfile(
       weightKg: 70, heightCm: 175, dateOfBirth: DateTime(1990, 1, 1), gender: Gender.male,
       activityLevel: ActivityLevel.moderate, goal: Goal.maintain, calorieTarget: 2400, bmi: 22.9,
@@ -161,58 +161,84 @@ void main() {
       final events = <String>[];
       await tester.pumpWidget(ProviderScope(child: CupertinoApp(
         theme: AppTheme.cupertino,
-        home: Builder(
-          builder: (context) => CupertinoPageScaffold(
-            child: Center(
-              child: CupertinoButton(
-                child: const Text('open'),
-                onPressed: () => showAppSheet<void>(
-                  context: context,
-                  builder: (_) => AppSheet(
-                    child: ProfileContent(
-                      profile: profile,
-                      username: username,
-                      onUsernameChanged: () => events.add('username changed'),
-                      onDeleteAccount: (_) async => events.add('delete'),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+        home: SettingsView(
+          profile: profile,
+          username: username,
+          onUsernameChanged: () => events.add('username changed'),
+          onBlockedPeople: () => events.add('blocked'),
+          onLogOut: (_) async => events.add('log out'),
+          onDeleteAccount: (_) async => events.add('delete'),
         ),
       )));
-      await tester.tap(find.text('open'));
       await settle(tester);
       return events;
     }
 
+    Future<void> tapKey(WidgetTester tester, String key) async {
+      final target = find.byKey(ValueKey(key));
+      await tester.ensureVisible(target);
+      await settle(tester);
+      await tester.tap(target);
+      await settle(tester);
+    }
+
     testWidgets('delete account can be reached on a small phone', (tester) async {
       final events = await open(tester, profile: profile, username: 'river');
-      final delete = find.byKey(const ValueKey('delete_account'));
-      await tester.ensureVisible(delete);
-      await settle(tester);
-      await tester.tap(delete);
-      await settle(tester);
+      await tapKey(tester, 'delete_account');
       expect(events, ['delete']);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('someone who never finished onboarding can still delete their account', (tester) async {
       final events = await open(tester);
       expect(find.text('Set up profile'), findsOneWidget);
-      await tester.ensureVisible(find.byKey(const ValueKey('delete_account')));
-      await tester.tap(find.byKey(const ValueKey('delete_account')));
-      await settle(tester);
+      await tapKey(tester, 'delete_account');
       expect(events, ['delete']);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-    testWidgets('the username button is hidden until the name is known; height reads in metres', (tester) async {
+    testWidgets('the username row is hidden until the name is known', (tester) async {
       await open(tester, profile: profile);
       expect(find.byKey(const ValueKey('change_username')), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await open(tester, profile: profile, username: 'river');
       expect(find.byKey(const ValueKey('change_username')), findsOneWidget);
+      expect(find.text('@river'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('log out and blocked people live in settings', (tester) async {
+      final events = await open(tester, profile: profile, username: 'river');
+      await tapKey(tester, 'blocked_people');
+      await tapKey(tester, 'log_out');
+      expect(events, ['blocked', 'log out']);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the profile tab shows the plan; height reads in metres', (tester) async {
+      var opened = 0;
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: ProfileView(
+          profile: profile,
+          username: 'river',
+          photoButton: const SizedBox(width: 60, height: 60),
+          onOpenSettings: () => opened++,
+        ),
+      ));
+      expect(find.text('@river'), findsOneWidget);
+      expect(find.text('2400'), findsOneWidget);
+      expect(find.text('112g'), findsOneWidget);
       expect(find.text('1.75 m'), findsOneWidget); // was shown as "0.2 m"
+      expect(find.text('70 kg'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('open_settings')));
+      await settle(tester);
+      expect(opened, 1);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the profile tab offers setup to someone who never finished onboarding', (tester) async {
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: ProfileView(profile: null, onOpenSettings: () {}),
+      ));
+      expect(find.text('Set up profile'), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile_settings')), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
