@@ -9,8 +9,175 @@ import '../../models/progress.dart';
 import '../../theme/tracker_colors.dart';
 import '../game/flame_style.dart';
 
-/// A small flame with the streak count, shown on a friend's row.
-/// Lit (warm) once you've both sent today; dimmer while the day is still open.
+/// The flame tier a shared streak of [days] has earned: the same tiers as your
+/// own daily streak, so a long streak with a friend burns hotter.
+FlameTier flameTierForDays(int days) {
+  var tier = FlameTier.spark;
+  for (final t in FlameTier.values) {
+    if (days >= t.minDays) tier = t;
+  }
+  return tier;
+}
+
+/// A painted, flickering flame. Hotter colours and a bigger body as [tier]
+/// rises; grey and still while the day is still open ([lit] false).
+class FlameMark extends StatefulWidget {
+  const FlameMark({super.key, required this.tier, required this.lit, this.size = 20});
+
+  final FlameTier tier;
+  final bool lit;
+
+  /// Height of the flame in logical pixels at the smallest tier.
+  final double size;
+
+  @override
+  State<FlameMark> createState() => _FlameMarkState();
+}
+
+class _FlameMarkState extends State<FlameMark> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(FlameMark old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  /// Flickers only while lit, and not at all when the device asks for less motion.
+  void _sync() {
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (widget.lit && !still) {
+      if (!_controller.isAnimating) _controller.repeat();
+    } else {
+      _controller.stop();
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // A little bigger at each tier, so the flame itself shows how long it has burned.
+    final grow = 1 + widget.tier.index * 0.07;
+    final height = widget.size * grow;
+    final width = height * 0.78;
+    final style = FlameStyle.of(widget.tier, dim: !widget.lit);
+    return SizedBox(
+      width: width * 1.5, // room for the glow and the sway
+      height: height * 1.15,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => CustomPaint(
+          painter: _FlamePainter(
+            t: _controller.value,
+            gradient: style.gradient,
+            glow: widget.lit ? style.glow : 0,
+            glowColor: style.color,
+            lit: widget.lit,
+            tier: widget.tier,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FlamePainter extends CustomPainter {
+  _FlamePainter({
+    required this.t,
+    required this.gradient,
+    required this.glow,
+    required this.glowColor,
+    required this.lit,
+    required this.tier,
+  });
+
+  final double t;
+  final Gradient gradient;
+  final double glow;
+  final Color glowColor;
+  final bool lit;
+  final FlameTier tier;
+
+  /// A flame with a leaning tip and a small tongue licking up the left side,
+  /// drawn inside [r]. (A plain teardrop reads as water once it is greyed out.)
+  Path _flame(Rect r, double sway) {
+    final w = r.width, h = r.height;
+    final x = r.left, y = r.top;
+    final tipX = x + w * (0.5 + sway * 0.14);
+    final tongueX = x + w * (0.16 - sway * 0.05);
+    return Path()
+      ..moveTo(tipX, y)
+      ..cubicTo(x + w * 0.60, y + h * 0.22, x + w, y + h * 0.40, x + w, y + h * 0.66)
+      ..cubicTo(x + w, y + h * 0.88, x + w * 0.76, y + h, x + w * 0.5, y + h)
+      ..cubicTo(x + w * 0.24, y + h, x, y + h * 0.88, x, y + h * 0.62)
+      ..cubicTo(x, y + h * 0.48, x + w * 0.08, y + h * 0.36, tongueX, y + h * 0.24)
+      ..cubicTo(x + w * 0.22, y + h * 0.38, x + w * 0.28, y + h * 0.44, x + w * 0.38, y + h * 0.42)
+      ..cubicTo(x + w * 0.34, y + h * 0.26, x + w * 0.42, y + h * 0.10, tipX, y)
+      ..close();
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final h = size.height / 1.15;
+    final w = h * 0.78;
+    // Flicker: the tip sways and the body breathes, out of step with each other.
+    final sway = lit ? sin(t * 2 * pi) : 0.0;
+    final breathe = lit ? 1 + 0.045 * sin(t * 4 * pi + 1) : 1.0;
+    final bodyH = h * breathe;
+    final rect = Rect.fromLTWH((size.width - w) / 2, size.height - bodyH, w, bodyH);
+    final outer = _flame(rect, sway);
+
+    if (glow > 0) {
+      canvas.drawPath(
+        outer,
+        Paint()
+          ..color = glowColor.withValues(alpha: 0.55 * glow)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.45),
+      );
+    }
+    canvas.drawPath(outer, Paint()..shader = gradient.createShader(rect));
+
+    // The bright core, nearer the base. Greyed along with the rest when unlit.
+    final core = Rect.fromLTWH(
+      rect.left + w * 0.27,
+      rect.top + bodyH * 0.42,
+      w * 0.46,
+      bodyH * 0.55,
+    );
+    canvas.drawPath(
+      _flame(core, -sway * 0.8),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: lit
+              ? const [Color(0xFFFFF6D6), Color(0xFFFFD060)]
+              : const [Color(0x55FFFFFF), Color(0x22FFFFFF)],
+        ).createShader(core),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FlamePainter old) =>
+      old.t != t || old.lit != lit || old.tier != tier || old.glow != glow || old.gradient != gradient;
+}
+
+/// A flame with the streak count, shown on a friend's row. The flame gets
+/// hotter as the streak grows; it burns (flickers, glows) once you have both
+/// sent today and sits greyed out while the day is still open.
 class StreakBadge extends StatelessWidget {
   const StreakBadge({super.key, required this.count, required this.lit});
 
@@ -19,22 +186,28 @@ class StreakBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = lit ? FlameStyle.of(FlameTier.flame).color : TrackerColors.textTertiary;
+    final tier = flameTierForDays(count);
+    final style = FlameStyle.of(tier, dim: !lit);
+    final color = style.color;
     return Semantics(
-      label: '$count day streak',
+      label: '$count day streak${lit ? '' : ', not kept yet today'}',
+      excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        key: const ValueKey('streak_badge'),
+        padding: const EdgeInsets.fromLTRB(5, 2, 10, 2),
         decoration: BoxDecoration(
-          color: TrackerColors.alpha(color, 0.14),
+          color: TrackerColors.alpha(color, lit ? 0.14 : 0.10),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: TrackerColors.alpha(color, 0.3)),
+          border: Border.all(color: TrackerColors.alpha(color, lit ? 0.38 : 0.25)),
+          boxShadow: lit && style.glow > 0.4
+              ? [BoxShadow(color: TrackerColors.alpha(color, 0.22 * style.glow), blurRadius: 12)]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Opacity(opacity: lit ? 1 : 0.55, child: const Text('🔥', style: TextStyle(fontSize: 13))),
-            const SizedBox(width: 3),
-            Text('$count', style: AppType.caption(color: color, size: 12.5).copyWith(fontWeight: FontWeight.w800)),
+            FlameMark(tier: tier, lit: lit, size: 18),
+            Text('$count', style: AppType.caption(color: color, size: 13).copyWith(fontWeight: FontWeight.w800)),
           ],
         ),
       ),
@@ -199,7 +372,7 @@ class _StreakCelebrationState extends State<_StreakCelebration> with SingleTicke
                             ),
                           ],
                         ),
-                        child: const Text('🔥', style: TextStyle(fontSize: 104, decoration: TextDecoration.none)),
+                        child: FlameMark(tier: flameTierForDays(widget.streak), lit: true, size: 96),
                       ),
                     ),
                     const SizedBox(height: 18),
