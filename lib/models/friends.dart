@@ -73,11 +73,22 @@ class PersonFound {
       );
 }
 
+/// The most suggestions the server returns for one search. A shorter answer
+/// is the whole answer, which is what lets the app narrow it without asking
+/// again.
+const int peopleSearchLimit = 8;
+
+/// Narrow [found] (the answer for a shorter spelling) to the people whose
+/// username starts with [query].
+List<PersonFound> narrowPeople(List<PersonFound> found, String query) =>
+    found.where((p) => p.username.toLowerCase().startsWith(query)).toList();
+
 /// What to send to the people search for [typed], or null when it is too
 /// short or can't be part of a username (so no request is made).
 String? peopleSearchQuery(String typed) {
   final text = typed.trim().replaceFirst(RegExp(r'^@'), '').toLowerCase();
-  return RegExp(r'^[a-z0-9_]{2,20}$').hasMatch(text) ? text : null;
+  // Usernames start with a letter, so anything else can't match anyone.
+  return RegExp(r'^[a-z][a-z0-9_]{1,19}$').hasMatch(text) ? text : null;
 }
 
 /// The people you have the longest streaks with come first, always; equal

@@ -37,6 +37,7 @@ class _Server {
   List<String> everyone = const [];
   final searches = <String>[];
   Duration Function(String q)? searchDelay;
+  int? searchLimit;
   http.Response? Function(http.Request)? onRequest;
 
   MockClient get client => MockClient((r) async {
@@ -60,7 +61,7 @@ class _Server {
           if (searchDelay != null) await Future<void>.delayed(searchDelay!(q));
           return http.Response(
             jsonEncode([
-              for (final name in everyone.where((n) => n.toLowerCase().startsWith(q)))
+              for (final name in everyone.where((n) => n.toLowerCase().startsWith(q)).take(searchLimit ?? everyone.length))
                 {
                   'user_id': 'u-$name',
                   'username': name,
@@ -139,6 +140,7 @@ void main() {
       expect(peopleSearchQuery(' @Sa '), 'sa');
       expect(peopleSearchQuery('s'), isNull);
       expect(peopleSearchQuery('sam!'), isNull);
+      expect(peopleSearchQuery('1bad'), isNull);
       expect(peopleSearchQuery(''), isNull);
     });
 
@@ -293,7 +295,7 @@ void main() {
       }
     }
 
-    testWidgets('suggestions appear as you type and narrow with each letter', (tester) async {
+    testWidgets('suggestions appear as you type and narrow at once, without asking the server again', (tester) async {
       final server = await open(tester, _Server()..everyone = ['Sam', 'Sammy', 'Sara', 'Bea']);
       await type(tester, 's');
       expect(server.searches, isEmpty, reason: 'one letter is too little to search on');
@@ -305,16 +307,45 @@ void main() {
       expect(find.text('@Sara'), findsOneWidget);
       expect(find.text('@Bea'), findsNothing);
 
-      await type(tester, 'sam');
+      // One more letter: narrowed on the very next frame, no waiting.
+      await tester.enterText(find.byType(CupertinoTextField), 'sam');
+      await tester.pump();
       expect(find.text('@Sara'), findsNothing);
       expect(find.text('@Sammy'), findsOneWidget);
 
-      await type(tester, 'sammy');
+      await tester.enterText(find.byType(CupertinoTextField), 'sammy');
+      await tester.pump();
       expect(find.text('@Sam'), findsNothing);
       expect(find.text('@Sammy'), findsOneWidget);
 
+      // Deleting letters brings the earlier list straight back.
+      await tester.enterText(find.byType(CupertinoTextField), 'sa');
+      await tester.pump();
+      expect(find.text('@Sara'), findsOneWidget);
+
       await type(tester, '');
       expect(find.byKey(const ValueKey('people_suggestions')), findsNothing);
+      expect(server.searches, ['sa'], reason: 'three names is the whole answer, so nothing else was asked');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a full page of suggestions may be hiding more, so the next letter does ask', (tester) async {
+      final server = await open(
+        tester,
+        _Server()..everyone = [for (var i = 0; i < 12; i++) 'Sam$i', 'Sara'],
+      );
+      server.searchLimit = 8;
+      await type(tester, 'sa');
+      expect(find.text('@Sam0'), findsOneWidget);
+      expect(find.text('@Sara'), findsNothing, reason: 'cut off by the limit of 8');
+
+      await tester.enterText(find.byType(CupertinoTextField), 'sar');
+      await tester.pump();
+      expect(find.text('@Sam0'), findsNothing, reason: 'narrowed at once');
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(server.searches, ['sa', 'sar']);
+      expect(find.text('@Sara'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('tapping Add on a suggestion sends the request and the page refreshes by itself', (tester) async {

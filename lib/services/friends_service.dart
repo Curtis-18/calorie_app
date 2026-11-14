@@ -24,12 +24,17 @@ class FriendsService {
 
   static String? _supabaseToken() => Supabase.instance.client.auth.currentSession?.accessToken;
 
+  /// Kept open between searches: a new connection per keystroke pause cost a
+  /// fresh TLS handshake each time.
+  http.Client? _searchClient;
+
   Future<http.Response> _send(
-    Future<http.Response> Function(http.Client, Map<String, String>) call,
-  ) async {
+    Future<http.Response> Function(http.Client, Map<String, String>) call, {
+    bool keepAlive = false,
+  }) async {
     final token = (_tokenProvider ?? _supabaseToken)();
     if (token == null) throw const FriendsException("You've been signed out. Please log in again.");
-    final client = _client ?? http.Client();
+    final client = _client ?? (keepAlive ? (_searchClient ??= http.Client()) : http.Client());
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 45));
@@ -38,7 +43,7 @@ class FriendsService {
     } on http.ClientException {
       throw const FriendsException("Couldn't reach the server. Check your connection and try again.");
     } finally {
-      if (_client == null) client.close();
+      if (_client == null && !keepAlive) client.close();
     }
   }
 
@@ -81,7 +86,10 @@ class FriendsService {
   /// still works.
   Future<List<PersonFound>> search(String query) async {
     try {
-      final r = await _send((c, h) => c.get(_uri('/friends/search').replace(queryParameters: {'q': query}), headers: h));
+      final r = await _send(
+        (c, h) => c.get(_uri('/friends/search').replace(queryParameters: {'q': query}), headers: h),
+        keepAlive: true,
+      );
       if (r.statusCode != 200) return const [];
       return (jsonDecode(r.body) as List).map((e) => PersonFound.fromJson(e as Map<String, dynamic>)).toList();
     } catch (_) {

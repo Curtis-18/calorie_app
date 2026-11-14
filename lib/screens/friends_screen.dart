@@ -60,6 +60,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   Timer? _searchDebounce;
   int _searchRun = 0;
 
+  /// Answers already received, by what was searched for. Emptied whenever
+  /// a request is sent or the page refreshes, so labels don't go stale.
+  final _answers = <String, List<PersonFound>>{};
+
   // Keeping the page current without pulling down: requests and bites from
   // other people arrive while this screen is open.
   static const _refreshEvery = Duration(seconds: 45);
@@ -86,12 +90,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   /// this tab is the one on screen.
   void _refreshQuietly() {
     if (!mounted || !TickerMode.valuesOf(context).enabled) return;
+    _answers.clear();
     ref.read(friendsProvider.notifier).load();
     ref.read(snapInboxProvider.notifier).load();
   }
 
-  /// Search as you type: wait for a short pause, then ask for people whose
-  /// username starts with what is in the field.
+  /// Search as you type. The server is slow to answer (about a second or
+  /// more), so the list never waits for it when it doesn't have to:
+  ///  - an answer already received for this spelling is shown at once;
+  ///  - one more letter narrows the list on screen at once, and if that list
+  ///    was the whole answer (fewer than the server's limit) nothing is asked;
+  ///  - otherwise the server is asked after a short pause, and its answer
+  ///    replaces the narrowed list.
   void _onNameChanged(String text) {
     if (_notice != null) setState(() => _notice = null);
     _searchDebounce?.cancel();
@@ -106,14 +116,45 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       }
       return;
     }
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () => _search(query));
+
+    final known = _knownAnswer(query);
+    if (known != null) {
+      _searchRun++;
+      setState(() {
+        _found = known;
+        _foundFor = query;
+      });
+      return;
+    }
+
+    // Not known in full: show what can be worked out now, then ask.
+    final base = _foundFor;
+    if (base != null && query.startsWith(base)) {
+      setState(() => _found = narrowPeople(_found, query));
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 150), () => _search(query));
+  }
+
+  /// The complete answer for [query] if it can be had without the server:
+  /// remembered, or narrowed from a remembered complete answer for a shorter
+  /// spelling.
+  List<PersonFound>? _knownAnswer(String query) {
+    final exact = _answers[query];
+    if (exact != null) return exact;
+    for (var length = query.length - 1; length >= 2; length--) {
+      final shorter = _answers[query.substring(0, length)];
+      if (shorter != null && shorter.length < peopleSearchLimit) return narrowPeople(shorter, query);
+    }
+    return null;
   }
 
   Future<void> _search(String query) async {
     final run = ++_searchRun;
     final found = await ref.read(friendsProvider.notifier).service.search(query);
+    if (!mounted) return;
+    _answers[query] = found;
     // A newer keystroke has taken over, or the field was cleared.
-    if (!mounted || run != _searchRun) return;
+    if (run != _searchRun) return;
     setState(() {
       _found = found;
       _foundFor = query;
@@ -125,6 +166,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     _searchRun++;
     _found = const [];
     _foundFor = null;
+    _answers.clear(); // who is "Requested" or a friend has just changed
   }
 
   void _say(String text, {bool error = false}) => setState(() {
