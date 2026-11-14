@@ -295,6 +295,35 @@ void main() {
       expect(find.byKey(const ValueKey('story_u-bea')), findsNothing);
     }, variant: ios);
 
+    testWidgets('a friend with a streak shows a flame on their bubble, burning only when kept today', (tester) async {
+      await open(
+        tester,
+        _Server(friends: [
+          {..._person('sam', streak: 9), 'sent_today': true, 'they_sent_today': true},
+          _person('bea', streak: 4),
+          _person('cy'),
+        ], groups: [
+          {'user_id': 'u-sam', 'username': 'sam', 'streak': 9, 'stories': [_story('a')]},
+          {'user_id': 'u-bea', 'username': 'bea', 'streak': 4, 'stories': [_story('b')]},
+          {'user_id': 'u-cy', 'username': 'cy', 'stories': [_story('c')]},
+        ]),
+      );
+      Finder badge(String id) =>
+          find.descendant(of: find.byKey(ValueKey('story_$id')), matching: find.byKey(const ValueKey('streak_badge')));
+      expect(badge('u-sam'), findsOneWidget);
+      expect(find.descendant(of: badge('u-sam'), matching: find.text('9')), findsOneWidget);
+      // Inside a tappable bubble the labels merge with the name, so look for
+      // the badges' own labels.
+      Finder labelled(String id, String text) => find.descendant(
+            of: find.byKey(ValueKey('story_$id')),
+            matching: find.byWidgetPredicate((w) => w is Semantics && w.properties.label == text),
+          );
+      expect(labelled('u-sam', '9 day streak'), findsOneWidget);
+      expect(labelled('u-bea', '4 day streak, not kept yet today'), findsOneWidget);
+      expect(badge('u-bea'), findsOneWidget);
+      expect(badge('u-cy'), findsNothing, reason: 'no streak, no flame');
+    }, variant: ios);
+
     testWidgets('no tray when the server has no stories', (tester) async {
       await open(tester, _Server(friends: [_person('sam')], storiesStatus: 404));
       expect(find.text('Your story'), findsNothing);

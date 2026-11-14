@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/friends_provider.dart';
+import '../providers/messages_provider.dart';
 import '../services/profile_link.dart';
 import '../widgets/profile_link_sheet.dart';
 import '../providers/shell_provider.dart';
@@ -30,6 +33,8 @@ class _MainShellState extends ConsumerState<MainShell> {
   // A controller, so other screens can move the person to a tab (Settings
   // sends them to Today to replay the tutorial).
   final _controller = CupertinoTabController();
+  Timer? _messageTimer;
+  late final AppLifecycleListener _lifecycle;
   final _screens = const [
     DashboardScreen(),
     InsightsScreen(),
@@ -51,6 +56,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   void initState() {
     super.initState();
     _controller.addListener(_onTabChanged);
+    // New messages show on the Friends tab wherever you are in the app.
+    _messageTimer = Timer.periodic(const Duration(seconds: 30), (_) => _refreshMessages());
+    _lifecycle = AppLifecycleListener(onResume: _refreshMessages);
     ProfileLink.pending.addListener(_showLinkedProfile);
     WidgetsBinding.instance.addPostFrameCallback((_) => _showLinkedProfile());
     // A fresh shell (after signing in again) starts on Today.
@@ -78,6 +86,10 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
+  void _refreshMessages() {
+    if (mounted) ref.read(conversationsProvider.notifier).load();
+  }
+
   void _onTabChanged() {
     if (!mounted) return;
     setState(() {});
@@ -88,6 +100,8 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   void dispose() {
     ProfileLink.pending.removeListener(_showLinkedProfile);
+    _messageTimer?.cancel();
+    _lifecycle.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -97,7 +111,9 @@ class _MainShellState extends ConsumerState<MainShell> {
     ref.listen<ShellTab>(shellTabProvider, (_, tab) {
       if (_controller.index != tab.index) _controller.index = tab.index;
     });
-    final waiting = ref.watch(pendingRequestCountProvider) + ref.watch(unseenSnapCountProvider);
+    final waiting = ref.watch(pendingRequestCountProvider) +
+        ref.watch(unseenSnapCountProvider) +
+        ref.watch(unreadMessagesProvider);
     final index = _controller.index;
     return CupertinoTabScaffold(
       controller: _controller,

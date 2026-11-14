@@ -6,6 +6,7 @@ import '../../theme/app_shapes.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/tracker_colors.dart';
 import '../pressable.dart';
+import 'flame.dart';
 
 /// The row of stories at the top of Friends: yours first, then each friend
 /// who has posted in the last 24 hours. A glowing ring means something new.
@@ -17,6 +18,7 @@ class StoryTray extends StatelessWidget {
     required this.onMine,
     required this.onFriend,
     this.myAvatarUrl,
+    this.streakLit,
   });
 
   final StoryFeed feed;
@@ -26,6 +28,10 @@ class StoryTray extends StatelessWidget {
   /// Your own bubble: opens your story, or the camera if it is empty.
   final VoidCallback onMine;
   final void Function(int index) onFriend;
+
+  /// Whether you have both sent a bite today to this friend (their flame burns
+  /// rather than being greyed out). Unknown counts as not yet.
+  final bool Function(String userId)? streakLit;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +62,8 @@ class StoryTray extends StatelessWidget {
             label: group.username,
             ring: group.allSeen ? _Ring.seen : _Ring.fresh,
             dim: group.allSeen,
+            streak: group.streak,
+            streakLit: streakLit?.call(group.userId) ?? false,
             onTap: () => onFriend(i - 1),
           );
         },
@@ -76,6 +84,8 @@ class _Bubble extends StatelessWidget {
     this.avatarUrl,
     this.add = false,
     this.dim = false,
+    this.streak = 0,
+    this.streakLit = false,
   });
 
   final String username;
@@ -84,6 +94,8 @@ class _Bubble extends StatelessWidget {
   final _Ring ring;
   final bool add;
   final bool dim;
+  final int streak;
+  final bool streakLit;
   final VoidCallback onTap;
 
   @override
@@ -117,6 +129,12 @@ class _Bubble extends StatelessWidget {
                     child: FriendAvatar(username: username, size: 56, imageUrl: avatarUrl),
                   ),
                 ),
+                if (streak > 0)
+                  Positioned(
+                    right: -6,
+                    bottom: -4,
+                    child: StreakBadge(compact: true, count: streak, lit: streakLit),
+                  ),
                 if (add)
                   Positioned(
                     right: 0,

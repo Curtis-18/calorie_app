@@ -179,10 +179,13 @@ class _FlamePainter extends CustomPainter {
 /// hotter as the streak grows; it burns (flickers, glows) once you have both
 /// sent today and sits greyed out while the day is still open.
 class StreakBadge extends StatelessWidget {
-  const StreakBadge({super.key, required this.count, required this.lit});
+  const StreakBadge({super.key, required this.count, required this.lit, this.compact = false});
 
   final int count;
   final bool lit;
+
+  /// Smaller, on a solid backing, to sit on the corner of an avatar.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -194,9 +197,11 @@ class StreakBadge extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         key: const ValueKey('streak_badge'),
-        padding: const EdgeInsets.fromLTRB(5, 2, 10, 2),
+        padding: compact ? const EdgeInsets.fromLTRB(3, 1, 6, 1) : const EdgeInsets.fromLTRB(5, 2, 10, 2),
         decoration: BoxDecoration(
-          color: TrackerColors.alpha(color, lit ? 0.14 : 0.10),
+          color: compact
+              ? Color.alphaBlend(TrackerColors.alpha(color, lit ? 0.18 : 0.10), TrackerColors.background)
+              : TrackerColors.alpha(color, lit ? 0.14 : 0.10),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: TrackerColors.alpha(color, lit ? 0.38 : 0.25)),
           boxShadow: lit && style.glow > 0.4
@@ -206,8 +211,11 @@ class StreakBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FlameMark(tier: tier, lit: lit, size: 18),
-            Text('$count', style: AppType.caption(color: color, size: 13).copyWith(fontWeight: FontWeight.w800)),
+            FlameMark(tier: tier, lit: lit, size: compact ? 12 : 18),
+            Text(
+              '$count',
+              style: AppType.caption(color: color, size: compact ? 11 : 13).copyWith(fontWeight: FontWeight.w800),
+            ),
           ],
         ),
       ),

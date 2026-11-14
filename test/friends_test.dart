@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:calorie_app/models/friends.dart';
 import 'package:calorie_app/providers/friends_provider.dart';
+import 'package:calorie_app/providers/messages_provider.dart';
+import 'package:calorie_app/services/messages_service.dart';
 import 'package:calorie_app/providers/snaps_provider.dart';
 import 'package:calorie_app/services/snaps_service.dart';
 import 'package:calorie_app/screens/friends_screen.dart';
@@ -250,7 +252,12 @@ void main() {
   });
 
   group('screen', () {
-    Future<_Server> open(WidgetTester tester, _Server server, {Future<void> Function(String text)? share}) async {
+    Future<_Server> open(
+      WidgetTester tester,
+      _Server server, {
+      Future<void> Function(String text)? share,
+      List<Map<String, dynamic>> conversations = const [],
+    }) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -260,6 +267,16 @@ void main() {
           friendsProvider.overrideWith((ref) => notifier),
           snapInboxProvider.overrideWith((ref) => SnapInboxNotifier(
                 service: SnapsService(client: MockClient((_) async => http.Response('[]', 200)), tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+          conversationsProvider.overrideWith((ref) => ConversationsNotifier(
+                service: MessagesService(
+                  client: MockClient((r) async => r.url.path == '/messages'
+                      ? http.Response(jsonEncode({'conversations': conversations, 'unread_total': 0}), 200)
+                      : http.Response(jsonEncode({'messages': [], 'has_more': false}), 200)),
+                  tokenProvider: () => 't',
+                ),
                 currentUserId: () => 'me',
                 userIdChanges: const Stream.empty(),
               )),
@@ -280,6 +297,45 @@ void main() {
       expect(find.text('@Cy'), findsOneWidget);
       expect(find.text('request sent'), findsOneWidget);
       expect(find.text('@Sam'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('each friend has a message button, with a count when they have written', (tester) async {
+      await open(
+        tester,
+        _Server(friends: ['Sam', 'Ada']),
+        conversations: [
+          {
+            'user_id': 'u-Sam',
+            'username': 'Sam',
+            'avatar_url': null,
+            'last_body': 'dinner?',
+            'last_mine': false,
+            'last_at': DateTime.now().toUtc().toIso8601String(),
+            'unread': 3,
+          },
+        ],
+      );
+      expect(find.byKey(const ValueKey('chat_u-Sam')), findsOneWidget);
+      expect(find.byKey(const ValueKey('chat_u-Ada')), findsOneWidget);
+      // The count shows on Sam's button and on the header's Messages button.
+      expect(find.text('3'), findsNWidgets(2));
+      expect(find.byKey(const ValueKey('open_messages')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('chat_u-Sam')));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Message @Sam'), findsOneWidget, reason: 'the conversation opened');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the header Messages button opens the list of conversations', (tester) async {
+      await open(tester, _Server(friends: ['Sam']));
+      await tester.tap(find.byKey(const ValueKey('open_messages')));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Messages'), findsOneWidget);
+      expect(find.text('No messages yet'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the search sits right under the story row, above requests and friends', (tester) async {

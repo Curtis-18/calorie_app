@@ -10,7 +10,10 @@ import '../models/friends.dart';
 import '../models/snaps.dart';
 import '../models/stories.dart';
 import 'bite_camera_screen.dart';
+import '../providers/messages_provider.dart';
 import '../providers/snaps_provider.dart';
+import 'chat_screen.dart';
+import 'conversations_screen.dart';
 import '../widgets/snaps/flame.dart';
 import '../widgets/snaps/sent_bites_sheet.dart';
 import 'snap_compose_screen.dart';
@@ -448,6 +451,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               subtitle: friends.hasValue
                   ? '${friends.value!.friends.length} of ${friends.value!.limit} friends'
                   : 'Share meals, keep streaks together',
+              actions: [
+                _MessagesButton(
+                  unread: ref.watch(unreadMessagesProvider),
+                  onTap: () => Navigator.of(context, rootNavigator: true)
+                      .push(CupertinoPageRoute<void>(builder: (_) => const ConversationsScreen())),
+                ),
+              ],
             ),
             Expanded(
               child: CustomScrollView(
@@ -492,6 +502,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           feed: feed,
           myUsername: me,
           myAvatarUrl: data.myAvatarUrl,
+          streakLit: (id) => data.friends.any((p) => p.userId == id && p.sentToday && p.theySentToday),
           onMine: () => feed.mine.isEmpty
               ? _snap(story: true)
               : _openStories(feed, myUsername: me, myAvatarUrl: data.myAvatarUrl),
@@ -756,6 +767,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             subtitle: _friendSubtitle(p),
             actions: [
               if (p.streak > 0) StreakBadge(count: p.streak, lit: p.sentToday && p.theySentToday),
+              _ChatButton(
+                key: ValueKey('chat_${p.userId}'),
+                unread: ref.watch(conversationsProvider).valueOrNull?.forUser(p.userId)?.unread ?? 0,
+                onTap: () => openChat(context, userId: p.userId, username: p.username, avatarUrl: p.avatarUrl)
+                    .then((_) => ref.read(conversationsProvider.notifier).load()),
+              ),
               _Pill(label: 'Bite', icon: CupertinoIcons.camera_fill, primary: true, onTap: () => _snap(to: p.userId)),
               _MoreButton(onTap: () => _more(p, isFriend: true)),
             ],
@@ -959,6 +976,68 @@ class _Pill extends StatelessWidget {
             if (icon != null) ...[Icon(icon, size: 13, color: color), const SizedBox(width: 5)],
             Text(label, style: AppType.caption(color: color, size: 12.5).copyWith(fontWeight: FontWeight.w800)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The message button on the Friends header, with a count of what is waiting.
+class _MessagesButton extends StatelessWidget {
+  const _MessagesButton({required this.unread, required this.onTap});
+
+  final int unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: unread > 0 ? 'Messages, $unread unread' : 'Messages',
+      excludeSemantics: true,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AppIconButton(
+            key: const ValueKey('open_messages'),
+            icon: CupertinoIcons.chat_bubble_2_fill,
+            onPressed: onTap,
+          ),
+          if (unread > 0)
+            Positioned(top: -4, right: -4, child: UnreadCount(count: unread)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Opens the conversation with one friend, with a dot when they've written.
+class _ChatButton extends StatelessWidget {
+  const _ChatButton({super.key, required this.unread, required this.onTap});
+
+  final int unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: unread > 0 ? 'Message, $unread unread' : 'Message',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Icon(CupertinoIcons.chat_bubble, size: 20, color: TrackerColors.textSecondary),
+              if (unread > 0)
+                Positioned(top: 0, right: -2, child: UnreadCount(count: unread)),
+            ],
+          ),
         ),
       ),
     );

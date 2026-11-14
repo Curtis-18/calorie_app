@@ -267,7 +267,9 @@ void main() {
       expect(find.text('BITES FROM FRIENDS'), findsOneWidget);
       expect(find.text('5'), findsOneWidget); // streak badge
       expect(find.text('sent you a bite today. Send one back!'), findsOneWidget);
-      expect(find.text('Bite'), findsNWidgets(2));
+      // Both friends have a Bite button (the second is a scroll away).
+      await tester.scrollUntilVisible(find.text('@bea'), 120, scrollable: find.byType(Scrollable).first);
+      expect(find.text('Bite', skipOffstage: false), findsNWidgets(2));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('taking a photo, picking a friend and sending reports the result', (tester) async {
