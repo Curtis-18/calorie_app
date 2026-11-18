@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/food_entry.dart';
 import '../models/nutrients.dart';
+import '../providers/budget_provider.dart';
 import '../providers/display_prefs_provider.dart';
+import '../widgets/week_budget_widgets.dart';
 import '../providers/food_log_provider.dart';
 import '../providers/progress_provider.dart';
 import '../providers/scan_queue_provider.dart';
@@ -307,6 +309,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     queue.start(bytes, meal);
   }
 
+  Future<void> _budgetAction(BuildContext context, Future<String?> action) async {
+    final error = await action;
+    if (error == null || !context.mounted) return;
+    await showAppDialog(context: context, title: "Couldn't do that", message: error, confirmLabel: 'OK');
+  }
+
   Future<void> _addNote(BuildContext context, PendingScan scan) async {
     final note = await showScanNoteSheet(context, initial: scan.note);
     if (note == null || !mounted) return;
@@ -444,9 +452,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final progress = ref.watch(progressProvider);
     final display = ref.watch(displayPrefsProvider);
     final scans = ref.watch(scanQueueProvider);
+    final budget = ref.watch(budgetProvider);
 
     final entries = _isToday ? foodLog : _pastEntries;
-    final target = profile?.calorieTarget ?? 2000;
+    // The flexible weekly allowance replaces the daily target on today only,
+    // and only for someone who turned it on.
+    final target = (_isToday && budget.weekly ? budget.week!.allowanceToday : null) ?? profile?.calorieTarget ?? 2000;
     final consumed = entries.totalCalories;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
@@ -486,6 +497,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 perfectDay: _isToday && (progress?.today.perfectDay ?? false),
                               ),
                             ),
+                            if (_isToday && budget.weekly) ...[
+                              const SizedBox(height: 14),
+                              WeekStrip(week: budget.week!),
+                            ],
+                            if (_isToday && budget.week?.nudge != null) ...[
+                              const SizedBox(height: 14),
+                              BudgetNudgeCard(
+                                nudge: budget.week!.nudge!,
+                                onSpread: () => _budgetAction(context, ref.read(budgetProvider.notifier).spread()),
+                                onDismiss: () => _budgetAction(context, ref.read(budgetProvider.notifier).dismissNudge()),
+                              ),
+                            ],
                             if (display.showMacros) ...[
                               const SizedBox(height: 14),
                               MacroBreakdownCard(

@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user_profile.dart';
+import '../models/week_budget.dart';
 import '../models/weight.dart';
+import '../providers/budget_provider.dart';
 import '../providers/display_prefs_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/shell_provider.dart';
@@ -12,6 +14,7 @@ import '../services/tour_service.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/app_field.dart';
 import '../widgets/appearance_picker.dart';
 import '../widgets/delete_account.dart';
@@ -74,11 +77,39 @@ class SettingsView extends ConsumerWidget {
     ref.read(tourReplayProvider.notifier).state++;
   }
 
+  Future<void> _saveBudget(BuildContext context, WidgetRef ref, Map<String, Object?> changes) async {
+    final error = await ref.read(budgetProvider.notifier).update(changes);
+    if (error == null || !context.mounted) return;
+    await showAppDialog(context: context, title: "Couldn't change that", message: error, confirmLabel: 'OK');
+  }
+
+  Future<void> _pickWeekStart(BuildContext context, WidgetRef ref, BudgetPrefs prefs) async {
+    final picked = await showCupertinoModalPopup<int>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: const Text('Week starts on'),
+        actions: [
+          CupertinoActionSheetAction(onPressed: () => Navigator.pop(context, 0), child: const Text('Monday')),
+          CupertinoActionSheetAction(onPressed: () => Navigator.pop(context, 6), child: const Text('Sunday')),
+        ],
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+      ),
+    );
+    if (picked == null || picked == prefs.weekStartDay || !context.mounted) return;
+    await _saveBudget(context, ref, {
+      'week_start_day': picked,
+      // Weekend flex is listed from the first day of the week, so it moves with it.
+      if (prefs.weekendFlex) 'weights': weekendFlexWeights(picked),
+    });
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
     final displayNotifier = ref.read(displayPrefsProvider.notifier);
     final unit = ref.watch(weightUnitProvider);
+    final budget = ref.watch(budgetProvider);
+    final budgetPrefs = budget.prefs ?? const BudgetPrefs();
     final p = profile;
 
     return CupertinoPageScaffold(
@@ -162,6 +193,52 @@ class SettingsView extends ConsumerWidget {
                           subtitle: 'Start a meal photo as soon as the app opens',
                           value: display.launchToCamera,
                           onChanged: displayNotifier.setLaunchToCamera,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    SettingsGroup(
+                      label: 'Weekly budget',
+                      footer: 'Eat a bit more one day and the rest of the week eases gently, inside your healthy range. '
+                          'Days you don’t log are left out.',
+                      children: [
+                        SettingsSwitchRow(
+                          key: const ValueKey('toggle_weekly_budget'),
+                          icon: CupertinoIcons.calendar,
+                          color: TrackerColors.accentEnd,
+                          title: 'Flexible weekly target',
+                          subtitle: 'Today’s plan adjusts a little across the week',
+                          value: budgetPrefs.weekly,
+                          onChanged: (on) => _saveBudget(context, ref, {'mode': on ? 'weekly' : 'daily'}),
+                        ),
+                        SettingsSwitchRow(
+                          key: const ValueKey('toggle_weekend_flex'),
+                          icon: CupertinoIcons.sun_max,
+                          color: TrackerColors.accentEnd,
+                          title: 'Weekend flex',
+                          subtitle: 'A little more on Saturday and Sunday',
+                          value: budgetPrefs.weekendFlex,
+                          onChanged: (on) => _saveBudget(context, ref, {
+                            'weights': on ? weekendFlexWeights(budgetPrefs.weekStartDay) : <double>[],
+                            if (on) 'mode': 'weekly',
+                          }),
+                        ),
+                        SettingsSwitchRow(
+                          key: const ValueKey('toggle_budget_nudges'),
+                          icon: CupertinoIcons.chat_bubble_text,
+                          color: TrackerColors.accentEnd,
+                          title: 'Gentle nudges',
+                          subtitle: 'A kind suggestion after a bigger day',
+                          value: budgetPrefs.nudges,
+                          onChanged: (on) => _saveBudget(context, ref, {'nudges': on}),
+                        ),
+                        SettingsRow(
+                          key: const ValueKey('week_start'),
+                          icon: CupertinoIcons.calendar_today,
+                          color: TrackerColors.accentEnd,
+                          title: 'Week starts on',
+                          value: budgetPrefs.weekStartDay == 6 ? 'Sunday' : 'Monday',
+                          onTap: () => _pickWeekStart(context, ref, budgetPrefs),
                         ),
                       ],
                     ),
