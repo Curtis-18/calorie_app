@@ -9,6 +9,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
+import 'my_recipes_view.dart';
 import 'recipe_detail_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -28,6 +29,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   bool _searching = false;
   bool _hasSearched = false;
   String? _error;
+
+  /// 0 = browse the library, 1 = my own recipes.
+  int _tab = 0;
 
   @override
   void initState() {
@@ -92,6 +96,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     super.dispose();
   }
 
+  Widget _segments() => CupertinoSlidingSegmentedControl<int>(
+        key: const ValueKey('recipe_tabs'),
+        groupValue: _tab,
+        children: const {0: Text('Browse'), 1: Text('Mine')},
+        onValueChanged: (v) => setState(() => _tab = v ?? 0),
+      );
+
   @override
   Widget build(BuildContext context) {
     final showingSearch = _hasSearched;
@@ -106,9 +117,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
           children: [
             PageHeader(
               title: 'Recipes',
-              subtitle: 'Ideas for your next meal',
-              actions: [if (isLoading) const SkeletonBox(width: 64, height: 12)],
-              bottom: CupertinoSearchTextField(
+              subtitle: _tab == 1 ? 'Your own dishes, one tap to log' : 'Ideas for your next meal',
+              actions: [if (_tab == 0 && isLoading) const SkeletonBox(width: 64, height: 12)],
+              bottom: _tab == 1 ? _segments() : Column(children: [_segments(), const SizedBox(height: 10), CupertinoSearchTextField(
                 controller: _controller,
                 onSubmitted: _search,
                 onChanged: (value) {
@@ -125,10 +136,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 itemColor: TrackerColors.textSecondary,
                 style: AppType.body(size: 15),
                 placeholderStyle: AppType.body(size: 15, color: TrackerColors.textTertiary),
-              ),
+              )]),
             ),
             Expanded(
-              child: ListView(
+              child: _tab == 1 ? const MyRecipesView() : ListView(
                 physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                 children: [

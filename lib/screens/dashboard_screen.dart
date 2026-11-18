@@ -10,6 +10,7 @@ import '../models/nutrients.dart';
 import '../providers/budget_provider.dart';
 import '../providers/display_prefs_provider.dart';
 import '../widgets/week_budget_widgets.dart';
+import 'new_recipe_screen.dart';
 import '../providers/food_log_provider.dart';
 import '../providers/progress_provider.dart';
 import '../providers/scan_queue_provider.dart';
@@ -579,6 +580,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   onSearch: _isToday ? () => _openFoodSearch(context, meal) : null,
                                   onRemove: _isToday ? (id) => _removeEntry(context, id) : null,
                                   onEdit: _isToday ? (entry) => _editEntry(context, entry) : null,
+                                  onSaveRecipe: _isToday
+                                      ? () => Navigator.push(
+                                            context,
+                                            CupertinoPageRoute<void>(
+                                              builder: (_) => NewRecipeScreen(
+                                                fromMeal: entries.forMeal(meal),
+                                                initialTitle: '${meal.name[0].toUpperCase()}${meal.name.substring(1)}',
+                                              ),
+                                            ),
+                                          )
+                                      : null,
                                 ),
                               ),
                             ),

@@ -19,6 +19,7 @@ class MealSection extends StatelessWidget {
     required this.onSearch,
     required this.onRemove,
     this.onEdit,
+    this.onSaveRecipe,
     this.accent = TrackerColors.accentStart,
   });
 
@@ -36,6 +37,9 @@ class MealSection extends StatelessWidget {
 
   /// Tapping a row; null makes rows read-only (a past day).
   final void Function(FoodEntry entry)? onEdit;
+
+  /// Save the foods in this meal as one recipe. Null hides it (a past day).
+  final VoidCallback? onSaveRecipe;
   final Color accent;
 
   @override
@@ -80,6 +84,32 @@ class MealSection extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (onSaveRecipe != null && entries.isNotEmpty) ...[
+                  Semantics(
+                    button: true,
+                    label: 'Save $title as a recipe',
+                    child: Pressable(
+                      key: ValueKey('meal_save_recipe_$title'),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onSaveRecipe!();
+                      },
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: TrackerColors.alpha(TrackerColors.textPrimary, 0.06),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: TrackerColors.border, width: 1),
+                        ),
+                        child: Icon(CupertinoIcons.book, size: 15, color: TrackerColors.textSecondary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 if (onSearch != null)
                   Semantics(
                     button: true,
