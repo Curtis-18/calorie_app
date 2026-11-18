@@ -70,6 +70,12 @@ class FakeService extends HouseRecipeService {
   }
 
   @override
+  Future<List<RecipeCollection>?> collections() async => <RecipeCollection>[];
+
+  @override
+  Future<List<RecipeBrief>?> highlights() async => <RecipeBrief>[];
+
+  @override
   Future<String?> delete(String id) async => deleteError;
 
   @override

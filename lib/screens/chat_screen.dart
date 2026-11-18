@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/messages.dart';
 import '../providers/messages_provider.dart';
+import '../providers/house_recipes_provider.dart';
 import '../services/messages_service.dart';
+import '../widgets/house_recipe_sheet.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -399,6 +401,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               isLastMine: identical(message, lastMine),
               onLongPress: () => _menu(message),
               onRetry: () => _deliver(message),
+              onOpenRecipe: (id) => openRecipeById(context, ref.read(houseRecipesProvider.notifier), id),
             ),
           ],
         );
@@ -453,12 +456,14 @@ class _Bubble extends StatelessWidget {
     required this.isLastMine,
     required this.onLongPress,
     required this.onRetry,
+    required this.onOpenRecipe,
   });
 
   final ChatMessage message;
   final bool isLastMine;
   final VoidCallback onLongPress;
   final VoidCallback onRetry;
+  final void Function(String recipeId) onOpenRecipe;
 
   @override
   Widget build(BuildContext context) {
@@ -501,13 +506,20 @@ class _Bubble extends StatelessWidget {
                     borderRadius: radius,
                     border: mine || !TrackerColors.isDark ? null : Border.all(color: TrackerColors.border),
                   ),
-                  child: Text(
-                    message.body,
-                    style: AppType.body(
-                      size: 15.5,
-                      color: mine ? TrackerColors.onAccent : TrackerColors.textPrimary,
-                    ),
-                  ),
+                  child: message.attachment == null
+                      ? Text(
+                          message.body,
+                          style: AppType.body(
+                            size: 15.5,
+                            color: mine ? TrackerColors.onAccent : TrackerColors.textPrimary,
+                          ),
+                        )
+                      : _RecipeCard(
+                          key: ValueKey('recipe_card_${message.id}'),
+                          card: message.attachment!,
+                          mine: mine,
+                          onOpen: () => onOpenRecipe(message.attachment!.recipeId),
+                        ),
                 ),
               ),
             ),
@@ -625,6 +637,41 @@ class _Composer extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A recipe a friend sent (or I sent): its name and calories, and a tap to open.
+class _RecipeCard extends StatelessWidget {
+  const _RecipeCard({super.key, required this.card, required this.mine, required this.onOpen});
+
+  final MessageAttachment card;
+  final bool mine;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = mine ? TrackerColors.onAccent : TrackerColors.textPrimary;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onOpen,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(CupertinoIcons.book_fill, size: 20, color: ink),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Recipe', style: AppType.caption(size: 11, color: ink.withValues(alpha: 0.75))),
+                Text(card.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 15.5, color: ink)),
+                Text('${card.calories} kcal per serving · tap to open', style: AppType.caption(size: 11.5, color: ink.withValues(alpha: 0.8))),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -28,6 +28,8 @@ class HouseRecipe {
     required this.carbsG,
     required this.fatG,
     required this.estimated,
+    this.mine = true,
+    this.ownerName,
     this.nutrients,
     this.description,
     this.steps = const [],
@@ -46,6 +48,10 @@ class HouseRecipe {
 
   /// Shown as "estimated": something in it was typed rather than looked up.
   final bool estimated;
+
+  /// False for a recipe a friend shared with me.
+  final bool mine;
+  final String? ownerName;
   final Nutrients? nutrients;
   final String? description;
   final List<String> steps;
@@ -66,6 +72,8 @@ class HouseRecipe {
         carbsG: ((j['carbs_g'] as num?) ?? 0).toDouble(),
         fatG: ((j['fat_g'] as num?) ?? 0).toDouble(),
         estimated: j['estimated'] == true,
+        mine: j['mine'] != false,
+        ownerName: j['owner_name'] as String?,
         nutrients: Nutrients.fromJson(j['nutrients']),
         description: j['description'] as String?,
         steps: [for (final s in (j['steps'] as List? ?? const [])) s as String],
@@ -130,4 +138,58 @@ int? previewCaloriesPerServing(List<DraftIngredient> items, double servings) {
     total += c * i.grams / 100;
   }
   return (total / servings).round();
+}
+
+
+/// A recipe as listed inside a collection or in Highlights.
+class RecipeBrief {
+  const RecipeBrief({required this.id, required this.title, required this.calories, required this.estimated, required this.mine});
+
+  final String id;
+  final String title;
+  final int calories;
+  final bool estimated;
+  final bool mine;
+
+  static RecipeBrief? fromJson(Object? raw) {
+    try {
+      final j = raw as Map<String, dynamic>;
+      return RecipeBrief(
+        id: j['id'] as String,
+        title: j['title'] as String,
+        calories: (j['calories_per_serving'] as num).toInt(),
+        estimated: j['estimated'] == true,
+        mine: j['mine'] != false,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+class RecipeCollection {
+  const RecipeCollection({required this.id, required this.name, required this.isDefault, this.items = const []});
+
+  final String id;
+  final String name;
+
+  /// "Saved": made automatically, can't be deleted.
+  final bool isDefault;
+  final List<RecipeBrief> items;
+
+  bool contains(String recipeId) => items.any((i) => i.id == recipeId);
+
+  static RecipeCollection? fromJson(Object? raw) {
+    try {
+      final j = raw as Map<String, dynamic>;
+      return RecipeCollection(
+        id: j['id'] as String,
+        name: j['name'] as String,
+        isDefault: j['is_default'] == true,
+        items: [for (final i in (j['items'] as List? ?? const [])) ?RecipeBrief.fromJson(i)],
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }

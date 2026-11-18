@@ -77,6 +77,8 @@ class HouseRecipeService {
       return "That recipe isn't complete yet.";
     }
     if (r.statusCode == 503) return "Recipes aren't available right now. Please try again later.";
+    if (r.statusCode == 403) return 'You can only send recipes to your friends.';
+    if (r.statusCode == 404) return "That recipe isn't available any more.";
     return "Couldn't save that right now. Please try again.";
   }
 
@@ -131,4 +133,66 @@ class HouseRecipeService {
       timeout: const Duration(seconds: 8),
     );
   }
+
+  // ---- collections, Highlights, sharing ------------------------------------
+
+  Future<List<RecipeCollection>?> collections() async {
+    final r = await _send((c, h) => c.get(Uri.parse('${ApiConfig.baseUrl}/collections'), headers: h));
+    if (r == null || r.statusCode != 200) return null;
+    try {
+      return [for (final j in jsonDecode(r.body) as List) ?RecipeCollection.fromJson(j)];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<RecipeBrief>?> highlights() async {
+    final r = await _send((c, h) => c.get(Uri.parse('${ApiConfig.baseUrl}/highlights'), headers: h));
+    if (r == null || r.statusCode != 200) return null;
+    try {
+      return [for (final j in jsonDecode(r.body) as List) ?RecipeBrief.fromJson(j)];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Every write below returns null on success, otherwise a message to show.
+  Future<String?> _write(Future<http.Response> Function(http.Client c, Map<String, String> h) call) async {
+    final r = await _send(call);
+    if (r != null && r.statusCode >= 200 && r.statusCode < 300) return null;
+    return _message(r);
+  }
+
+  Future<String?> createCollection(String id, String name) => _write((c, h) =>
+      c.post(Uri.parse('${ApiConfig.baseUrl}/collections'), headers: h, body: jsonEncode({'id': id, 'name': name})));
+
+  Future<String?> deleteCollection(String id) =>
+      _write((c, h) => c.delete(Uri.parse('${ApiConfig.baseUrl}/collections/$id'), headers: h));
+
+  Future<String?> addToCollection(String collectionId, String recipeId) => _write((c, h) => c.post(
+        Uri.parse('${ApiConfig.baseUrl}/collections/$collectionId/items'),
+        headers: h,
+        body: jsonEncode({'recipe_id': recipeId}),
+      ));
+
+  Future<String?> removeFromCollection(String collectionId, String recipeId) => _write(
+      (c, h) => c.delete(Uri.parse('${ApiConfig.baseUrl}/collections/$collectionId/items/$recipeId'), headers: h));
+
+  /// Keep a recipe in "Saved".
+  Future<String?> save(String recipeId) =>
+      _write((c, h) => c.post(Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/save'), headers: h));
+
+  Future<String?> setHighlights(List<String> recipeIds) => _write((c, h) =>
+      c.put(Uri.parse('${ApiConfig.baseUrl}/highlights'), headers: h, body: jsonEncode({'recipe_ids': recipeIds})));
+
+  /// Send a recipe to a friend as a chat card. [messageId] is chosen by the app
+  /// so a retry sends it once.
+  Future<String?> share(String recipeId, String friendId, String messageId) => _write((c, h) => c.post(
+        Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/share/$friendId'),
+        headers: h,
+        body: jsonEncode({'id': messageId}),
+      ));
+
+  Future<String?> unshare(String recipeId, String friendId) =>
+      _write((c, h) => c.delete(Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/share/$friendId'), headers: h));
 }

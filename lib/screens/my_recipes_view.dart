@@ -11,6 +11,7 @@ import '../widgets/app_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/house_recipe_sheet.dart';
 import '../widgets/pressable.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/shimmer.dart';
 import 'new_recipe_screen.dart';
 
@@ -30,6 +31,44 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(houseRecipesProvider.notifier).load();
     });
+  }
+
+  Future<void> _open(String id) =>
+      openRecipeById(context, ref.read(houseRecipesProvider.notifier), id);
+
+  Future<void> _openCollection(RecipeCollection c) async {
+    final picked = await showCupertinoModalPopup<Object>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text(c.name),
+        message: c.items.isEmpty ? const Text('Nothing here yet. Add recipes from a recipe’s Collections button.') : null,
+        actions: [
+          for (final i in c.items)
+            CupertinoActionSheetAction(
+              key: ValueKey('collection_item_${i.id}'),
+              onPressed: () => Navigator.pop(context, i),
+              child: Text(i.mine ? i.title : '${i.title} (from a friend)'),
+            ),
+          if (!c.isDefault)
+            CupertinoActionSheetAction(
+              key: const ValueKey('delete_collection'),
+              isDestructiveAction: true,
+              onPressed: () => Navigator.pop(context, 'delete'),
+              child: const Text('Delete this collection'),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+      ),
+    );
+    if (!mounted || picked == null) return;
+    if (picked is RecipeBrief) {
+      await _open(picked.id);
+    } else {
+      final error = await ref.read(houseRecipesProvider.notifier).deleteCollection(c.id);
+      if (error != null && mounted) {
+        await showAppDialog(context: context, title: "Couldn't delete it", message: error, confirmLabel: 'OK');
+      }
+    }
   }
 
   void _create() {
@@ -72,12 +111,44 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
             message: 'Save the dishes you cook often, then log them in one tap. '
                 'You can also save a meal you’ve already logged from Today.',
           )
-        else
+        else ...[
+          if (state.highlights.isNotEmpty) ...[
+            SectionHeader(label: 'Highlights'),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              height: 96,
+              child: ListView(
+                key: const ValueKey('highlights'),
+                scrollDirection: Axis.horizontal,
+                children: [
+                  for (final h in state.highlights)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: _HighlightTile(brief: h, onTap: () => _open(h.id)),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          if (state.collections.isNotEmpty) ...[
+            SectionHeader(label: 'Collections'),
+            const SizedBox(height: AppSpacing.md),
+            for (final c in state.collections)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _CollectionRow(collection: c, onTap: () => _openCollection(c)),
+              ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          SectionHeader(label: 'All recipes'),
+          const SizedBox(height: AppSpacing.md),
           for (final r in state.recipes)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _Row(recipe: r, onTap: () => showHouseRecipeSheet(context, r)),
             ),
+        ],
         SizedBox(height: AppSpacing.tabBarClearance + bottomInset),
       ],
     );
@@ -121,4 +192,66 @@ class _Row extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HighlightTile extends StatelessWidget {
+  const _HighlightTile({required this.brief, required this.onTap});
+
+  final RecipeBrief brief;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Pressable(
+        key: ValueKey('highlight_${brief.id}'),
+        onTap: onTap,
+        haptics: true,
+        child: Container(
+          width: 150,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: TrackerColors.alpha(TrackerColors.accentEnd, 0.1),
+            borderRadius: BorderRadius.circular(AppRadii.button),
+            border: Border.all(color: TrackerColors.alpha(TrackerColors.accentEnd, 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(CupertinoIcons.pin_fill, size: 12, color: TrackerColors.accentEnd),
+              const SizedBox(height: 4),
+              Text(brief.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 13)),
+              Text('${brief.calories} kcal', style: AppType.caption(size: 11)),
+            ],
+          ),
+        ),
+      );
+}
+
+class _CollectionRow extends StatelessWidget {
+  const _CollectionRow({required this.collection, required this.onTap});
+
+  final RecipeCollection collection;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Pressable(
+        key: ValueKey('collection_row_${collection.id}'),
+        onTap: onTap,
+        haptics: true,
+        borderRadius: AppRadii.containerAll,
+        child: AppCard(
+          padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
+          borderRadius: AppRadii.containerAll,
+          child: Row(
+            children: [
+              Icon(collection.isDefault ? CupertinoIcons.bookmark : CupertinoIcons.folder, size: 18, color: TrackerColors.textSecondary),
+              const SizedBox(width: 12),
+              Expanded(child: Text(collection.name, style: AppType.body(size: 15))),
+              Text('${collection.items.length}', style: AppType.caption(size: 12)),
+              const SizedBox(width: 6),
+              Icon(CupertinoIcons.chevron_right, size: 14, color: TrackerColors.textTertiary),
+            ],
+          ),
+        ),
+      );
 }

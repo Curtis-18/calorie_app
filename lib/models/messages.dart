@@ -4,6 +4,24 @@ enum SendState { sent, sending, failed }
 /// The longest message the server accepts.
 const int maxMessageChars = 1000;
 
+/// A card under a message's text. Only recipes exist so far; anything else the
+/// server might add later is ignored, and the text still shows.
+class MessageAttachment {
+  const MessageAttachment({required this.recipeId, required this.title, required this.calories});
+
+  final String recipeId;
+  final String title;
+  final int calories;
+
+  static MessageAttachment? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic> || raw['kind'] != 'recipe') return null;
+    final id = raw['id'];
+    final title = raw['title'];
+    if (id is! String || title is! String) return null;
+    return MessageAttachment(recipeId: id, title: title, calories: ((raw['calories'] as num?) ?? 0).toInt());
+  }
+}
+
 class ChatMessage {
   const ChatMessage({
     required this.id,
@@ -13,8 +31,10 @@ class ChatMessage {
     this.readAt,
     this.state = SendState.sent,
     this.error,
+    this.attachment,
   });
 
+  final MessageAttachment? attachment;
   final String id;
   final bool mine;
   final String body;
@@ -33,6 +53,7 @@ class ChatMessage {
         body: json['body'] as String,
         createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
         readAt: json['read_at'] == null ? null : DateTime.parse(json['read_at'] as String).toLocal(),
+        attachment: MessageAttachment.fromJson(json['attachment']),
       );
 
   ChatMessage copyWith({SendState? state, String? error, bool clearError = false}) => ChatMessage(
@@ -43,6 +64,7 @@ class ChatMessage {
         readAt: readAt,
         state: state ?? this.state,
         error: clearError ? null : (error ?? this.error),
+        attachment: attachment,
       );
 }
 
