@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/insights_provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/weekly_report_provider.dart';
+import '../widgets/weekly_report_card.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -148,6 +150,10 @@ class InsightsScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    if (ref.watch(weeklyReportProvider).valueOrNull case final report?) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      WeeklyReportCard(report: report),
+                    ],
                     const SizedBox(height: AppSpacing.lg),
                     AppCard(
                       child: Column(
