@@ -20,7 +20,8 @@ import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
 import '../widgets/profile_photo.dart';
 import '../widgets/settings_list.dart';
-import 'notification_settings_screen.dart';
+import '../providers/whats_new_provider.dart';
+import 'notifications_screen.dart';
 import 'onboarding_screen.dart';
 import 'settings_screen.dart';
 
@@ -39,6 +40,7 @@ class ProfileScreen extends ConsumerWidget {
       username: friends?.myUsername,
       avatarUrl: friends?.myAvatarUrl,
       onPhotoChanged: () => ref.read(friendsProvider.notifier).load(),
+      hasUnreadNotifications: ref.watch(whatsNewProvider),
     );
   }
 }
@@ -54,8 +56,11 @@ class ProfileView extends StatelessWidget {
     this.onPhotoChanged,
     this.photoButton,
     this.onOpenSettings,
+    this.hasUnreadNotifications = false,
   });
 
+  /// Something new to read in Notifications: shows a dot on that row.
+  final bool hasUnreadNotifications;
   final UserProfile? profile;
   final ProgressData? progress;
   final WeightUnit unit;
@@ -151,7 +156,9 @@ class ProfileView extends StatelessWidget {
                         icon: CupertinoIcons.bell,
                         color: TrackerColors.macroFat,
                         title: 'Notifications',
-                        onTap: () => _pushOver(context, (_) => const NotificationSettingsScreen()),
+                        subtitle: hasUnreadNotifications ? 'What’s new' : null,
+                        trailing: hasUnreadNotifications ? const UnreadDot() : null,
+                        onTap: () => _pushOver(context, (_) => const NotificationsScreen()),
                       ),
                       SettingsRow(
                         key: const ValueKey('profile_settings'),
