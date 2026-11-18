@@ -15,7 +15,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class PhotoAnalysisException implements Exception {
   final String message;
 
-  const PhotoAnalysisException(this.message);
+  /// Whether trying the same photo again is likely to work (a timeout, a
+  /// dropped connection, the server busy). False for things a retry can't fix:
+  /// a signed-out session, a photo that is too large or unreadable, the
+  /// scan limit.
+  final bool retryable;
+
+  const PhotoAnalysisException(this.message, {this.retryable = false});
 
   @override
   String toString() => 'PhotoAnalysisException: $message';
@@ -66,7 +72,7 @@ class PhotoEstimationService {
     return session?.accessToken;
   }
 
-  Future<List<DetectedFood>> analyzePhoto(List<int> imageBytes) async {
+  Future<List<DetectedFood>> analyzePhoto(List<int> imageBytes, {String? note}) async {
     String? token;
     try {
       token = await (_tokenProvider ?? _getFreshToken)();
@@ -85,20 +91,27 @@ class PhotoEstimationService {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-            body: jsonEncode({'image': base64Encode(imageBytes)}),
+            body: jsonEncode({
+              'image': base64Encode(imageBytes),
+              'date': _deviceDate(),
+              if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+            }),
           )
           .timeout(timeout);
     } on TimeoutException {
-      throw const PhotoAnalysisException(timeoutMessage);
+      throw const PhotoAnalysisException(timeoutMessage, retryable: true);
     } on http.ClientException {
       // Covers no connection, DNS failure and (on web) a CORS rejection.
-      throw const PhotoAnalysisException(networkMessage);
+      throw const PhotoAnalysisException(networkMessage, retryable: true);
     } finally {
       if (_client == null) client.close();
     }
 
     if (response.statusCode != 200) {
-      throw PhotoAnalysisException(messageForStatus(response.statusCode));
+      throw PhotoAnalysisException(
+        messageForStatus(response.statusCode),
+        retryable: const {502, 503, 504}.contains(response.statusCode),
+      );
     }
 
     final List<DetectedFood> foods;
@@ -118,6 +131,10 @@ class PhotoEstimationService {
     }
     return foods;
   }
+
+  /// The device-local date (yyyy-mm-dd), so the server counts the scan on the
+  /// person's own day, like food logs.
+  static String _deviceDate() => DateTime.now().toIso8601String().substring(0, 10);
 
   /// User-facing text for a non-200 from `POST /estimate-photo`.
   static String messageForStatus(int status) {

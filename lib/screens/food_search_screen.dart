@@ -11,10 +11,12 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/glass.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
+import 'barcode_scanner_screen.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final MealType mealType;
@@ -79,6 +81,40 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     });
   }
 
+  /// Scan a barcode and go straight to the amount step for that product.
+  /// Secondary to the photo: this screen is the by-name path.
+  Future<void> _scanBarcode() async {
+    final code = await Navigator.push<String>(
+      context,
+      CupertinoPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (code == null || !mounted) return;
+    FoodItem? found;
+    String? problem;
+    showCupertinoDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AppLoadingDialog(label: 'Looking up the product…'),
+    );
+    try {
+      found = await _service.lookupBarcode(code);
+    } catch (e) {
+      problem = e.toString();
+    }
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+    if (found != null) {
+      _selectFood(found);
+      return;
+    }
+    await showAppDialog(
+      context: context,
+      title: problem == null ? "We couldn't find that product" : "Couldn't look that up",
+      message: problem ?? 'Try searching for it by name instead.',
+      confirmLabel: 'OK',
+    );
+  }
+
   void _selectFood(FoodItem item) async {
     if (widget.pickOnly) {
       Navigator.pop(context, item);
@@ -127,6 +163,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
         border: AppDecor.hairlineTop,
+        trailing: CupertinoButton(
+          key: const ValueKey('scan_barcode'),
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(32, 32),
+          onPressed: _scanBarcode,
+          child: Icon(CupertinoIcons.barcode_viewfinder, size: 24, color: TrackerColors.textSecondary),
+        ),
         middle: CupertinoSearchTextField(
           controller: _controller,
           autofocus: true,

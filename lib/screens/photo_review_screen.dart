@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import '../models/adjustment.dart';
 import '../models/detected_food.dart';
+import '../services/adjustments_service.dart';
 import '../models/food_entry.dart';
 import '../services/snaps_service.dart' show newSnapId;
 import '../models/food_item.dart';
@@ -18,7 +20,10 @@ class PhotoReviewScreen extends StatefulWidget {
   final List<DetectedFood> items;
   final MealType mealType;
 
-  const PhotoReviewScreen({super.key, required this.items, required this.mealType});
+  /// The one-tap extras. Null loads them from the server; tests pass them in.
+  final List<Adjustment>? adjustments;
+
+  const PhotoReviewScreen({super.key, required this.items, required this.mealType, this.adjustments});
 
   @override
   State<PhotoReviewScreen> createState() => _PhotoReviewScreenState();
@@ -31,7 +36,77 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
   void initState() {
     super.initState();
     _items = List.from(widget.items);
+    _adjustments = widget.adjustments ?? const [];
+    if (widget.adjustments == null) {
+      _loadAdjustments();
+    } else {
+      _applyAdded();
+    }
   }
+
+  /// Extras the person said went in ("cooked in butter") are switched on for
+  /// them, through the same chips, so saying it and tapping it can never both
+  /// add the butter.
+  void _applyAdded() {
+    final wanted = {for (final i in _items) ...i.added};
+    for (final a in _adjustments) {
+      if (!a.isScale && wanted.contains(a.id) && !_isOn(a)) _items.add(a.toFood());
+    }
+  }
+
+  late List<Adjustment> _adjustments;
+  bool _restaurant = false;
+
+  Future<void> _loadAdjustments() async {
+    final found = await AdjustmentsService().fetch();
+    if (!mounted) return;
+    setState(() {
+      _adjustments = found;
+      _applyAdded();
+    });
+  }
+
+  bool _isOn(Adjustment a) =>
+      a.isScale ? _restaurant : _items.any((i) => i.adjustmentId == a.id);
+
+  /// One tap on an extra chip. Adds (or removes) the food it stands for, or
+  /// scales the photographed foods for a restaurant portion.
+  void _toggle(Adjustment a) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (a.isScale) {
+        final up = !_restaurant;
+        _restaurant = up;
+        for (final item in _items.where((i) => i.adjustmentId == null)) {
+          item.estimatedGrams = up ? item.estimatedGrams * a.factor : item.estimatedGrams / a.factor;
+        }
+        // The gram fields keep their own text, so rebuild them with the new amounts.
+        _items = List.of(_items.map(_copyOf));
+      } else if (_isOn(a)) {
+        _items.removeWhere((i) => i.adjustmentId == a.id);
+      } else {
+        _items.add(a.toFood());
+      }
+    });
+  }
+
+  DetectedFood _copyOf(DetectedFood f) => DetectedFood(
+        name: f.name,
+        estimatedGrams: f.estimatedGrams,
+        caloriesPer100g: f.caloriesPer100g,
+        proteinPer100g: f.proteinPer100g,
+        carbsPer100g: f.carbsPer100g,
+        fatPer100g: f.fatPer100g,
+        extrasPer100g: f.extrasPer100g,
+        matched: f.matched,
+        matchedDescription: f.matchedDescription,
+        matchedFdcId: f.matchedFdcId,
+        preparation: f.preparation,
+        kind: f.kind,
+        adjustmentId: f.adjustmentId,
+      );
+
+  int get _totalCalories => _matched.fold(0, (sum, i) => sum + i.estimatedCalories);
 
   List<DetectedFood> get _matched => _items.where((i) => i.matched).toList();
   int get _unmatchedCount => _items.length - _matched.length;
@@ -127,6 +202,30 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                 ],
               ),
             ),
+            if (_adjustments.any((a) => a.appliesTo(_items)))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Anything the camera can’t see?', style: AppType.callout(size: 12)),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final a in _adjustments.where((a) => a.appliesTo(_items)))
+                          _Chip(
+                            key: ValueKey('extra_${a.id}'),
+                            label: _isOn(a) ? '✓ ${a.label.replaceFirst('+ ', '')}' : a.isScale ? '${a.label} (estimate)' : a.label,
+                            color: _isOn(a) ? TrackerColors.accentStartText : TrackerColors.textSecondary,
+                            onTap: () => _toggle(a),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: _items.isEmpty
                   ? AppEmptyState(
@@ -171,6 +270,15 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                               style: AppType.caption(size: 11),
+                                            ),
+                                          ),
+                                        if (item.noteApplied != null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              'From your note: ${item.noteApplied}',
+                                              key: ValueKey('note_applied_${identityHashCode(item)}'),
+                                              style: AppType.caption(size: 11, color: TrackerColors.accentStartText),
                                             ),
                                           ),
                                         const SizedBox(height: 8),
@@ -232,6 +340,15 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                   "won't be saved. Tap Find to choose the right food.",
                   textAlign: TextAlign.center,
                   style: AppType.caption(color: TrackerColors.warning, size: 12),
+                ),
+              ),
+            if (_matched.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'About $_totalCalories kcal in total',
+                  key: const ValueKey('review_total'),
+                  style: AppType.caption(size: 12),
                 ),
               ),
             Padding(
@@ -330,7 +447,7 @@ class _GramFieldState extends State<_GramField> {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color, this.icon, this.onTap});
+  const _Chip({super.key, required this.label, required this.color, this.icon, this.onTap});
 
   final String label;
   final Color color;

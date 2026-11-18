@@ -13,6 +13,20 @@ class DetectedFood {
   String? matchedDescription; // the USDA food the numbers come from
   int? matchedFdcId;
 
+  /// What the photo showed of how it was made ("fried") and what it is
+  /// ("salad"), when the server could tell. Decides which one-tap extras to offer.
+  final String? preparation;
+  final String? kind;
+
+  /// Set on a food added by a one-tap extra (oil, butter...), so toggling the
+  /// chip off can take it away again.
+  final String? adjustmentId;
+
+  /// From the person's spoken note: extras they said went in ("butter"), and
+  /// why an amount changed, shown under the food.
+  final List<String> added;
+  final String? noteApplied;
+
   DetectedFood({
     required this.name,
     required this.estimatedGrams,
@@ -24,6 +38,11 @@ class DetectedFood {
     this.matched = false,
     this.matchedDescription,
     this.matchedFdcId,
+    this.preparation,
+    this.kind,
+    this.adjustmentId,
+    this.added = const [],
+    this.noteApplied,
   });
 
   /// One item from `POST /estimate-photo`. Macros are present when the
@@ -39,6 +58,10 @@ class DetectedFood {
         matched: json['matched'] == true,
         matchedDescription: json['matched_description'] as String?,
         matchedFdcId: (json['matched_fdc_id'] as num?)?.toInt(),
+        preparation: json['preparation'] as String?,
+        kind: json['kind'] as String?,
+        added: [for (final a in (json['added'] as List? ?? const [])) if (a is String) a],
+        noteApplied: json['note_applied'] as String?,
       );
 
   /// Point this item at [food]'s nutrition. Grams and the user's name stay.

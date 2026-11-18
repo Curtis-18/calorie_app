@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/food_entry.dart';
@@ -8,12 +10,15 @@ import '../models/nutrients.dart';
 import '../providers/display_prefs_provider.dart';
 import '../providers/food_log_provider.dart';
 import '../providers/progress_provider.dart';
+import '../providers/scan_queue_provider.dart';
+import '../models/pending_scan.dart';
+import '../widgets/pending_scan_card.dart';
+import '../widgets/scan_note_sheet.dart';
 import '../providers/shell_provider.dart';
 import '../models/progress.dart';
 import '../providers/user_provider.dart';
 import '../services/day_log_service.dart';
 import '../services/log_cache_reader.dart';
-import '../services/photo_estimation.dart';
 import '../services/server_handshake.dart';
 import '../services/tour_service.dart';
 import '../theme/app_motion.dart';
@@ -82,6 +87,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     _lifecycle = AppLifecycleListener(onResume: _onResume);
     _celebrationSub = ref.read(progressProvider.notifier).celebrations.listen(_enqueueCelebration);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeStartTour());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchCamera());
+  }
+
+  /// Set once the "open the camera at launch" check has run, so coming back to
+  /// the Today tab (or the app resuming) never opens the camera again.
+  static bool _launchCameraHandled = false;
+
+  /// "Open the camera at launch" (Settings, off by default). Only on a phone
+  /// build: a browser blocks opening the camera without a tap. Never during
+  /// the first-run tour, which owns the screen then.
+  Future<void> _maybeLaunchCamera() async {
+    if (_launchCameraHandled || kIsWeb) return;
+    _launchCameraHandled = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!(prefs.getBool(DisplayPrefsNotifier.launchToCameraKey) ?? false)) return;
+      if (!await TourService.hasSeen(TourService.dashboard)) return;
+    } catch (_) {
+      return;
+    }
+    // Let the splash and the route transition finish, like the tour does.
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!mounted || !_isFrontmost() || !_isToday) return;
+    await _captureAndAnalyze(context, mealForHour(DateTime.now().hour));
   }
 
   @override
@@ -249,102 +278,92 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     await _openFoodSearch(context, meal);
   }
 
+  /// Take the photo and hand it to the background scan. The card appears on
+  /// Today at once; nothing blocks while Gemini and USDA work.
   Future<void> _captureAndAnalyze(BuildContext context, MealType meal) async {
-    final picker = ImagePicker();
-    final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
-    if (photo == null || !context.mounted) return;
-
-    var progressDialogVisible = true;
-    showCupertinoDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: const Color(0x99000000),
-      builder: (context) => const AppLoadingDialog(label: 'Analysing your meal…'),
-    );
-
-    try {
-      final bytes = await photo.readAsBytes();
-      final service = PhotoEstimationService();
-      final detected = await service.analyzePhoto(bytes);
-
-      if (detected.isEmpty) {
-        if (!context.mounted) return;
-        Navigator.of(context, rootNavigator: true).pop();
-        progressDialogVisible = false;
-        await showAppDialog(
-          context: context,
-          title: 'No food detected',
-          message: "We couldn't identify any food in that photo. Try getting closer or improving the lighting.",
-          confirmLabel: 'OK',
-        );
-        return;
-      }
-
-      // Macros arrive with the detection: the backend matches each food in
-      // USDA in the same request.
-      if (!context.mounted) return;
-      Navigator.of(context, rootNavigator: true).pop();
-      progressDialogVisible = false;
-
-      final entries = await Navigator.push<List<FoodEntry>>(
-        context,
-        CupertinoPageRoute(builder: (context) => PhotoReviewScreen(items: detected, mealType: meal)),
-      );
-
-      if (!context.mounted) return;
-      if (entries != null && entries.isNotEmpty) {
-        final saveState = ValueNotifier(SaveToastState.loading);
-        final overlay = Overlay.of(context);
-        late final OverlayEntry saveToastEntry;
-        saveToastEntry = OverlayEntry(
-          builder: (context) => Positioned(
-            left: 24,
-            right: 24,
-            bottom: 32,
-            child: IgnorePointer(
-              child: Center(
-                child: ValueListenableBuilder<SaveToastState>(
-                  valueListenable: saveState,
-                  builder: (context, state, child) => SaveToast(state: state),
-                ),
-              ),
-            ),
-          ),
-        );
-        overlay.insert(saveToastEntry);
-
-        void dismissSaveToast() {
-          if (saveToastEntry.mounted) saveToastEntry.remove();
-          saveState.dispose();
-        }
-
-        try {
-          await Future.wait(
-            entries.map((entry) => ref.read(foodLogProvider.notifier).addEntry(entry)),
-          );
-          saveState.value = SaveToastState.success;
-          _refreshStreak();
-          await Future<void>.delayed(const Duration(milliseconds: 1200));
-          dismissSaveToast();
-        } catch (_) {
-          dismissSaveToast();
-          rethrow;
-        } finally {
-          progressDialogVisible = false;
-        }
-      }
-    } catch (e) {
-      if (!context.mounted) return;
-      if (progressDialogVisible) Navigator.of(context, rootNavigator: true).pop();
-
-      final message = e is PhotoAnalysisException
-          ? e.message
-          : "Something went wrong while saving your meal. Please try again.";
-
+    final queue = ref.read(scanQueueProvider.notifier);
+    if (!queue.hasRoom) {
       await showAppDialog(
         context: context,
-        title: 'Couldn\'t scan meal',
-        message: message,
+        title: 'Finish your other photos first',
+        message: 'You have ${ScanQueueNotifier.maxPending} meals waiting to be checked. Review or dismiss one, then take the next.',
+        confirmLabel: 'OK',
+      );
+      return;
+    }
+
+    final picker = ImagePicker();
+    // Shrunk at the source: a full camera photo is several MB, which made the
+    // upload (and so the scan) slower for no gain in what the model can see.
+    final photo = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+      maxWidth: 1280,
+      maxHeight: 1280,
+    );
+    if (photo == null || !context.mounted) return;
+    final bytes = await photo.readAsBytes();
+    if (!mounted) return;
+    queue.start(bytes, meal);
+  }
+
+  Future<void> _addNote(BuildContext context, PendingScan scan) async {
+    final note = await showScanNoteSheet(context, initial: scan.note);
+    if (note == null || !mounted) return;
+    ref.read(scanQueueProvider.notifier).addNote(scan.id, note);
+  }
+
+  /// The person tapped a finished scan: check the foods, then save them.
+  Future<void> _reviewScan(BuildContext context, PendingScan scan) async {
+    final entries = await Navigator.push<List<FoodEntry>>(
+      context,
+      CupertinoPageRoute(builder: (context) => PhotoReviewScreen(items: scan.foods, mealType: scan.meal)),
+    );
+    // Backing out keeps the card, so the photo isn't lost by accident.
+    if (entries == null) return;
+    if (mounted) ref.read(scanQueueProvider.notifier).remove(scan.id);
+    if (entries.isEmpty || !context.mounted) return;
+
+    final saveState = ValueNotifier(SaveToastState.loading);
+    final overlay = Overlay.of(context);
+    late final OverlayEntry saveToastEntry;
+    saveToastEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: 24,
+        right: 24,
+        bottom: 32,
+        child: IgnorePointer(
+          child: Center(
+            child: ValueListenableBuilder<SaveToastState>(
+              valueListenable: saveState,
+              builder: (context, state, child) => SaveToast(state: state),
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(saveToastEntry);
+
+    void dismissSaveToast() {
+      if (saveToastEntry.mounted) saveToastEntry.remove();
+      saveState.dispose();
+    }
+
+    try {
+      await Future.wait(
+        entries.map((entry) => ref.read(foodLogProvider.notifier).addEntry(entry)),
+      );
+      saveState.value = SaveToastState.success;
+      _refreshStreak();
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      dismissSaveToast();
+    } catch (_) {
+      dismissSaveToast();
+      if (!context.mounted) return;
+      await showAppDialog(
+        context: context,
+        title: "Couldn't save your meal",
+        message: 'Something went wrong while saving your meal. Please try again.',
         confirmLabel: 'OK',
       );
     }
@@ -424,6 +443,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final foodLog = ref.watch(foodLogProvider);
     final progress = ref.watch(progressProvider);
     final display = ref.watch(displayPrefsProvider);
+    final scans = ref.watch(scanQueueProvider);
 
     final entries = _isToday ? foodLog : _pastEntries;
     final target = profile?.calorieTarget ?? 2000;
@@ -511,6 +531,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   : null,
                             ),
                             const SizedBox(height: 12),
+                            // Photos being scanned, or waiting to be checked.
+                            if (_isToday)
+                              for (final scan in scans)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: PendingScanCard(
+                                    key: ValueKey('scan_${scan.id}'),
+                                    scan: scan,
+                                    onReview: () => _reviewScan(context, scan),
+                                    onRetry: () => ref.read(scanQueueProvider.notifier).retry(scan.id),
+                                    onDismiss: () => ref.read(scanQueueProvider.notifier).remove(scan.id),
+                                    onNote: () => _addNote(context, scan),
+                                  ),
+                                ),
                             ...MealType.values.map(
                               (meal) => Padding(
                                 padding: const EdgeInsets.only(bottom: 10),

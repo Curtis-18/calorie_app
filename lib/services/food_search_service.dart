@@ -93,6 +93,41 @@ class FoodSearchService {
     }
   }
 
+  /// The packaged food with this barcode, or null when USDA doesn't have it.
+  /// Never throws for "not found"; other failures are [FoodSearchException]s.
+  Future<FoodItem?> lookupBarcode(String code) async {
+    final token = await (_tokenProvider ?? _currentToken)();
+    if (token == null) throw const FoodSearchException(signedOutMessage);
+
+    final uri = Uri.parse('${ApiConfig.baseUrl}/foods/barcode').replace(queryParameters: {'code': code});
+    final client = _client ?? http.Client();
+    final http.Response response;
+    try {
+      response = await client.get(uri, headers: {'Authorization': 'Bearer $token'}).timeout(timeout);
+    } on TimeoutException {
+      throw const FoodSearchException(timeoutMessage);
+    } on http.ClientException {
+      throw const FoodSearchException(networkMessage);
+    } finally {
+      if (_client == null) client.close();
+    }
+
+    if (response.statusCode == 404) return null;
+    if (response.statusCode == 401) {
+      throw const FoodSearchException('Your session has expired. Please log in again.');
+    }
+    if (response.statusCode == 429) {
+      throw const FoodSearchException("You're searching very fast. Wait a moment and try again.");
+    }
+    if (response.statusCode != 200) throw const FoodSearchException(unavailableMessage);
+    try {
+      final item = FoodItem.fromApiJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return item.caloriesPer100g == null ? null : item;
+    } catch (_) {
+      throw const FoodSearchException(unavailableMessage);
+    }
+  }
+
   FoodItem _bestMatch(List<FoodItem> results, String query) {
     final queryWords = query
         .toLowerCase()

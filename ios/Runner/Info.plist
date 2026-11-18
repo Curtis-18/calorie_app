@@ -70,5 +70,9 @@
 	<string>Choose a photo from your library to use as your profile picture.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>NuStreak uses the camera to photograph your meals so you can log them and share them with friends.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NuStreak listens only while you hold the mic, to turn what you say about your meal (for example "half of this") into a note. Nothing is recorded or saved.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>NuStreak turns your spoken note about a meal into text on your phone.</string>
 </dict>
 </plist>

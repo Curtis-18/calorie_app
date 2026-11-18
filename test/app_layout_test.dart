@@ -213,6 +213,24 @@ void main() {
       expect(prefs.getBool(DisplayPrefsNotifier.nutrientsKey), isFalse);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+    testWidgets('"Open the camera at launch" starts off and is remembered', (tester) async {
+      final container = await pump(tester);
+      expect(container.read(displayPrefsProvider).launchToCamera, isFalse);
+
+      final toggle = find.descendant(
+        of: find.byKey(const ValueKey('toggle_launch_camera')),
+        matching: find.byType(CupertinoSwitch),
+      );
+      await tester.ensureVisible(toggle);
+      await settle(tester);
+      await tester.tap(toggle);
+      await settle(tester);
+
+      expect(container.read(displayPrefsProvider).launchToCamera, isTrue);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(DisplayPrefsNotifier.launchToCameraKey), isTrue);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('saved toggles are read back', (tester) async {
       final container = await pump(tester, saved: {DisplayPrefsNotifier.macrosKey: false});
       expect(container.read(displayPrefsProvider).showMacros, isFalse);
