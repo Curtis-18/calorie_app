@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../services/scan_photo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -307,7 +308,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       maxHeight: 1280,
     );
     if (photo == null || !context.mounted) return;
-    final bytes = await photo.readAsBytes();
+    var bytes = await photo.readAsBytes();
+    // The browser ignores the size hint above, so shrink there ourselves.
+    if (kIsWeb) bytes = await shrinkForScan(bytes);
     if (!mounted) return;
     queue.start(bytes, meal);
   }

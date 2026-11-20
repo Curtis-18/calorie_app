@@ -1,5 +1,8 @@
 import 'nutrients.dart';
 
+/// `data_type` the backend sends for the barcode fallback.
+const openFoodFactsDataType = 'Open Food Facts';
+
 class FoodItem {
   final int fdcId;
   final String description;
@@ -11,6 +14,10 @@ class FoodItem {
 
   /// Fibre, sugar, sodium, iron and calcium per 100 g, where USDA has them.
   final Map<String, double> extrasPer100g;
+
+  /// A product the backend found in Open Food Facts when USDA had none (its
+  /// data must be credited, and it has no USDA id).
+  bool get isOpenFoodFacts => dataType == openFoodFactsDataType;
 
   FoodItem({
     required this.fdcId,

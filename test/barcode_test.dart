@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:calorie_app/models/barcode.dart';
+import 'package:calorie_app/models/food_item.dart';
+import 'package:calorie_app/screens/food_search_screen.dart' show QuantityDialog;
 import 'package:calorie_app/providers/display_prefs_provider.dart';
 import 'package:calorie_app/screens/barcode_scanner_screen.dart';
 import 'package:calorie_app/services/food_search_service.dart';
@@ -79,6 +81,33 @@ void main() {
         () => service((_) => http.Response('{}', 200), token: null).lookupBarcode('012345678905'),
         throwsA(isA<FoodSearchException>()),
       );
+    });
+  });
+
+  group('Open Food Facts results', () {
+    FoodItem item(String? type) => FoodItem(fdcId: type == null ? 7 : 0, description: 'Hazelnut spread', dataType: type, caloriesPer100g: 539);
+
+    test('the backend fallback is recognised from data_type, USDA products are not', () {
+      final off = FoodItem.fromApiJson({'fdc_id': 0, 'description': 'Hazelnut spread', 'data_type': 'Open Food Facts', 'calories_per_100g': 539});
+      expect(off.isOpenFoodFacts, isTrue);
+      expect(item('Branded').isOpenFoodFacts, isFalse);
+      expect(item(null).isOpenFoodFacts, isFalse);
+    });
+
+    Future<void> showDialogFor(WidgetTester tester, FoodItem food) async {
+      await tester.pumpWidget(CupertinoApp(home: Center(child: QuantityDialog(food: food))));
+      await tester.pump();
+    }
+
+    testWidgets('the amount dialog credits Open Food Facts', (tester) async {
+      await showDialogFor(tester, item('Open Food Facts'));
+      expect(find.byKey(const ValueKey('off_credit')), findsOneWidget);
+      expect(find.text('Source: Open Food Facts'), findsOneWidget);
+    });
+
+    testWidgets('and says nothing extra for a USDA product', (tester) async {
+      await showDialogFor(tester, item('Branded'));
+      expect(find.byKey(const ValueKey('off_credit')), findsNothing);
     });
   });
 

@@ -122,7 +122,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     }
     final grams = await showCupertinoDialog<double>(
       context: context,
-      builder: (context) => _QuantityDialog(food: item),
+      builder: (context) => QuantityDialog(food: item),
     );
     if (grams == null || !mounted) return;
 
@@ -259,15 +259,15 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 }
 
-class _QuantityDialog extends StatefulWidget {
+class QuantityDialog extends StatefulWidget {
   final FoodItem food;
-  const _QuantityDialog({required this.food});
+  const QuantityDialog({super.key, required this.food});
 
   @override
-  State<_QuantityDialog> createState() => _QuantityDialogState();
+  State<QuantityDialog> createState() => _QuantityDialogState();
 }
 
-class _QuantityDialogState extends State<_QuantityDialog> {
+class _QuantityDialogState extends State<QuantityDialog> {
   final _gramsController = TextEditingController(text: '100');
   double? _grams = 100;
 
@@ -301,6 +301,15 @@ class _QuantityDialogState extends State<_QuantityDialog> {
                   overflow: TextOverflow.ellipsis,
                   style: AppType.headline(),
                 ),
+                if (widget.food.isOpenFoodFacts) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Source: Open Food Facts',
+                    key: const ValueKey('off_credit'),
+                    textAlign: TextAlign.center,
+                    style: AppType.body(size: 12, color: TrackerColors.textTertiary),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 CupertinoTextField(
                   controller: _gramsController,

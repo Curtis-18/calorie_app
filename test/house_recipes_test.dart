@@ -357,6 +357,26 @@ void main() {
       expect(find.byKey(const ValueKey('save_recipe')), findsNothing); // went back
     });
 
+    screenTest('an Open Food Facts product (no USDA id) is sent with its own numbers, not as id 0', (tester) async {
+      await pump(tester, NewRecipeScreen(
+        makeId: () => 'off-id',
+        pickFood: (_) async => FoodItem(fdcId: 0, description: 'Hazelnut spread', dataType: 'Open Food Facts', caloriesPer100g: 539, proteinPer100g: 6.3, carbsPer100g: 57.5, fatPer100g: 30.9),
+      ));
+      await tester.enterText(find.descendant(of: find.byKey(const ValueKey('recipe_title_field')), matching: find.byType(CupertinoTextField)), 'Toast');
+      await tester.tap(find.byKey(const ValueKey('add_ingredient')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('add_search')));
+      await settle(tester);
+      await tester.enterText(find.byKey(const ValueKey('grams_field')), '20');
+      await tester.tap(find.byKey(const ValueKey('grams_ok')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('save_recipe')));
+      await settle(tester);
+      final ing = (service.created.single['ingredients'] as List).single as Map;
+      expect(ing.containsKey('fdc_id'), isFalse);
+      expect(ing['per_100g'], containsPair('calories', 539.0));
+    });
+
     screenTest('an ingredient the person types is marked, and sent with its numbers', (tester) async {
       await pump(tester, NewRecipeScreen(makeId: () => 'id'));
       await tester.enterText(find.descendant(of: find.byKey(const ValueKey('recipe_title_field')), matching: find.byType(CupertinoTextField)), 'Curry');

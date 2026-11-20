@@ -100,7 +100,9 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
       setState(() => _items.add(DraftIngredient(
             name: food.description,
             grams: grams,
-            fdcId: food.fdcId,
+            // An Open Food Facts product has no USDA id (0): it is sent with
+            // its own per-100 g values, like an ingredient typed by hand.
+            fdcId: food.fdcId > 0 ? food.fdcId : null,
             caloriesPer100g: food.caloriesPer100g,
             proteinPer100g: food.proteinPer100g ?? 0,
             carbsPer100g: food.carbsPer100g ?? 0,
