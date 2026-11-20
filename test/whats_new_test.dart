@@ -174,13 +174,19 @@ void main() {
       expect(opened, 1);
     });
 
-    testWidgets('the bell is not there when everything has been read', (tester) async {
+    testWidgets('the bell stays on Today once everything is read, without the dot', (tester) async {
+      var opened = 0;
       await pump(
         tester,
-        const CupertinoPageScaffold(child: SafeArea(child: DashboardHeader(streakDays: 3, dateLabel: 'Today'))),
+        CupertinoPageScaffold(
+          child: SafeArea(child: DashboardHeader(streakDays: 3, dateLabel: 'Today', onOpenNotifications: () => opened++)),
+        ),
         unread: false,
       );
-      expect(find.byKey(const ValueKey('whats_new_bell')), findsNothing);
+      expect(find.byKey(const ValueKey('whats_new_bell')), findsOneWidget);
+      expect(find.byKey(const ValueKey('unread_dot')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('whats_new_bell')));
+      expect(opened, 1);
     });
 
     testWidgets('the Profile tab’s Notifications row shows a dot, and opens Notifications', (tester) async {

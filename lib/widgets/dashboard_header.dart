@@ -26,7 +26,8 @@ class DashboardHeader extends StatelessWidget {
     this.onOpenNotifications,
   });
 
-  /// Something new to read: shows a small bell with a dot (gone once read).
+  /// Something new to read: the bell shows a dot (gone once read). The bell
+  /// itself is always there when [onOpenNotifications] is given.
   final bool hasUnreadNotifications;
   final VoidCallback? onOpenNotifications;
 
@@ -54,7 +55,8 @@ class DashboardHeader extends StatelessWidget {
       title: dateLabel,
       titleAccessory: DayArrows(onPrevious: onPreviousDay, onNext: onNextDay, canGoNext: canGoNext),
       actions: [
-        if (hasUnreadNotifications) _NewBell(onTap: onOpenNotifications),
+        if (onOpenNotifications != null || hasUnreadNotifications)
+          _NewBell(onTap: onOpenNotifications, unread: hasUnreadNotifications),
         if (progress != null) ...[
           FlameStreakPill(streak: progress!.streak, onTap: () => showProgressSheet(context)),
           LevelBadge(level: progress!.level, size: 34, onTap: () => showProgressSheet(context)),
@@ -66,13 +68,13 @@ class DashboardHeader extends StatelessWidget {
 }
 
 
-/// Only while there is something unread: a small bell with a dot that opens
-/// Notifications (where "What's new" is). Gone once it has been opened, so the
-/// bar stays as uncrowded as before.
+/// A small bell that always opens Notifications (where "What's new" is), with
+/// a dot while there is something unread.
 class _NewBell extends StatelessWidget {
-  const _NewBell({this.onTap});
+  const _NewBell({this.onTap, required this.unread});
 
   final VoidCallback? onTap;
+  final bool unread;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +82,7 @@ class _NewBell extends StatelessWidget {
       padding: const EdgeInsets.only(right: 8),
       child: Semantics(
         button: true,
-        label: 'Notifications, something new',
+        label: unread ? 'Notifications, something new' : 'Notifications',
         child: Pressable(
           key: const ValueKey('whats_new_bell'),
           onTap: () {
@@ -95,7 +97,7 @@ class _NewBell extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 Icon(CupertinoIcons.bell, size: 20, color: TrackerColors.textSecondary),
-                const Positioned(top: 6, right: 7, child: UnreadDot()),
+                if (unread) const Positioned(top: 6, right: 7, child: UnreadDot()),
               ],
             ),
           ),
