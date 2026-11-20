@@ -7,6 +7,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'pressable.dart';
 import 'shimmer.dart';
+import '../l10n/app_strings.dart';
 
 String _mealLabel(PendingScan scan) {
   final name = scan.meal.name;
@@ -42,18 +43,18 @@ class PendingScanCard extends StatelessWidget {
     final String subtitle;
     switch (scan.status) {
       case ScanStatus.scanning:
-        title = 'Looking at your meal…';
-        subtitle = '${_mealLabel(scan)} · you can keep using the app';
+        title = tr('Looking at your meal…');
+        subtitle = tr('{meal} · you can keep using the app', {'meal': tr(_mealLabel(scan))});
       case ScanStatus.ready:
         final n = scan.foods.length;
-        title = 'Check your ${_mealLabel(scan).toLowerCase()}';
-        subtitle = '$n food${n == 1 ? '' : 's'} found · tap to review';
+        title = tr('Check your {v1}', {'v1': tr(_mealLabel(scan).toLowerCase())});
+        subtitle = n == 1 ? tr('1 food found · tap to review') : tr('{n} foods found · tap to review', {'n': n});
       case ScanStatus.empty:
-        title = 'No food found';
-        subtitle = 'Try getting closer or improving the light.';
+        title = tr('No food found');
+        subtitle = tr('Try getting closer or improving the light.');
       case ScanStatus.failed:
-        title = "Couldn't scan this photo";
-        subtitle = scan.message ?? 'Please try again.';
+        title = tr("Couldn't scan this photo");
+        subtitle = scan.message ?? tr('Please try again.');
     }
 
     final card = Container(
@@ -114,7 +115,7 @@ class PendingScanCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               minimumSize: const Size(32, 32),
               onPressed: onRetry,
-              child: Text('Try again', style: AppType.callout(color: TrackerColors.ink(TrackerColors.accentStart))),
+              child: Text(tr('Try again'), style: AppType.callout(color: TrackerColors.ink(TrackerColors.accentStart))),
             ),
           if (!scanning)
             CupertinoButton(

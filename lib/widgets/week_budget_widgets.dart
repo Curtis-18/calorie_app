@@ -9,6 +9,7 @@ import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'app_card.dart';
 import 'pressable.dart';
+import '../l10n/app_strings.dart';
 
 String _kcal(int n) => NumberFormat.decimalPattern().format(n);
 
@@ -35,9 +36,9 @@ class WeekStrip extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text("Today's plan: ${_kcal(week.allowanceToday)} kcal", style: AppType.headline()),
+                  child: Text(tr("Today's plan: {v1} kcal", {'v1': _kcal(week.allowanceToday)}), style: AppType.headline()),
                 ),
-                Text('See the week', style: AppType.caption(size: 11)),
+                Text(tr('See the week'), style: AppType.caption(size: 11)),
                 const SizedBox(width: 2),
                 Icon(CupertinoIcons.chevron_right, size: 12, color: TrackerColors.textTertiary),
               ],
@@ -103,18 +104,18 @@ Future<void> showWeekSheet(BuildContext context, WeekBudgetData week) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Your week', style: AppType.title()),
+            Text(tr('Your week'), style: AppType.title()),
             const SizedBox(height: 6),
             Text(week.explanation, style: AppType.callout(size: 13)),
             const SizedBox(height: 14),
             for (final d in week.days) _DayRow(day: d),
             const SizedBox(height: 10),
             Text(
-              'Plans stay inside your healthy range, and days you didn’t log are left out. Not medical advice.',
+              tr('Plans stay inside your healthy range, and days you didn’t log are left out. Not medical advice.'),
               style: AppType.caption(size: 11),
             ),
             const SizedBox(height: 14),
-            AppButton.glass(label: 'Done', onPressed: () => Navigator.pop(context)),
+            AppButton.glass(label: tr('Done'), onPressed: () => Navigator.pop(context)),
           ],
         ),
       ),
@@ -135,11 +136,11 @@ class _DayRow extends StatelessWidget {
     final fill = eaten == null || day.allowance == 0 ? 0.0 : (eaten / day.allowance).clamp(0.0, 1.0);
     final String right;
     if (future) {
-      right = '${_kcal(day.base)} planned';
+      right = tr('{n} planned', {'n': _kcal(day.base)});
     } else if (eaten == null) {
-      right = day.state == BudgetDayState.pastUnlogged ? 'Not logged' : '0 of ${_kcal(day.allowance)}';
+      right = day.state == BudgetDayState.pastUnlogged ? tr('Not logged') : tr('0 of {n}', {'n': _kcal(day.allowance)});
     } else {
-      right = '${_kcal(eaten)} of ${_kcal(day.allowance)}';
+      right = tr('{a} of {b}', {'a': _kcal(eaten), 'b': _kcal(day.allowance)});
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -203,7 +204,7 @@ class BudgetNudgeCard extends StatelessWidget {
                 Expanded(
                   child: AppButton(
                     key: const ValueKey('nudge_spread'),
-                    label: 'Yes, spread it',
+                    label: tr('Yes, spread it'),
                     height: 42,
                     onPressed: onSpread,
                   ),
@@ -212,7 +213,7 @@ class BudgetNudgeCard extends StatelessWidget {
               Expanded(
                 child: AppButton.glass(
                   key: const ValueKey('nudge_dismiss'),
-                  label: nudge.canSpread ? 'Not now' : 'OK',
+                  label: nudge.canSpread ? tr('Not now') : 'OK',
                   height: 42,
                   onPressed: onDismiss,
                 ),

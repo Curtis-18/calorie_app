@@ -5,6 +5,7 @@ import '../models/barcode.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
+import '../l10n/app_strings.dart';
 
 /// Point the camera at a barcode; pops with the digits of the first valid one.
 /// Typing the number is always offered too: a browser or a denied camera
@@ -54,7 +55,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     final typed = await showCupertinoDialog<String>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Type the barcode number'),
+        title: Text(tr('Type the barcode number')),
         content: Padding(
           padding: const EdgeInsets.only(top: 12),
           child: CupertinoTextField(
@@ -62,15 +63,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             controller: text,
             keyboardType: TextInputType.number,
             autofocus: true,
-            placeholder: 'The digits under the bars',
+            placeholder: tr('The digits under the bars'),
           ),
         ),
         actions: [
-          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: () => Navigator.pop(context, text.text),
-            child: const Text('Look up'),
+            child: Text(tr('Look up')),
           ),
         ],
       ),
@@ -81,8 +82,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       await showCupertinoDialog<void>(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text("That doesn't look like a barcode"),
-          content: const Text('Barcodes are 8 to 14 digits long.'),
+          title: Text(tr("That doesn't look like a barcode")),
+          content: Text(tr('Barcodes are 8 to 14 digits long.')),
           actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
         ),
       );
@@ -96,7 +97,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFF000000),
-      navigationBar: const CupertinoNavigationBar(middle: Text('Scan a barcode')),
+      navigationBar: CupertinoNavigationBar(middle: Text(tr('Scan a barcode'))),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -115,7 +116,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(32),
                   child: Text(
-                    "The camera isn't available. You can type the number instead.",
+                    tr("The camera isn't available. You can type the number instead."),
                     textAlign: TextAlign.center,
                     style: AppType.body(color: const Color(0xFFFFFFFF)),
                   ),
@@ -142,13 +143,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Fit the barcode inside the frame',
+                  tr('Fit the barcode inside the frame'),
                   style: AppType.callout(color: const Color(0xFFFFFFFF)),
                 ),
                 const SizedBox(height: 12),
                 AppButton.glass(
                   key: const ValueKey('type_barcode'),
-                  label: 'Type the number instead',
+                  label: tr('Type the number instead'),
                   icon: CupertinoIcons.keyboard,
                   onPressed: _typeIt,
                 ),

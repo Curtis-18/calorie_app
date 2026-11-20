@@ -8,6 +8,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_card.dart';
 import 'notification_settings_screen.dart';
+import '../l10n/app_strings.dart';
 
 /// Notifications: what's new in the app. Opening it clears the unread dot.
 /// The gear opens the push-notification settings (what to tell you, quiet
@@ -36,7 +37,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     return CupertinoPageScaffold(
       backgroundColor: TrackerColors.background,
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Notifications'),
+        middle: Text(tr('Notifications')),
         backgroundColor: TrackerColors.background,
         trailing: CupertinoButton(
           key: const ValueKey('notification_settings'),
@@ -54,7 +55,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               _ReleaseCard(release: release, isNew: _wasUnread && release.id == latestWhatsNew.id),
               const SizedBox(height: AppSpacing.lg),
             ],
-            Center(child: Text('That’s everything for now.', style: AppType.caption(size: 12))),
+            Center(child: Text(tr('That’s everything for now.'), style: AppType.caption(size: 12))),
           ],
         ),
       ),
@@ -77,7 +78,7 @@ class _ReleaseCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(release.title, style: AppType.title())),
+              Expanded(child: Text(tr(release.title), style: AppType.title())),
               if (isNew)
                 Container(
                   key: const ValueKey('new_pill'),
@@ -111,9 +112,9 @@ class _ReleaseCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(release.items[i].title, style: AppType.body(size: 15)),
+                      Text(tr(release.items[i].title), style: AppType.body(size: 15)),
                       const SizedBox(height: 2),
-                      Text(release.items[i].body, style: AppType.callout(size: 13)),
+                      Text(tr(release.items[i].body), style: AppType.callout(size: 13)),
                     ],
                   ),
                 ),

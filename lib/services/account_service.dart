@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import 'user_cache.dart';
+import '../l10n/app_strings.dart';
 
 class AccountException implements Exception {
   const AccountException(this.message);
@@ -33,7 +34,7 @@ class AccountService {
   Future<void> deleteAccount() async {
     final token = (_tokenProvider ?? _supabaseToken)();
     final userId = _currentUserId();
-    if (token == null) throw const AccountException("You've been signed out. Please log in again.");
+    if (token == null) throw AccountException(tr("You've been signed out. Please log in again."));
 
     final client = _client ?? http.Client();
     final http.Response response;
@@ -42,9 +43,9 @@ class AccountService {
           .delete(Uri.parse('${ApiConfig.baseUrl}/me'), headers: {'Authorization': 'Bearer $token'})
           .timeout(const Duration(seconds: 60)); // may include a server cold start
     } on TimeoutException {
-      throw const AccountException('The server is taking too long. It may be waking up, so try again.');
+      throw AccountException(tr('The server is taking too long. It may be waking up, so try again.'));
     } on http.ClientException {
-      throw const AccountException("Couldn't reach the server. Check your connection and try again.");
+      throw AccountException(tr("Couldn't reach the server. Check your connection and try again."));
     } finally {
       if (_client == null) client.close();
     }
@@ -52,7 +53,7 @@ class AccountService {
     // 401 after a lost response means the first attempt went through: the
     // account, and so the sign-in, is already gone.
     if (response.statusCode != 204 && response.statusCode != 401) {
-      throw AccountException(_detail(response, "Couldn't delete your account. Please try again."));
+      throw AccountException(_detail(response, tr("Couldn't delete your account. Please try again.")));
     }
     if (userId != null) await forgetOnDevice(userId);
   }

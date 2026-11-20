@@ -1,4 +1,5 @@
 import 'weight.dart';
+import '../l10n/app_strings.dart';
 
 /// How a height is typed in.
 enum HeightUnit {
@@ -59,8 +60,8 @@ bool usesImperialUnits(String? countryCode) => const {'US', 'LR', 'MM'}.contains
 
 /// What to say when a weight can't be used.
 String weightProblem(WeightUnit unit) =>
-    'Enter a weight between ${unit.format(20, decimals: 0)} and ${unit.format(400, decimals: 0)}.';
+    tr('Enter a weight between {v1} and {v2}.', {'v1': unit.format(20, decimals: 0), 'v2': unit.format(400, decimals: 0)});
 
 String heightProblem(HeightUnit unit) => unit == HeightUnit.cm
-    ? 'Enter a height between ${minHeightCm.round()} and ${maxHeightCm.round()} cm.'
-    : 'Enter a height between 3 ft 4 in and 8 ft 2 in.';
+    ? tr('Enter a height between {v1} and {v2} cm.', {'v1': minHeightCm.round(), 'v2': maxHeightCm.round()})
+    : tr('Enter a height between 3 ft 4 in and 8 ft 2 in.');

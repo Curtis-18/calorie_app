@@ -6,6 +6,7 @@ import '../models/bite_meal.dart';
 import '../services/bite_stamp.dart';
 import '../theme/app_typography.dart';
 import '../widgets/pressable.dart';
+import '../l10n/app_strings.dart';
 
 /// What the camera hands back: the finished bite, or a note that the live
 /// camera couldn't start (so the caller can fall back to the system camera).
@@ -52,7 +53,7 @@ class _BiteCameraScreenState extends State<BiteCameraScreen> with WidgetsBinding
   Future<void> _start() async {
     try {
       _cameras = await availableCameras();
-      if (_cameras.isEmpty) throw CameraException('none', 'No camera');
+      if (_cameras.isEmpty) throw CameraException('none', tr('No camera'));
       _cameraIndex = _cameras.indexWhere((c) => c.lensDirection == CameraLensDirection.back);
       if (_cameraIndex < 0) _cameraIndex = 0;
       await _open();
@@ -156,7 +157,7 @@ class _BiteCameraScreenState extends State<BiteCameraScreen> with WidgetsBinding
                       right: 0,
                       top: 14,
                       child: Text(
-                        'Fit your plate in the circle',
+                        tr('Fit your plate in the circle'),
                         key: const ValueKey('plate_hint'),
                         textAlign: TextAlign.center,
                         style: AppType.caption(color: const Color(0xE6FFFFFF), size: 13),
@@ -368,7 +369,7 @@ class _MealChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            meal.label,
+            tr(meal.label),
             style: AppType.caption(color: selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF), size: 14),
           ),
         ),

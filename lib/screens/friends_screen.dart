@@ -40,6 +40,7 @@ import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
 import '../widgets/recipe_access.dart';
 import '../widgets/shimmer.dart';
+import '../l10n/app_strings.dart';
 
 /// Friends tab: your username, add someone by theirs, answer requests, and
 /// see who you're connected with. Snaps and shared streaks build on this.
@@ -196,7 +197,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     _searchRun++;
     _found = const [];
     _foundFor = null;
-    _answers.clear(); // who is "Requested" or a friend has just changed
+    _answers.clear(); // who is tr("Requested") or a friend has just changed
   }
 
   void _say(String text, {bool error = false}) => setState(() {
@@ -210,7 +211,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     if (name.isEmpty) return;
     final problem = validateUsername(name);
     if (problem != null) {
-      _say("That doesn't look like a username. $problem", error: true);
+      _say(tr("That doesn't look like a username. {problem}", {'problem': problem}), error: true);
       return;
     }
     setState(() => _sending = true);
@@ -221,10 +222,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       _controller.clear();
       _clearSearch();
       _say(switch (result.outcome) {
-        RequestOutcome.sent => 'Request sent to @${result.username}.',
-        RequestOutcome.accepted => 'You and @${result.username} are now friends!',
-        RequestOutcome.alreadyFriends => "You're already friends with @${result.username}.",
-        RequestOutcome.alreadySent => 'You already asked @${result.username}. Waiting for them.',
+        RequestOutcome.sent => tr('Request sent to @{v1}.', {'v1': result.username}),
+        RequestOutcome.accepted => tr('You and @{v1} are now friends!', {'v1': result.username}),
+        RequestOutcome.alreadyFriends => tr("You're already friends with @{v1}.", {'v1': result.username}),
+        RequestOutcome.alreadySent => tr('You already asked @{v1}. Waiting for them.', {'v1': result.username}),
       });
     } on FriendsException catch (e) {
       if (mounted) _say(e.message, error: true);
@@ -243,8 +244,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       if (!mounted) return;
       await showAppDialog(
         context: context,
-        title: "Couldn't open the camera",
-        message: 'Allow camera access in Settings to send bites.',
+        title: tr("Couldn't open the camera"),
+        message: tr('Allow camera access in Settings to send bites.'),
       );
       return;
     }
@@ -324,7 +325,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       await action();
     } on FriendsException catch (e) {
       if (!mounted) return;
-      await showAppDialog(context: context, title: 'Something went wrong', message: e.message);
+      await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
     }
   }
 
@@ -339,26 +340,26 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             CupertinoActionSheetAction(
               key: const ValueKey('their_recipes'),
               onPressed: () => Navigator.pop(context, 'recipes'),
-              child: const Text('Their recipes'),
+              child: Text(tr('Their recipes')),
             ),
           CupertinoActionSheetAction(
             onPressed: () => Navigator.pop(context, 'remove'),
-            child: Text(isFriend ? 'Remove friend' : 'Decline request'),
+            child: Text(isFriend ? tr('Remove friend') : tr('Decline request')),
           ),
           if (person.avatarUrl != null)
             CupertinoActionSheetAction(
               onPressed: () => Navigator.pop(context, 'report_photo'),
-              child: const Text('Report profile photo'),
+              child: Text(tr('Report profile photo')),
             ),
           CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, 'block'),
-            child: const Text('Block'),
+            child: Text(tr('Block')),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(tr('Cancel')),
         ),
       ),
     );
@@ -372,18 +373,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         if (!mounted) return;
         await showAppDialog(
           context: context,
-          title: 'Thanks for telling us',
-          message: "We'll take a look. You can also block @${person.username} from the same menu.",
+          title: tr('Thanks for telling us'),
+          message: tr("We'll take a look. You can also block @{v1} from the same menu.", {'v1': person.username}),
         );
       });
     } else if (choice == 'remove') {
       final sure = isFriend
           ? await showAppDialog(
               context: context,
-              title: 'Remove @${person.username}?',
-              message: "You'll stop being friends. You can add each other again later.",
-              confirmLabel: 'Remove',
-              cancelLabel: 'Cancel',
+              title: tr('Remove @{v1}?', {'v1': person.username}),
+              message: tr("You'll stop being friends. You can add each other again later."),
+              confirmLabel: tr('Remove'),
+              cancelLabel: tr('Cancel'),
               destructive: true,
             )
           : true;
@@ -391,11 +392,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     } else {
       final sure = await showAppDialog(
         context: context,
-        title: 'Block @${person.username}?',
-        message: "They won't be able to find you or send you anything, and you won't see them. "
-            "They aren't told. You can unblock them any time.",
-        confirmLabel: 'Block',
-        cancelLabel: 'Cancel',
+        title: tr('Block @{v1}?', {'v1': person.username}),
+        message: tr("They won't be able to find you or send you anything, and you won't see them. They aren't told. You can unblock them any time."),
+        confirmLabel: tr('Block'),
+        cancelLabel: tr('Cancel'),
         destructive: true,
       );
       if (sure == true) await _run(() => notifier.block(person));
@@ -418,7 +418,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final url = ProfileLink.urlFor(username);
     try {
       await (widget.share ?? (text) => SharePlus.instance.share(ShareParams(text: text)))(
-        'Add me on NuStreak: $url',
+        tr('Add me on NuStreak: {url}', {'url': url}),
       );
     } catch (_) {
       // No share sheet here (some desktop browsers): copying still works.
@@ -456,10 +456,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         child: Column(
           children: [
             PageHeader(
-              title: 'Friends',
+              title: tr('Friends'),
               subtitle: friends.hasValue
-                  ? '${friends.value!.friends.length} of ${friends.value!.limit} friends'
-                  : 'Share meals, keep streaks together',
+                  ? tr('{n} of {limit} friends', {'n': friends.value!.friends.length, 'limit': friends.value!.limit})
+                  : tr('Share meals, keep streaks together'),
               actions: [
                 _MessagesButton(
                   unread: ref.watch(unreadMessagesProvider),
@@ -540,7 +540,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Bites you sent', style: AppType.caption(color: TrackerColors.textSecondary, size: 13)),
+                Text(tr('Bites you sent'), style: AppType.caption(color: TrackerColors.textSecondary, size: 13)),
                 const SizedBox(width: 4),
                 Icon(CupertinoIcons.chevron_right, size: 12, color: TrackerColors.textTertiary),
               ],
@@ -550,7 +550,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         const SizedBox(height: AppSpacing.md),
       ],
       if (inbox.isNotEmpty) ...[
-        SectionHeader(label: 'Bites from friends', trailing: _count(inbox.length)),
+        SectionHeader(label: tr('Bites from friends'), trailing: _count(inbox.length)),
         const SizedBox(height: AppSpacing.md),
         SizedBox(
           height: 112,
@@ -568,11 +568,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         error: (e, _) => [
           AppEmptyState(
             icon: CupertinoIcons.wifi_exclamationmark,
-            title: "Couldn't load your friends",
-            message: e is FriendsException ? e.message : 'Pull down to try again.',
+            title: tr("Couldn't load your friends"),
+            message: e is FriendsException ? e.message : tr('Pull down to try again.'),
             accent: TrackerColors.error,
           ),
-          Center(child: AppButton.glass(label: 'Try again', onPressed: notifier.load)),
+          Center(child: AppButton.glass(label: tr('Try again'), onPressed: notifier.load)),
         ],
         data: _lists,
       ),
@@ -582,7 +582,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   /// One card for finding people: search as you type, and the link to your own
   /// profile to share the way you would a LinkedIn or Instagram profile.
   List<Widget> _addFriend(FriendsData? data) => [
-        const SectionHeader(label: 'Add a friend'),
+        SectionHeader(label: tr('Add a friend')),
         const SizedBox(height: AppSpacing.md),
         AppCard(
           padding: const EdgeInsets.all(16),
@@ -593,7 +593,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 children: [
                   Expanded(
                     child: AppField(
-                      placeholder: 'Their username',
+                      placeholder: tr('Their username'),
                       controller: _controller,
                       icon: CupertinoIcons.at,
                       keyboardType: TextInputType.visiblePassword, // no autocorrect or suggestions
@@ -607,7 +607,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   const SizedBox(width: AppSpacing.md),
                   SizedBox(
                     width: 84,
-                    child: AppButton(label: _sending ? '…' : 'Add', onPressed: _sending ? null : _add),
+                    child: AppButton(label: _sending ? '…' : tr('Add'), onPressed: _sending ? null : _add),
                   ),
                 ],
               ),
@@ -675,7 +675,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Your profile link',
+                            tr('Your profile link'),
                             style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5),
                           ),
                           const SizedBox(height: 2),
@@ -701,7 +701,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                     Expanded(
                       child: AppButton.glass(
                         key: const ValueKey('copy_profile_link'),
-                        label: _copied ? 'Copied' : 'Copy link',
+                        label: _copied ? tr('Copied') : tr('Copy link'),
                         icon: _copied ? CupertinoIcons.checkmark : CupertinoIcons.link,
                         height: 44,
                         onPressed: () => _copyLink(data.myUsername!),
@@ -711,7 +711,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                     Expanded(
                       child: AppButton(
                         key: const ValueKey('share_profile_link'),
-                        label: 'Share',
+                        label: tr('Share'),
                         icon: CupertinoIcons.share,
                         height: 44,
                         onPressed: () => _shareLink(data.myUsername!),
@@ -732,14 +732,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final notifier = ref.read(friendsProvider.notifier);
     final requests = [
       if (data.incoming.isNotEmpty) ...[
-        SectionHeader(label: 'Requests', trailing: _count(data.incoming.length)),
+        SectionHeader(label: tr('Requests'), trailing: _count(data.incoming.length)),
         const SizedBox(height: AppSpacing.md),
         for (final p in data.incoming)
           _PersonRow(
             person: p,
-            subtitle: 'wants to be your friend',
+            subtitle: tr('wants to be your friend'),
             actions: [
-              _Pill(label: 'Accept', primary: true, onTap: () => _run(() => notifier.accept(p))),
+              _Pill(label: tr('Accept'), primary: true, onTap: () => _run(() => notifier.accept(p))),
               _MoreButton(onTap: () => _more(p, isFriend: false)),
             ],
           ),
@@ -748,26 +748,25 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     ];
     final waiting = [
       if (data.outgoing.isNotEmpty) ...[
-        SectionHeader(label: 'Waiting for a reply', trailing: _count(data.outgoing.length)),
+        SectionHeader(label: tr('Waiting for a reply'), trailing: _count(data.outgoing.length)),
         const SizedBox(height: AppSpacing.md),
         for (final p in data.outgoing)
           _PersonRow(
             person: p,
-            subtitle: 'request sent',
-            actions: [_Pill(label: 'Cancel', onTap: () => _run(() => notifier.remove(p)))],
+            subtitle: tr('request sent'),
+            actions: [_Pill(label: tr('Cancel'), onTap: () => _run(() => notifier.remove(p)))],
           ),
         const SizedBox(height: AppSpacing.xl),
       ],
     ];
     final yours = [
-      SectionHeader(label: 'Your friends', trailing: data.friends.isEmpty ? null : _count(data.friends.length)),
+      SectionHeader(label: tr('Your friends'), trailing: data.friends.isEmpty ? null : _count(data.friends.length)),
       const SizedBox(height: AppSpacing.md),
       if (data.friends.isEmpty)
         AppEmptyState(
           icon: CupertinoIcons.person_2,
-          title: 'No friends yet',
-          message: 'Add a friend with their username, or share yours. '
-              'Then send each other food bites to build a streak.',
+          title: tr('No friends yet'),
+          message: tr('Add a friend with their username, or share yours. Then send each other food bites to build a streak.'),
         )
       else
         for (final p in data.friends)
@@ -782,11 +781,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 onTap: () => openChat(context, userId: p.userId, username: p.username, avatarUrl: p.avatarUrl)
                     .then((_) => ref.read(conversationsProvider.notifier).load()),
               ),
-              _Pill(label: 'Bite', icon: CupertinoIcons.camera_fill, primary: true, onTap: () => _snap(to: p.userId)),
+              _Pill(label: tr('Bite'), icon: CupertinoIcons.camera_fill, primary: true, onTap: () => _snap(to: p.userId)),
               _MoreButton(onTap: () => _more(p, isFriend: true)),
             ],
           ),
-      const SizedBox(height: AppSpacing.xl),
+      SizedBox(height: AppSpacing.xl),
     ];
     return [...requests, ...yours, ...waiting];
   }
@@ -796,14 +795,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 }
 
 String _friendSubtitle(Person p) {
-  if (p.theySentToday && !p.sentToday) return 'sent you a bite today. Send one back!';
-  if (p.sentToday && !p.theySentToday) return p.streak > 0 ? 'waiting on them to keep the streak' : 'waiting on their bite';
-  if (p.sentToday && p.theySentToday) return 'streak is safe today';
-  return p.streak > 0 ? 'send a bite to keep your streak' : 'friends since ${_shortDate(p.since)}';
+  if (p.theySentToday && !p.sentToday) return tr('sent you a bite today. Send one back!');
+  if (p.sentToday && !p.theySentToday) return p.streak > 0 ? tr('waiting on them to keep the streak') : tr('waiting on their bite');
+  if (p.sentToday && p.theySentToday) return tr('streak is safe today');
+  return p.streak > 0 ? tr('send a bite to keep your streak') : tr('friends since {date}', {'date': _shortDate(p.since)});
 }
 
 String _shortDate(DateTime d) {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
   final local = d.toLocal();
   return '${months[local.month - 1]} ${local.day}';
 }
@@ -921,8 +920,8 @@ class _SuggestionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = switch (person.relation) {
-      Relation.friend => 'Friends',
-      Relation.requested => 'Requested',
+      Relation.friend => tr('Friends'),
+      Relation.requested => tr('Requested'),
       _ => null,
     };
     return Padding(
@@ -945,7 +944,7 @@ class _SuggestionRow extends StatelessWidget {
             Opacity(
               opacity: busy ? 0.5 : 1,
               child: _Pill(
-                label: person.relation == Relation.wantsYou ? 'Accept' : 'Add',
+                label: person.relation == Relation.wantsYou ? tr('Accept') : tr('Add'),
                 icon: CupertinoIcons.person_add_solid,
                 primary: true,
                 onTap: busy ? () {} : onAdd,
@@ -1002,7 +1001,7 @@ class _MessagesButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: unread > 0 ? 'Messages, $unread unread' : 'Messages',
+      label: unread > 0 ? tr('Messages, {unread} unread', {'unread': unread}) : tr('Messages'),
       excludeSemantics: true,
       child: Stack(
         clipBehavior: Clip.none,
@@ -1031,7 +1030,7 @@ class _ChatButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: unread > 0 ? 'Message, $unread unread' : 'Message',
+      label: unread > 0 ? tr('Message, {unread} unread', {'unread': unread}) : tr('Message'),
       excludeSemantics: true,
       child: Pressable(
         onTap: onTap,
@@ -1062,7 +1061,7 @@ class _MoreButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'More options',
+      label: tr('More options'),
       child: Pressable(
         onTap: onTap,
         child: SizedBox(
@@ -1127,10 +1126,10 @@ class _BlockedSheetState extends State<_BlockedSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Blocked people', style: AppType.title()),
+            Text(tr('Blocked people'), style: AppType.title()),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              "Blocked people can't find you or add you, and you won't see them.",
+              tr("Blocked people can't find you or add you, and you won't see them."),
               style: AppType.callout(),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -1139,13 +1138,13 @@ class _BlockedSheetState extends State<_BlockedSheet> {
             else if (blocked == null)
               const SkeletonRows(count: 2)
             else if (blocked.isEmpty)
-              Text("You haven't blocked anyone.", style: AppType.body(color: TrackerColors.textSecondary))
+              Text(tr("You haven't blocked anyone."), style: AppType.body(color: TrackerColors.textSecondary))
             else
               for (final p in blocked)
                 _PersonRow(
                   person: p,
                   subtitle: 'blocked',
-                  actions: [_Pill(label: 'Unblock', onTap: () => _unblock(p))],
+                  actions: [_Pill(label: tr('Unblock'), onTap: () => _unblock(p))],
                 ),
           ],
         ),
@@ -1196,11 +1195,10 @@ class _ShareTip extends StatelessWidget {
                     children: [
                       Text('TIP', style: AppType.sectionLabel(color: TrackerColors.alpha(ink, 0.7))),
                       const SizedBox(height: 2),
-                      Text('Share your meal', style: AppType.headline(color: ink)),
+                      Text(tr('Share your meal'), style: AppType.headline(color: ink)),
                       const SizedBox(height: 2),
                       Text(
-                        'Send a photo of what you are eating to friends, or add it to your story. '
-                        'Swap one every day to build a streak together.',
+                        tr('Send a photo of what you are eating to friends, or add it to your story. Swap one every day to build a streak together.'),
                         style: AppType.caption(color: TrackerColors.alpha(ink, 0.85), size: 12.5),
                       ),
                     ],
@@ -1215,7 +1213,7 @@ class _ShareTip extends StatelessWidget {
           right: 4,
           child: Semantics(
             button: true,
-            label: 'Dismiss tip',
+            label: tr('Dismiss tip'),
             child: Pressable(
               key: const ValueKey('dismiss_share_tip'),
               onTap: onDismiss,

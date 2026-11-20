@@ -1,5 +1,6 @@
 import 'progress.dart';
 import 'weight.dart';
+import '../l10n/app_strings.dart';
 
 /// Everything the progress share card shows, worked out from the user's
 /// progress and (optionally) weight history.
@@ -81,20 +82,20 @@ class ShareCardData {
       badgeCount: unlocked.length,
       badgeTotal: progress.achievements.length,
       weightChange: summary == null ? null : unit.formatChange(summary.changeKg),
-      weightSince: summary == null ? null : 'since ${shortDate(summary.startDate)}',
+      weightSince: summary == null ? null : tr('since {date}', {'date': shortDate(summary.startDate)}),
     );
   }
 
   /// Text that goes with the image in the share sheet.
   String get shareText {
     if (hasStreak) {
-      return "I'm on a $streakDays-day streak and level $level on NuStreak 🔥";
+      return tr("I'm on a {streakDays}-day streak and level {level} on NuStreak 🔥", {'streakDays': streakDays, 'level': level});
     }
-    return "I'm level $level on NuStreak 🔥";
+    return tr("I'm level {level} on NuStreak 🔥", {'level': level});
   }
 
   static String shortDate(DateTime d) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
     return '${months[d.month - 1]} ${d.day}';
   }
 

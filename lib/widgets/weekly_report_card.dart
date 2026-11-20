@@ -5,6 +5,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../theme/app_shapes.dart';
 import 'app_card.dart';
+import '../l10n/app_strings.dart';
 
 /// "Your week": how many days were logged, how many reached the protein goal,
 /// and up to two habit patterns with a positive tip. Neutral colours; never a
@@ -22,12 +23,12 @@ class WeeklyReportCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(label: 'Your week'),
+          SectionHeader(label: tr('Your week')),
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
-              Expanded(child: _Stat(value: '${report.daysLogged} of 7', label: 'days logged')),
-              if (protein != null) Expanded(child: _Stat(value: '$protein', label: protein == 1 ? 'day at your protein goal' : 'days at your protein goal')),
+              Expanded(child: _Stat(value: tr('{n} of 7', {'n': report.daysLogged}), label: tr('days logged'))),
+              if (protein != null) Expanded(child: _Stat(value: '$protein', label: protein == 1 ? tr('day at your protein goal') : tr('days at your protein goal'))),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -57,8 +58,9 @@ class WeeklyReportCard extends StatelessWidget {
           if (!report.enoughData && report.patterns.isEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Habit patterns show up after about two weeks of logging'
-              '${report.daysNeeded > 0 ? ' (around ${report.daysNeeded} more logged days)' : ''}.',
+              report.daysNeeded > 0
+                  ? tr('Habit patterns show up after about two weeks of logging (around {n} more logged days).', {'n': report.daysNeeded})
+                  : tr('Habit patterns show up after about two weeks of logging.'),
               key: const ValueKey('patterns_waiting'),
               style: AppType.caption(size: 12),
             ),

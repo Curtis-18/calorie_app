@@ -11,6 +11,7 @@ import 'glass.dart';
 import 'house_recipe_sheet.dart' show openRecipeById;
 import 'pressable.dart';
 import 'recipe_gallery.dart';
+import '../l10n/app_strings.dart';
 
 /// Who has been sent one of my recipes, with a way to take access back.
 Future<void> showSharedWithSheet(BuildContext context, HouseRecipe recipe) =>
@@ -48,10 +49,10 @@ class _SharedWithSheetState extends ConsumerState<SharedWithSheet> {
   Future<void> _takeBack(RecipeSharee person) async {
     final ok = await showAppDialog(
       context: context,
-      title: 'Take it back from @${person.username}?',
-      message: "They'll no longer be able to open it. The message stays in chat.",
-      confirmLabel: 'Take back',
-      cancelLabel: 'Cancel',
+      title: tr('Take it back from @{v1}?', {'v1': person.username}),
+      message: tr("They'll no longer be able to open it. The message stays in chat."),
+      confirmLabel: tr('Take back'),
+      cancelLabel: tr('Cancel'),
       destructive: true,
     );
     if (ok != true || !mounted) return;
@@ -62,7 +63,7 @@ class _SharedWithSheetState extends ConsumerState<SharedWithSheet> {
       _busy = null;
       if (error == null) _people = _people?.where((p) => p.friendId != person.friendId).toList();
     });
-    if (error != null) await showAppDialog(context: context, title: "Couldn't take it back", message: error, confirmLabel: 'OK');
+    if (error != null) await showAppDialog(context: context, title: tr("Couldn't take it back"), message: error, confirmLabel: 'OK');
   }
 
   @override
@@ -72,17 +73,17 @@ class _SharedWithSheetState extends ConsumerState<SharedWithSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Shared with', style: AppType.title()),
+          Text(tr('Shared with'), style: AppType.title()),
           const SizedBox(height: 10),
           if (_failed)
-            Text("Couldn't load this. Check your connection and try again.", key: const ValueKey('shared_failed'), style: AppType.body(size: 14, color: TrackerColors.textSecondary))
+            Text(tr("Couldn't load this. Check your connection and try again."), key: const ValueKey('shared_failed'), style: AppType.body(size: 14, color: TrackerColors.textSecondary))
           else if (people == null)
             const Padding(padding: EdgeInsets.all(12), child: Center(child: CupertinoActivityIndicator()))
           else if (people.isEmpty)
             Text(
               widget.recipe.sharedWithFriends
-                  ? 'You haven’t sent it to anyone. All your friends can open it, because it is set to friends.'
-                  : 'You haven’t sent it to anyone.',
+                  ? tr('You haven’t sent it to anyone. All your friends can open it, because it is set to friends.')
+                  : tr('You haven’t sent it to anyone.'),
               key: const ValueKey('shared_empty'),
               style: AppType.body(size: 14, color: TrackerColors.textSecondary),
             )
@@ -101,7 +102,7 @@ class _SharedWithSheetState extends ConsumerState<SharedWithSheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       minimumSize: const Size(32, 32),
                       onPressed: _busy == null ? () => _takeBack(p) : null,
-                      child: Text('Take back', style: AppType.caption(size: 13, color: TrackerColors.error)),
+                      child: Text(tr('Take back'), style: AppType.caption(size: 13, color: TrackerColors.error)),
                     ),
                   ],
                 ),
@@ -152,15 +153,15 @@ class _FriendRecipesSheetState extends ConsumerState<FriendRecipesSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('@${widget.username}’s recipes', style: AppType.title()),
+          Text(tr('@{name}’s recipes', {'name': widget.username}), style: AppType.title()),
           const SizedBox(height: 10),
           if (_failed)
-            Text("Couldn't load this. Check your connection and try again.", key: const ValueKey('friend_recipes_failed'), style: AppType.body(size: 14, color: TrackerColors.textSecondary))
+            Text(tr("Couldn't load this. Check your connection and try again."), key: const ValueKey('friend_recipes_failed'), style: AppType.body(size: 14, color: TrackerColors.textSecondary))
           else if (recipes == null)
             const Padding(padding: EdgeInsets.all(12), child: Center(child: CupertinoActivityIndicator()))
           else if (recipes.isEmpty)
             Text(
-              '@${widget.username} hasn’t pinned any recipes for friends yet.',
+              tr('@{name} hasn’t pinned any recipes for friends yet.', {'name': widget.username}),
               key: const ValueKey('friend_recipes_empty'),
               style: AppType.body(size: 14, color: TrackerColors.textSecondary),
             )
@@ -180,7 +181,7 @@ class _FriendRecipesSheetState extends ConsumerState<FriendRecipesSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(r.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 15)),
-                            Text('${r.calories} kcal per serving${r.estimated ? ' · estimated' : ''}', style: AppType.caption(size: 12)),
+                            Text(r.estimated ? tr('{n} kcal per serving · estimated', {'n': r.calories}) : tr('{n} kcal per serving', {'n': r.calories}), style: AppType.caption(size: 12)),
                           ],
                         ),
                       ),

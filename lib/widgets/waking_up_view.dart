@@ -11,6 +11,7 @@ import 'app_button.dart';
 import 'app_field.dart' show AppBackdrop;
 import 'animated_logo.dart';
 import 'glass.dart';
+import '../l10n/app_strings.dart';
 
 /// Shown while the backend boots after a cold start.
 ///
@@ -23,18 +24,18 @@ class WakingUpView extends StatefulWidget {
   /// When the connection attempt began; drives the timer and progress bar.
   final DateTime startedAt;
 
-  static const tips = [
-    'Take a photo of your plate to log a whole meal in seconds.',
-    'Use the arrows next to the date to look back at earlier days.',
-    'Insights turns your week into a few simple, personal tips.',
-    'Logging as you eat keeps the ring accurate all day.',
+  static final tips = [
+    tr('Take a photo of your plate to log a whole meal in seconds.'),
+    tr('Use the arrows next to the date to look back at earlier days.'),
+    tr('Insights turns your week into a few simple, personal tips.'),
+    tr('Logging as you eat keeps the ring accurate all day.'),
   ];
 
   /// Headline for how long we've been waiting.
   static String titleFor(Duration elapsed) {
-    if (elapsed < const Duration(seconds: 15)) return 'Waking up the server';
-    if (elapsed < const Duration(seconds: 40)) return 'Warming things up';
-    return 'Almost there';
+    if (elapsed < const Duration(seconds: 15)) return tr('Waking up the server');
+    if (elapsed < const Duration(seconds: 40)) return tr('Warming things up');
+    return tr('Almost there');
   }
 
   /// Eases toward 94% so the bar never claims "done" before the server is.
@@ -94,7 +95,7 @@ class _WakingUpViewState extends State<WakingUpView> with SingleTickerProviderSt
               children: [
                 const Spacer(flex: 3),
                 Semantics(
-                  label: 'Connecting to the server',
+                  label: tr('Connecting to the server'),
                   child: _Ember(animation: _orbit, reduceMotion: reduceMotion),
                 ),
                 const SizedBox(height: 40),
@@ -112,8 +113,7 @@ class _WakingUpViewState extends State<WakingUpView> with SingleTickerProviderSt
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 320),
                   child: Text(
-                    "Our server naps when it's quiet. The first load can take up "
-                    "to a minute, and after that everything's quick.",
+                    tr("Our server naps when it's quiet. The first load can take up to a minute, and after that everything's quick."),
                     textAlign: TextAlign.center,
                     style: AppType.body(color: TrackerColors.textSecondary).copyWith(height: 1.45),
                   ),
@@ -122,7 +122,7 @@ class _WakingUpViewState extends State<WakingUpView> with SingleTickerProviderSt
                 _ProgressBar(value: WakingUpView.progressFor(_elapsed), animate: !reduceMotion),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  '${seconds}s · usually under a minute',
+                  tr('{s}s · usually under a minute', {'s': seconds}),
                   style: AppType.caption(color: TrackerColors.textTertiary),
                 ),
                 const Spacer(flex: 2),
@@ -334,7 +334,7 @@ class ServerUnreachableView extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  "Couldn't reach the server",
+                  tr("Couldn't reach the server"),
                   textAlign: TextAlign.center,
                   style: AppType.display(size: 26),
                 ),
@@ -342,8 +342,7 @@ class ServerUnreachableView extends StatelessWidget {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 320),
                   child: Text(
-                    "It may still be starting up, or your connection dropped. "
-                    'Check your connection, then try again.',
+                    '${tr("It may still be starting up, or your connection dropped.")} ${tr('Check your connection, then try again.')}',
                     textAlign: TextAlign.center,
                     style: AppType.body(color: TrackerColors.textSecondary).copyWith(height: 1.45),
                   ),
@@ -351,11 +350,11 @@ class ServerUnreachableView extends StatelessWidget {
                 const SizedBox(height: 32),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 320),
-                  child: AppButton(label: 'Try again', icon: CupertinoIcons.refresh, onPressed: onRetry),
+                  child: AppButton(label: tr('Try again'), icon: CupertinoIcons.refresh, onPressed: onRetry),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 AppButton(
-                  label: 'Sign out',
+                  label: tr('Sign out'),
                   style: AppButtonStyle.quiet,
                   expand: false,
                   height: 44,

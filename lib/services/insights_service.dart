@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/insights.dart';
+import '../l10n/app_strings.dart';
 
 /// An insights failure with a message that is safe to show the user.
 class InsightsException implements Exception {
@@ -33,17 +34,16 @@ class InsightsService {
   /// cold start.
   final Duration timeout;
 
-  static const signedOutMessage = "You've been signed out. Please log in again.";
-  static const timeoutMessage =
-      'Insights are taking too long. The server may be waking up, so pull to refresh in a moment.';
-  static const networkMessage = "Couldn't reach the server. Check your connection and try again.";
-  static const unavailableMessage = "Insights aren't available right now. Please try again in a moment.";
+  static String get signedOutMessage => tr("You've been signed out. Please log in again.");
+  static String get timeoutMessage => tr('Insights are taking too long. The server may be waking up, so pull to refresh in a moment.');
+  static String get networkMessage => tr("Couldn't reach the server. Check your connection and try again.");
+  static String get unavailableMessage => tr("Insights aren't available right now. Please try again in a moment.");
 
   static String? _supabaseToken() => Supabase.instance.client.auth.currentSession?.accessToken;
 
   Future<InsightsData> fetchInsights({bool refresh = false}) async {
     final token = (_tokenProvider ?? _supabaseToken)();
-    if (token == null) throw const InsightsException(signedOutMessage);
+    if (token == null) throw InsightsException(signedOutMessage);
 
     // The device-local date, the same one food logs are saved under. Without
     // it the server used its own UTC date, so away from UTC the week and the
@@ -60,22 +60,22 @@ class InsightsService {
           .get(uri, headers: {'Authorization': 'Bearer $token'})
           .timeout(timeout);
     } on TimeoutException {
-      throw const InsightsException(timeoutMessage);
+      throw InsightsException(timeoutMessage);
     } on http.ClientException {
-      throw const InsightsException(networkMessage);
+      throw InsightsException(networkMessage);
     } finally {
       if (_client == null) client.close();
     }
 
     if (response.statusCode == 401) {
-      throw const InsightsException('Your session has expired. Please log in again.');
+      throw InsightsException(tr('Your session has expired. Please log in again.'));
     }
-    if (response.statusCode != 200) throw const InsightsException(unavailableMessage);
+    if (response.statusCode != 200) throw InsightsException(unavailableMessage);
 
     try {
       return InsightsData.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     } catch (_) {
-      throw const InsightsException(unavailableMessage);
+      throw InsightsException(unavailableMessage);
     }
   }
 }

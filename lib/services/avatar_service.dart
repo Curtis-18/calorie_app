@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
+import '../l10n/app_strings.dart';
 
 /// Profile pictures are stored square at this size: sharp on any avatar the
 /// app draws, and small enough that a friends list loads quickly.
@@ -53,15 +54,15 @@ class AvatarService {
 
   Future<http.Response> _send(Future<http.Response> Function(http.Client, Map<String, String>) call) async {
     final token = (_tokenProvider ?? _supabaseToken)();
-    if (token == null) throw const AvatarException("You've been signed out. Please log in again.");
+    if (token == null) throw AvatarException(tr("You've been signed out. Please log in again."));
     final client = _client ?? http.Client();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 60));
     } on TimeoutException {
-      throw const AvatarException('The server is taking too long. It may be waking up, so try again.');
+      throw AvatarException(tr('The server is taking too long. It may be waking up, so try again.'));
     } on http.ClientException {
-      throw const AvatarException("Couldn't reach the server. Check your connection and try again.");
+      throw AvatarException(tr("Couldn't reach the server. Check your connection and try again."));
     } finally {
       if (_client == null) client.close();
     }
@@ -81,12 +82,12 @@ class AvatarService {
   Future<void> upload(Uint8List image) async {
     final r = await _send((c, h) => c.post(_uri, headers: h, body: jsonEncode({'image': base64Encode(image)})));
     if (r.statusCode == 200) return;
-    throw AvatarException(_detail(r, "Couldn't save your photo. Please try again."));
+    throw AvatarException(_detail(r, tr("Couldn't save your photo. Please try again.")));
   }
 
   Future<void> remove() async {
     final r = await _send((c, h) => c.delete(_uri, headers: h));
     if (r.statusCode == 204) return;
-    throw AvatarException(_detail(r, "Couldn't remove your photo. Please try again."));
+    throw AvatarException(_detail(r, tr("Couldn't remove your photo. Please try again.")));
   }
 }

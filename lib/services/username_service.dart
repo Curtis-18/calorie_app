@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
+import '../l10n/app_strings.dart';
 
 class UsernameException implements Exception {
   const UsernameException(this.message);
@@ -27,7 +28,7 @@ class UsernameService {
   final http.Client? _client;
   final String? Function()? _tokenProvider;
 
-  static const taken = 'That username is taken.';
+  static String get taken => tr('That username is taken.');
 
   static String? _supabaseToken() => Supabase.instance.client.auth.currentSession?.accessToken;
 
@@ -35,15 +36,15 @@ class UsernameService {
     Future<http.Response> Function(http.Client, Map<String, String>) call,
   ) async {
     final token = (_tokenProvider ?? _supabaseToken)();
-    if (token == null) throw const UsernameException("You've been signed out. Please log in again.");
+    if (token == null) throw UsernameException(tr("You've been signed out. Please log in again."));
     final client = _client ?? http.Client();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 45));
     } on TimeoutException {
-      throw const UsernameException('The server is taking too long. It may be waking up, so try again.');
+      throw UsernameException(tr('The server is taking too long. It may be waking up, so try again.'));
     } on http.ClientException {
-      throw const UsernameException("Couldn't reach the server. Check your connection and try again.");
+      throw UsernameException(tr("Couldn't reach the server. Check your connection and try again."));
     } finally {
       if (_client == null) client.close();
     }
@@ -64,7 +65,7 @@ class UsernameService {
           Uri.parse('${ApiConfig.baseUrl}/username/check').replace(queryParameters: {'name': name.trim()}),
           headers: h,
         ));
-    if (r.statusCode != 200) throw const UsernameException("Couldn't check that name. Please try again.");
+    if (r.statusCode != 200) throw UsernameException(tr("Couldn't check that name. Please try again."));
     final json = jsonDecode(r.body) as Map<String, dynamic>;
     return UsernameCheck(available: json['available'] == true, reason: json['reason'] as String?);
   }
@@ -80,12 +81,12 @@ class UsernameService {
       case 200:
         return (jsonDecode(r.body) as Map<String, dynamic>)['username'] as String;
       case 409:
-        throw const UsernameException(taken);
+        throw UsernameException(taken);
       case 422:
       case 429:
-        throw UsernameException(_detail(r, "That username can't be used."));
+        throw UsernameException(_detail(r, tr("That username can't be used.")));
       default:
-        throw const UsernameException("Couldn't save your username. Please try again.");
+        throw UsernameException(tr("Couldn't save your username. Please try again."));
     }
   }
 }

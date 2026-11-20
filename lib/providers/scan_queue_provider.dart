@@ -12,6 +12,7 @@ import '../services/photo_estimation.dart';
 import '../services/snaps_service.dart' show newSnapId;
 import '../services/user_cache.dart';
 import 'food_region_provider.dart';
+import '../l10n/app_strings.dart';
 
 /// Meal photos being scanned in the background.
 ///
@@ -143,7 +144,7 @@ class ScanQueueNotifier extends StateNotifier<List<PendingScan>> {
           ..retryable = retryable
           ..message = e is PhotoAnalysisException
               ? e.message
-              : 'Something went wrong while scanning your meal. Please try again.';
+              : tr('Something went wrong while scanning your meal. Please try again.');
         break;
       }
     }

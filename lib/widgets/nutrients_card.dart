@@ -6,6 +6,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_card.dart';
 import 'glass.dart';
+import '../l10n/app_strings.dart';
 
 /// Fibre, sugar, sodium, iron and calcium for the day on screen.
 ///
@@ -36,8 +37,8 @@ class NutrientsCard extends StatelessWidget {
           if (!summary.hasData)
             Text(
               summary.foods == 0
-                  ? 'Fibre, sugar, sodium, iron and calcium show up here as you log food.'
-                  : "The foods logged so far don't have nutrient data.",
+                  ? tr('Fibre, sugar, sodium, iron and calcium show up here as you log food.')
+                  : tr("The foods logged so far don't have nutrient data."),
               key: const ValueKey('nutrients_empty'),
               style: AppType.caption(color: TrackerColors.textTertiary, size: 12),
             )
@@ -46,9 +47,8 @@ class NutrientsCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               summary.isPartial
-                  ? 'Based on ${summary.foodsWithData} of ${summary.foods} foods today; the rest have no '
-                      'nutrient data. Daily amounts are general guidance for adults, not medical advice.'
-                  : 'Daily amounts are general guidance for adults, not medical advice.',
+                  ? tr('Based on {v1} of {v2} foods today; the rest have no nutrient data. Daily amounts are general guidance for adults, not medical advice.', {'v1': summary.foodsWithData, 'v2': summary.foods})
+                  : tr('Daily amounts are general guidance for adults, not medical advice.'),
               key: const ValueKey('nutrients_note'),
               style: AppType.caption(color: TrackerColors.textTertiary, size: 11),
             ),
@@ -82,11 +82,11 @@ class _NutrientRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(info.label, style: AppType.caption(color: TrackerColors.textPrimary, size: 12)),
+              Text(tr(info.label), style: AppType.caption(color: TrackerColors.textPrimary, size: 12)),
               const Spacer(),
               Text(
                 // Unknown is shown as unknown, never as a zero.
-                known ? formatNutrient(total.amount, info.unit) : 'No data',
+                known ? formatNutrient(total.amount, info.unit) : tr('No data'),
                 key: ValueKey('nutrient_${info.key}'),
                 style: AppType.caption(
                   color: known ? TrackerColors.textPrimary : TrackerColors.textTertiary,
@@ -95,7 +95,7 @@ class _NutrientRow extends StatelessWidget {
               ),
               if (known && target != null)
                 Text(
-                  info.isLimit ? ' of $target ${info.unit} limit' : ' / $target ${info.unit}',
+                  info.isLimit ? ' ${tr('of {target} {unit} limit', {'target': target, 'unit': info.unit})}' : ' / $target ${info.unit}',
                   style: AppType.caption(color: TrackerColors.textTertiary, size: 11),
                 ),
             ],
@@ -138,7 +138,7 @@ class NutrientsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'View nutrients',
+      label: tr('View nutrients'),
       child: AppCard(
         key: const ValueKey('nutrients_row'),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -162,10 +162,10 @@ class NutrientsRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('View nutrients', style: AppType.body(size: 15.5).copyWith(fontWeight: FontWeight.w600)),
+                  Text(tr('View nutrients'), style: AppType.body(size: 15.5).copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 1),
                   Text(
-                    'Fibre, sugar, sodium, iron and calcium',
+                    tr('Fibre, sugar, sodium, iron and calcium'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppType.caption(color: TrackerColors.textSecondary),

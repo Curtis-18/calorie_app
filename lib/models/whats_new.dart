@@ -29,14 +29,12 @@ const whatsNewReleases = <WhatsNewRelease>[
       WhatsNewItem(
         icon: CupertinoIcons.book,
         title: 'Your own recipes',
-        body: 'Recipes → Mine. Save a dish you cook, or save a meal you logged with the book icon on Today, then log it in one tap. '
-            'Pin favourites, sort them into collections and send one to a friend.',
+        body: 'Recipes → Mine. Save a dish you cook, or save a meal you logged with the book icon on Today, then log it in one tap. Pin favourites, sort them into collections and send one to a friend.',
       ),
       WhatsNewItem(
         icon: CupertinoIcons.camera,
         title: 'Faster photo logging',
-        body: 'Take a photo and carry on: the scan finishes in the background. Tap the mic on a scan to add a note like '
-            '“half of this, cooked in butter”.',
+        body: 'Take a photo and carry on: the scan finishes in the background. Tap the mic on a scan to add a note like “half of this, cooked in butter”.',
       ),
       WhatsNewItem(
         icon: CupertinoIcons.barcode,
@@ -46,8 +44,7 @@ const whatsNewReleases = <WhatsNewRelease>[
       WhatsNewItem(
         icon: CupertinoIcons.calendar,
         title: 'A flexible weekly target',
-        body: 'Settings → Weekly budget. A bigger day eases the rest of the week a little, inside your healthy range. '
-            'It’s off until you turn it on, and gentle nudges are optional.',
+        body: 'Settings → Weekly budget. A bigger day eases the rest of the week a little, inside your healthy range. It’s off until you turn it on, and gentle nudges are optional.',
       ),
       WhatsNewItem(
         icon: CupertinoIcons.chart_bar,

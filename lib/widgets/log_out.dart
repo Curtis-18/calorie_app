@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../screens/auth_gate.dart';
 import 'app_dialog.dart';
+import '../l10n/app_strings.dart';
 
 /// Ask, then sign out and return to the sign-in screen. Log out used to be a
 /// bare icon in the Today header, one accidental tap from being signed out.
@@ -15,10 +16,10 @@ Future<bool> confirmAndLogOut(
 }) async {
   final sure = await showAppDialog(
     context: context,
-    title: 'Log out?',
-    message: 'Your food log and streaks are saved to your account and will be here when you log back in.',
-    confirmLabel: 'Log out',
-    cancelLabel: 'Stay',
+    title: tr('Log out?'),
+    message: tr('Your food log and streaks are saved to your account and will be here when you log back in.'),
+    confirmLabel: tr('Log out'),
+    cancelLabel: tr('Stay'),
   );
   if (sure != true || !context.mounted) return false;
 

@@ -16,6 +16,7 @@ import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 import '../widgets/weekly_trend_chart.dart';
 import '../widgets/weight/weight_card.dart';
+import '../l10n/app_strings.dart';
 
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
@@ -33,12 +34,12 @@ class InsightsScreen extends ConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              title: 'Insights',
-              subtitle: 'Your week at a glance',
+              title: tr('Insights'),
+              subtitle: tr('Your week at a glance'),
               actions: [
                 Semantics(
                   button: true,
-                  label: 'Refresh insights',
+                  label: tr('Refresh insights'),
                   child: Pressable(
                     onTap: insightsAsync.isLoading ? null : () => ref.read(insightsProvider.notifier).load(refresh: true),
                     dimWhenDisabled: true,
@@ -83,7 +84,7 @@ class InsightsScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
                     AppEmptyState(
                       icon: CupertinoIcons.wifi_exclamationmark,
-                      title: 'Could not load insights',
+                      title: tr('Could not load insights'),
                       message: '$err',
                       accent: TrackerColors.error,
                     ),
@@ -144,7 +145,7 @@ class InsightsScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SectionHeader(label: 'This week'),
+                          SectionHeader(label: tr('This week')),
                           const SizedBox(height: AppSpacing.lg),
                           WeeklyTrendChart(data: insights.weeklyTrend, target: target),
                         ],
@@ -159,7 +160,7 @@ class InsightsScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SectionHeader(label: 'Tips'),
+                          SectionHeader(label: tr('Tips')),
                           const SizedBox(height: AppSpacing.lg),
                           ...insights.tips.asMap().entries.map(
                             (entry) => Padding(
@@ -173,7 +174,7 @@ class InsightsScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
-                    const SectionHeader(label: 'Body'),
+                    SectionHeader(label: tr('Body')),
                     const SizedBox(height: AppSpacing.md),
                     const WeightProgressCard(),
                     SizedBox(height: AppSpacing.tabBarClearance + bottomInset),

@@ -14,6 +14,7 @@ import '../widgets/app_dialog.dart';
 import '../widgets/glass.dart';
 import '../widgets/pressable.dart';
 import 'friends_screen.dart' show FriendAvatar;
+import '../l10n/app_strings.dart';
 
 /// One photo as the viewer plays it, whoever it belongs to.
 class StoryItem {
@@ -199,7 +200,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
     try {
       await ref.read(storiesProvider.notifier).react(story.id, emoji);
     } on SnapsException catch (e) {
-      if (mounted) await _whilePaused(() => showAppDialog(context: context, title: 'Something went wrong', message: e.message));
+      if (mounted) await _whilePaused(() => showAppDialog(context: context, title: tr('Something went wrong'), message: e.message));
     }
   }
 
@@ -209,15 +210,15 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
         final choice = await showCupertinoModalPopup<String>(
           context: context,
           builder: (context) => CupertinoActionSheet(
-            title: Text(owner.isMine ? 'Your story' : '@${owner.username}'),
+            title: Text(owner.isMine ? tr('Your story') : '@${owner.username}'),
             actions: [
               CupertinoActionSheetAction(
                 isDestructiveAction: true,
                 onPressed: () => Navigator.pop(context, owner.isMine ? 'delete' : 'report'),
-                child: Text(owner.isMine ? 'Delete this photo' : 'Report this story'),
+                child: Text(owner.isMine ? tr('Delete this photo') : tr('Report this story')),
               ),
             ],
-            cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
           ),
         );
         if (choice == null || !mounted) return;
@@ -228,8 +229,8 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
             if (!mounted) return;
             await showAppDialog(
               context: context,
-              title: 'Thanks for telling us',
-              message: "We'll take a look. You can also block @${owner.username} from the Friends tab.",
+              title: tr('Thanks for telling us'),
+              message: tr("We'll take a look. You can also block @{v1} from the Friends tab.", {'v1': owner.username}),
             );
           } else {
             await notifier.delete(story.id);
@@ -237,7 +238,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
             _removeCurrent();
           }
         } on SnapsException catch (e) {
-          if (mounted) await showAppDialog(context: context, title: 'Something went wrong', message: e.message);
+          if (mounted) await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
         }
       });
 
@@ -267,7 +268,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
     final width = MediaQuery.sizeOf(context).width;
     final reaction = _reactions[story.id] ?? story.reaction;
     const white = Color(0xFFFFFFFF);
-    Widget missing() => const Center(child: Text("This photo couldn't be loaded.", style: TextStyle(color: white)));
+    Widget missing() => Center(child: Text(tr("This photo couldn't be loaded."), style: TextStyle(color: white)));
 
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFF000000),
@@ -342,7 +343,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          owner.isMine ? 'Your story' : '@${owner.username}',
+                          owner.isMine ? tr('Your story') : '@${owner.username}',
                           key: const ValueKey('story_owner'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -411,13 +412,13 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
                         _DarkPill(
                           key: const ValueKey('story_seen_by'),
                           icon: CupertinoIcons.eye_fill,
-                          label: story.viewers.isEmpty ? 'No views yet' : 'Seen by ${story.viewers.length}',
+                          label: story.viewers.isEmpty ? tr('No views yet') : tr('Seen by {v1}', {'v1': story.viewers.length}),
                           onTap: _seenBy,
                         ),
                         _DarkPill(
                           key: const ValueKey('story_add'),
                           icon: CupertinoIcons.camera_fill,
-                          label: 'Add to story',
+                          label: tr('Add to story'),
                           onTap: () => Navigator.of(context).pop(storyViewerAdd),
                         ),
                       ],
@@ -501,11 +502,11 @@ class _ViewersList extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Seen by', style: AppType.title()),
+          Text(tr('Seen by'), style: AppType.title()),
           const SizedBox(height: AppSpacing.md),
           if (viewers.isEmpty)
             Text(
-              'Nobody has looked yet. Your friends can see this for 24 hours.',
+              tr('Nobody has looked yet. Your friends can see this for 24 hours.'),
               style: AppType.body(color: TrackerColors.textSecondary),
             )
           else

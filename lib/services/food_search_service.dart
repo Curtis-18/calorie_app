@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/detected_food.dart';
 import '../models/food_item.dart';
+import '../l10n/app_strings.dart';
 
 /// A food search failure with a message that is safe to show the user.
 class FoodSearchException implements Exception {
@@ -38,10 +39,10 @@ class FoodSearchService {
 
   static const pageSize = 20;
 
-  static const signedOutMessage = "You've been signed out. Please log in again.";
-  static const timeoutMessage = 'Search is taking too long. The server may be waking up, so try again.';
-  static const networkMessage = "Couldn't reach the server. Check your connection and try again.";
-  static const unavailableMessage = 'Food search is unavailable right now. Please try again in a moment.';
+  static String get signedOutMessage => tr("You've been signed out. Please log in again.");
+  static String get timeoutMessage => tr('Search is taking too long. The server may be waking up, so try again.');
+  static String get networkMessage => tr("Couldn't reach the server. Check your connection and try again.");
+  static String get unavailableMessage => tr('Food search is unavailable right now. Please try again in a moment.');
 
   static Future<String?> _currentToken() async =>
       Supabase.instance.client.auth.currentSession?.accessToken;
@@ -51,7 +52,7 @@ class FoodSearchService {
     if (trimmedQuery.isEmpty) return [];
 
     final token = await (_tokenProvider ?? _currentToken)();
-    if (token == null) throw const FoodSearchException(signedOutMessage);
+    if (token == null) throw FoodSearchException(signedOutMessage);
 
     final uri = Uri.parse('${ApiConfig.baseUrl}/foods/search').replace(
       queryParameters: {
@@ -67,18 +68,18 @@ class FoodSearchService {
           .get(uri, headers: {'Authorization': 'Bearer $token'})
           .timeout(timeout);
     } on TimeoutException {
-      throw const FoodSearchException(timeoutMessage);
+      throw FoodSearchException(timeoutMessage);
     } on http.ClientException {
-      throw const FoodSearchException(networkMessage);
+      throw FoodSearchException(networkMessage);
     } finally {
       if (_client == null) client.close();
     }
 
     if (response.statusCode == 401) {
-      throw const FoodSearchException('Your session has expired. Please log in again.');
+      throw FoodSearchException(tr('Your session has expired. Please log in again.'));
     }
     if (response.statusCode != 200) {
-      throw const FoodSearchException(unavailableMessage);
+      throw FoodSearchException(unavailableMessage);
     }
 
     try {
@@ -89,7 +90,7 @@ class FoodSearchService {
           .where((item) => item.caloriesPer100g != null)
           .toList();
     } catch (_) {
-      throw const FoodSearchException(unavailableMessage);
+      throw FoodSearchException(unavailableMessage);
     }
   }
 
@@ -97,7 +98,7 @@ class FoodSearchService {
   /// Never throws for "not found"; other failures are [FoodSearchException]s.
   Future<FoodItem?> lookupBarcode(String code) async {
     final token = await (_tokenProvider ?? _currentToken)();
-    if (token == null) throw const FoodSearchException(signedOutMessage);
+    if (token == null) throw FoodSearchException(signedOutMessage);
 
     final uri = Uri.parse('${ApiConfig.baseUrl}/foods/barcode').replace(queryParameters: {'code': code});
     final client = _client ?? http.Client();
@@ -105,26 +106,26 @@ class FoodSearchService {
     try {
       response = await client.get(uri, headers: {'Authorization': 'Bearer $token'}).timeout(timeout);
     } on TimeoutException {
-      throw const FoodSearchException(timeoutMessage);
+      throw FoodSearchException(timeoutMessage);
     } on http.ClientException {
-      throw const FoodSearchException(networkMessage);
+      throw FoodSearchException(networkMessage);
     } finally {
       if (_client == null) client.close();
     }
 
     if (response.statusCode == 404) return null;
     if (response.statusCode == 401) {
-      throw const FoodSearchException('Your session has expired. Please log in again.');
+      throw FoodSearchException(tr('Your session has expired. Please log in again.'));
     }
     if (response.statusCode == 429) {
-      throw const FoodSearchException("You're searching very fast. Wait a moment and try again.");
+      throw FoodSearchException(tr("You're searching very fast. Wait a moment and try again."));
     }
-    if (response.statusCode != 200) throw const FoodSearchException(unavailableMessage);
+    if (response.statusCode != 200) throw FoodSearchException(unavailableMessage);
     try {
       final item = FoodItem.fromApiJson(jsonDecode(response.body) as Map<String, dynamic>);
       return item.caloriesPer100g == null ? null : item;
     } catch (_) {
-      throw const FoodSearchException(unavailableMessage);
+      throw FoodSearchException(unavailableMessage);
     }
   }
 

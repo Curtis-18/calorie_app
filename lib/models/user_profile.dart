@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 enum Gender { male, female }
 enum ActivityLevel {
   sedentary('sedentary'),
@@ -81,11 +82,11 @@ class UserProfile {
 
   String get bmiCategory {
     final b = bmi;
-    if (b == null) return 'Unknown';
-    if (b < 18.5) return 'Underweight';
-    if (b < 25) return 'Normal weight';
-    if (b < 30) return 'Overweight';
-    return 'Obese';
+    if (b == null) return tr('Unknown');
+    if (b < 18.5) return tr('Underweight');
+    if (b < 25) return tr('Normal weight');
+    if (b < 30) return tr('Overweight');
+    return tr('Obese');
   }
 
   UserProfile copyWithTargets({

@@ -7,6 +7,7 @@ import '../../theme/app_typography.dart';
 import '../../theme/tracker_colors.dart';
 import '../pressable.dart';
 import 'flame.dart';
+import '../../l10n/app_strings.dart';
 
 /// The row of stories at the top of Friends: yours first, then each friend
 /// who has posted in the last 24 hours. A glowing ring means something new.
@@ -48,7 +49,7 @@ class StoryTray extends StatelessWidget {
               key: const ValueKey('my_story'),
               username: myUsername,
               avatarUrl: myAvatarUrl,
-              label: 'Your story',
+              label: tr('Your story'),
               ring: feed.mine.isEmpty ? _Ring.none : _Ring.seen,
               add: feed.mine.isEmpty,
               onTap: onMine,

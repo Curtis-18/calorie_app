@@ -11,6 +11,7 @@ import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 import 'my_recipes_view.dart';
 import 'recipe_detail_screen.dart';
+import '../l10n/app_strings.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -77,7 +78,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Search failed, try again.';
+        _error = tr('Search failed, try again.');
         _searching = false;
       });
     }
@@ -97,9 +98,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Widget _segments() => CupertinoSlidingSegmentedControl<int>(
-        key: const ValueKey('recipe_tabs'),
+        key: ValueKey('recipe_tabs'),
         groupValue: _tab,
-        children: const {0: Text('Browse'), 1: Text('Mine')},
+        children: {0: Text(tr('Browse')), 1: Text(tr('Mine'))},
         onValueChanged: (v) => setState(() => _tab = v ?? 0),
       );
 
@@ -116,8 +117,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
         child: Column(
           children: [
             PageHeader(
-              title: 'Recipes',
-              subtitle: _tab == 1 ? 'Your own dishes, one tap to log' : 'Ideas for your next meal',
+              title: tr('Recipes'),
+              subtitle: _tab == 1 ? tr('Your own dishes, one tap to log') : tr('Ideas for your next meal'),
               actions: [if (_tab == 0 && isLoading) const SkeletonBox(width: 64, height: 12)],
               bottom: _tab == 1 ? _segments() : Column(children: [_segments(), const SizedBox(height: 10), CupertinoSearchTextField(
                 controller: _controller,
@@ -130,7 +131,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     });
                   }
                 },
-                placeholder: 'Search recipes…',
+                placeholder: tr('Search recipes…'),
                 backgroundColor: TrackerColors.alpha(TrackerColors.textPrimary, 0.07),
                 borderRadius: AppRadii.buttonAll,
                 itemColor: TrackerColors.textSecondary,
@@ -145,11 +146,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 children: [
                   if (!showingSearch) ...[
                     SectionHeader(
-                      label: 'Browse',
+                      label: tr('Browse'),
                       trailing: isLoading || list.isEmpty
                           ? null
                           : Text(
-                              '${list.length} recipes',
+                              tr('{n} recipes', {'n': list.length}),
                               style: AppType.caption(color: TrackerColors.textTertiary, size: 11),
                             ),
                     ),
@@ -160,17 +161,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   else if (_error != null)
                     AppEmptyState(
                       icon: CupertinoIcons.wifi_exclamationmark,
-                      title: 'Something went wrong',
+                      title: tr('Something went wrong'),
                       message: _error,
                       accent: TrackerColors.error,
                     )
                   else if (list.isEmpty)
                     AppEmptyState(
                       icon: showingSearch ? CupertinoIcons.search : CupertinoIcons.book,
-                      title: showingSearch ? 'No recipes found' : 'Could not load recipes',
+                      title: showingSearch ? tr('No recipes found') : tr('Could not load recipes'),
                       message: showingSearch
-                          ? 'Try a different search term.'
-                          : 'Pull to try again once you are back online.',
+                          ? tr('Try a different search term.')
+                          : tr('Pull to try again once you are back online.'),
                     )
                   else
                     ...list.asMap().entries.map(
@@ -255,7 +256,7 @@ class _RecipeRow extends StatelessWidget {
                         color: TrackerColors.textTertiary,
                       ),
                       const SizedBox(width: 4),
-                      Text('Tap to cook', style: AppType.caption(size: 11)),
+                      Text(tr('Tap to cook'), style: AppType.caption(size: 11)),
                     ],
                   ),
                 ],

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/house_recipe.dart';
 import '../services/house_recipe_service.dart';
 import '../services/user_cache.dart';
+import '../l10n/app_strings.dart';
 
 class HouseRecipesState {
   const HouseRecipesState({
@@ -96,7 +97,7 @@ class HouseRecipesNotifier extends StateNotifier<HouseRecipesState> {
   Future<String?> togglePin(HouseRecipe recipe) async {
     final pinned = isPinned(recipe.id);
     if (!pinned && state.highlights.length >= maxHighlights) {
-      return 'You can pin up to $maxHighlights recipes. Unpin one first.';
+      return tr('You can pin up to {maxHighlights} recipes. Unpin one first.', {'maxHighlights': maxHighlights});
     }
     final next = pinned
         ? state.highlights.where((h) => h.id != recipe.id).toList()

@@ -14,6 +14,7 @@ import '../glass.dart';
 import '../pressable.dart';
 import '../share/share_sheet.dart';
 import 'weight_chart.dart';
+import '../../l10n/app_strings.dart';
 
 enum _Range {
   month('1M', 31),
@@ -58,7 +59,7 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(
-            label: 'Weight progress',
+            label: tr('Weight progress'),
             trailing: UnitToggle(
               unit: unit,
               onChanged: (u) => ref.read(weightUnitProvider.notifier).set(u),
@@ -71,7 +72,7 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
               icon: CupertinoIcons.wifi_exclamationmark,
               text: '$e',
               action: AppButton.glass(
-                label: 'Try again',
+                label: tr('Try again'),
                 height: 44,
                 onPressed: () => ref.read(weightProvider.notifier).load(),
               ),
@@ -85,8 +86,8 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
 
   Widget _empty(BuildContext context) => _Message(
         icon: CupertinoIcons.chart_bar_alt_fill,
-        text: 'Log your first weigh-in to start tracking your progress over time.',
-        action: AppButton(label: 'Log weight', icon: CupertinoIcons.plus, onPressed: () => showLogWeightSheet(context)),
+        text: tr('Log your first weigh-in to start tracking your progress over time.'),
+        action: AppButton(label: tr('Log weight'), icon: CupertinoIcons.plus, onPressed: () => showLogWeightSheet(context)),
       );
 
   Widget _content(BuildContext context, WeightHistory h, WeightUnit unit) {
@@ -102,16 +103,16 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
         const SizedBox(height: 2),
         Text(
           h.entries.length == 1
-              ? 'Your starting point · log again to see your trend'
-              : 'since ${_long(s.startDate)} · ${s.count} weigh-ins',
+              ? tr('Your starting point · log again to see your trend')
+              : tr('since {date} · {n} weigh-ins', {'date': _long(s.startDate), 'n': s.count}),
           style: AppType.caption(color: TrackerColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
-            _Stat(label: 'Start', value: unit.format(s.startKg)),
-            _Stat(label: 'Now', value: unit.format(s.currentKg)),
-            _Stat(label: 'Lowest', value: unit.format(s.lowestKg)),
+            _Stat(label: tr('Start'), value: unit.format(s.startKg)),
+            _Stat(label: tr('Now'), value: unit.format(s.currentKg)),
+            _Stat(label: tr('Lowest'), value: unit.format(s.lowestKg)),
           ],
         ),
         if (h.entries.length > 1) ...[
@@ -119,7 +120,7 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
           Row(
             children: [
               for (final r in _Range.values) ...[
-                _RangeChip(label: r.label, selected: r == _range, onTap: () => setState(() => _range = r)),
+                _RangeChip(label: tr(r.label), selected: r == _range, onTap: () => setState(() => _range = r)),
                 const SizedBox(width: 6),
               ],
             ],
@@ -130,7 +131,7 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
         if (s.daysSinceLast >= 7) ...[
           const SizedBox(height: AppSpacing.md),
           Text(
-            "It's been ${s.daysSinceLast} days. Time for a weigh-in?",
+            tr("It's been {v1} days. Time for a weigh-in?", {'v1': s.daysSinceLast}),
             style: AppType.caption(color: TrackerColors.accentEndText, size: 12.5),
           ),
         ],
@@ -139,24 +140,24 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
           children: [
             Expanded(
               child: AppButton(
-                label: 'Log weight',
+                label: tr('Log weight'),
                 icon: CupertinoIcons.plus,
                 height: 46,
                 onPressed: () => showLogWeightSheet(context),
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
+            SizedBox(width: AppSpacing.md),
             AppButton.glass(
-              label: 'History',
+              label: tr('History'),
               expand: false,
               height: 46,
               onPressed: () => showWeightHistorySheet(context),
             ),
             if (h.entries.length > 1) ...[
-              const SizedBox(width: AppSpacing.sm),
+              SizedBox(width: AppSpacing.sm),
               Semantics(
                 button: true,
-                label: 'Share weight progress',
+                label: tr('Share weight progress'),
                 child: AppIconButton(
                   icon: CupertinoIcons.share,
                   size: 46,
@@ -173,7 +174,7 @@ class _WeightProgressCardState extends ConsumerState<WeightProgressCard> {
 }
 
 String _long(DateTime d) {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
   return '${months[d.month - 1]} ${d.day}';
 }
 
@@ -347,7 +348,7 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Weigh-in date', style: AppType.title()),
+            Text(tr('Weigh-in date'), style: AppType.title()),
             const SizedBox(height: AppSpacing.lg),
             SizedBox(
               height: 200,
@@ -360,7 +361,7 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            AppButton(label: 'Done', onPressed: () => Navigator.of(sheet).pop(picked)),
+            AppButton(label: tr('Done'), onPressed: () => Navigator.of(sheet).pop(picked)),
             const SizedBox(height: AppSpacing.lg),
           ],
         ),
@@ -373,7 +374,7 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
     final unit = ref.read(weightUnitProvider);
     final kg = parseWeightKg(_controller.text, unit);
     if (kg == null) {
-      setState(() => _error = 'Enter a weight between ${unit.format(20, decimals: 0)} and ${unit.format(400, decimals: 0)}.');
+      setState(() => _error = tr('Enter a weight between {v1} and {v2}.', {'v1': unit.format(20, decimals: 0), 'v2': unit.format(400, decimals: 0)}));
       return;
     }
     setState(() {
@@ -386,7 +387,7 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
       if (!mounted) return;
       Navigator.of(context).pop();
       if (notice != null) {
-        await showAppDialog(context: context, title: 'Goal updated', message: notice, confirmLabel: 'Got it');
+        await showAppDialog(context: context, title: tr('Goal updated'), message: notice, confirmLabel: tr('Got it'));
       }
     } catch (e) {
       if (mounted) {
@@ -409,7 +410,7 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
         children: [
           Row(
             children: [
-              Text('Log weight', style: AppType.title()),
+              Text(tr('Log weight'), style: AppType.title()),
               const Spacer(),
               UnitToggle(
                 unit: unit,
@@ -457,7 +458,7 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
                 children: [
                   Icon(CupertinoIcons.calendar, size: 15, color: TrackerColors.textSecondary),
                   const SizedBox(width: 6),
-                  Text(_isToday ? 'Today' : _long(_day), style: AppType.callout()),
+                  Text(_isToday ? tr('Today') : _long(_day), style: AppType.callout()),
                   const SizedBox(width: 4),
                   Icon(CupertinoIcons.chevron_down, size: 12, color: TrackerColors.textTertiary),
                 ],
@@ -465,10 +466,10 @@ class _LogWeightSheetState extends ConsumerState<_LogWeightSheet> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          AppButton(label: 'Save', loading: _saving, onPressed: _saving ? null : _save),
+          AppButton(label: tr('Save'), loading: _saving, onPressed: _saving ? null : _save),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Weigh in at the same time of day for the clearest trend. Morning, after the bathroom, works best.',
+            tr('Weigh in at the same time of day for the clearest trend. Morning, after the bathroom, works best.'),
             textAlign: TextAlign.center,
             style: AppType.caption(color: TrackerColors.textTertiary),
           ),
@@ -493,13 +494,13 @@ class _HistorySheet extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Weigh-ins', style: AppType.title()),
+        Text(tr('Weigh-ins'), style: AppType.title()),
         const SizedBox(height: AppSpacing.md),
         Flexible(
           child: entries.isEmpty
               ? Padding(
                   padding: const EdgeInsets.symmetric(vertical: 30),
-                  child: Center(child: Text('No weigh-ins yet', style: AppType.callout())),
+                  child: Center(child: Text(tr('No weigh-ins yet'), style: AppType.callout())),
                 )
               : ListView.separated(
                   shrinkWrap: true,
@@ -533,10 +534,10 @@ class _HistorySheet extends ConsumerWidget {
                             onPressed: () async {
                               final ok = await showAppDialog(
                                 context: context,
-                                title: 'Delete weigh-in?',
-                                message: '${unit.format(e.weightKg)} on ${_long(e.date)}',
-                                confirmLabel: 'Delete',
-                                cancelLabel: 'Cancel',
+                                title: tr('Delete weigh-in?'),
+                                message: tr('{weight} on {date}', {'weight': unit.format(e.weightKg), 'date': _long(e.date)}),
+                                confirmLabel: tr('Delete'),
+                                cancelLabel: tr('Cancel'),
                                 destructive: true,
                               );
                               if (ok == true) {
@@ -544,7 +545,7 @@ class _HistorySheet extends ConsumerWidget {
                                   await ref.read(weightProvider.notifier).delete(e.date);
                                 } catch (err) {
                                   if (context.mounted) {
-                                    await showAppDialog(context: context, title: 'Couldn\'t delete', message: '$err');
+                                    await showAppDialog(context: context, title: tr('Couldn\'t delete'), message: '$err');
                                   }
                                 }
                               }

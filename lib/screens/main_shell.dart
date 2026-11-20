@@ -46,11 +46,11 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   // In ShellTab order.
   static final _tabs = [
-    (icon: CupertinoIcons.square_list, label: 'Today', key: null),
-    (icon: CupertinoIcons.chart_bar, label: 'Insights', key: MainShell.insightsTabKey),
-    (icon: CupertinoIcons.person_2, label: 'Friends', key: MainShell.friendsTabKey),
-    (icon: CupertinoIcons.book, label: 'Recipes', key: null),
-    (icon: CupertinoIcons.person_crop_circle, label: 'Profile', key: MainShell.profileTabKey),
+    (icon: CupertinoIcons.square_list, label: tr('Today'), key: null),
+    (icon: CupertinoIcons.chart_bar, label: tr('Insights'), key: MainShell.insightsTabKey),
+    (icon: CupertinoIcons.person_2, label: tr('Friends'), key: MainShell.friendsTabKey),
+    (icon: CupertinoIcons.book, label: tr('Recipes'), key: null),
+    (icon: CupertinoIcons.person_crop_circle, label: tr('Profile'), key: MainShell.profileTabKey),
   ];
 
   @override

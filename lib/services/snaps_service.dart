@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/snaps.dart';
 import '../models/stories.dart';
+import '../l10n/app_strings.dart';
 
 class SnapsException implements Exception {
   const SnapsException(this.message);
@@ -42,15 +43,15 @@ class SnapsService {
     Duration timeout = const Duration(seconds: 45),
   }) async {
     final token = (_tokenProvider ?? _supabaseToken)();
-    if (token == null) throw const SnapsException("You've been signed out. Please log in again.");
+    if (token == null) throw SnapsException(tr("You've been signed out. Please log in again."));
     final client = _client ?? http.Client();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(timeout);
     } on TimeoutException {
-      throw const SnapsException('The server is taking too long. It may be waking up, so try again.');
+      throw SnapsException(tr('The server is taking too long. It may be waking up, so try again.'));
     } on http.ClientException {
-      throw const SnapsException("Couldn't reach the server. Check your connection and try again.");
+      throw SnapsException(tr("Couldn't reach the server. Check your connection and try again."));
     } finally {
       if (_client == null) client.close();
     }
@@ -94,18 +95,18 @@ class SnapsService {
           .map((e) => SendOutcome.fromJson(e as Map<String, dynamic>))
           .toList();
     }
-    throw SnapsException(_detail(r, "Couldn't send your bite. Please try again."));
+    throw SnapsException(_detail(r, tr("Couldn't send your bite. Please try again.")));
   }
 
   Future<List<InboxSnap>> inbox() async {
     final r = await _send((c, h) => c.get(_uri('/snaps/inbox'), headers: h));
-    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load your bites."));
+    if (r.statusCode != 200) throw SnapsException(_detail(r, tr("Couldn't load your bites.")));
     return (jsonDecode(r.body) as List).map((e) => InboxSnap.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<List<SentSnap>> sent() async {
     final r = await _send((c, h) => c.get(_uri('/snaps/sent'), headers: h));
-    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load the bites you sent."));
+    if (r.statusCode != 200) throw SnapsException(_detail(r, tr("Couldn't load the bites you sent.")));
     return (jsonDecode(r.body) as List).map((e) => SentSnap.fromJson(e as Map<String, dynamic>)).toList();
   }
 
@@ -116,18 +117,18 @@ class SnapsService {
   }
 
   Future<void> markViewed(String snapId) =>
-      _action((c, h) => c.post(_uri('/snaps/$snapId/view'), headers: h), "Couldn't mark that bite as seen.");
+      _action((c, h) => c.post(_uri('/snaps/$snapId/view'), headers: h), tr("Couldn't mark that bite as seen."));
 
   Future<void> react(String snapId, String emoji) => _action(
       (c, h) => c.post(_uri('/snaps/$snapId/react'), headers: h, body: jsonEncode({'emoji': emoji})),
-      "Couldn't send that reaction.");
+      tr("Couldn't send that reaction."));
 
   Future<void> report(String snapId, {String? reason}) => _action(
       (c, h) => c.post(_uri('/snaps/$snapId/report'), headers: h, body: jsonEncode({'reason': reason})),
-      "Couldn't send your report.");
+      tr("Couldn't send your report."));
 
   Future<void> delete(String snapId) =>
-      _action((c, h) => c.delete(_uri('/snaps/$snapId'), headers: h), "Couldn't delete that bite.");
+      _action((c, h) => c.delete(_uri('/snaps/$snapId'), headers: h), tr("Couldn't delete that bite."));
 
   // --- Stories: a photo every friend can see for 24 hours -----------------
 
@@ -147,28 +148,28 @@ class SnapsService {
       timeout: const Duration(seconds: 90),
     );
     if (r.statusCode == 200) return;
-    throw SnapsException(_detail(r, "Couldn't add that to your story. Please try again."));
+    throw SnapsException(_detail(r, tr("Couldn't add that to your story. Please try again.")));
   }
 
   Future<StoryFeed> stories() async {
     final r = await _send((c, h) => c.get(
         _uri('/stories').replace(queryParameters: {'date': DateTime.now().toIso8601String().substring(0, 10)}),
         headers: h));
-    if (r.statusCode != 200) throw SnapsException(_detail(r, "Couldn't load stories."));
+    if (r.statusCode != 200) throw SnapsException(_detail(r, tr("Couldn't load stories.")));
     return StoryFeed.fromJson(jsonDecode(utf8.decode(r.bodyBytes)) as Map<String, dynamic>);
   }
 
   Future<void> markStoryViewed(String storyId) =>
-      _action((c, h) => c.post(_uri('/stories/$storyId/view'), headers: h), "Couldn't mark that story as seen.");
+      _action((c, h) => c.post(_uri('/stories/$storyId/view'), headers: h), tr("Couldn't mark that story as seen."));
 
   Future<void> reactToStory(String storyId, String emoji) => _action(
       (c, h) => c.post(_uri('/stories/$storyId/react'), headers: h, body: jsonEncode({'emoji': emoji})),
-      "Couldn't send that reaction.");
+      tr("Couldn't send that reaction."));
 
   Future<void> reportStory(String storyId, {String? reason}) => _action(
       (c, h) => c.post(_uri('/stories/$storyId/report'), headers: h, body: jsonEncode({'reason': reason})),
-      "Couldn't send your report.");
+      tr("Couldn't send your report."));
 
   Future<void> deleteStory(String storyId) =>
-      _action((c, h) => c.delete(_uri('/stories/$storyId'), headers: h), "Couldn't delete that story.");
+      _action((c, h) => c.delete(_uri('/stories/$storyId'), headers: h), tr("Couldn't delete that story."));
 }

@@ -439,12 +439,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final now = DateTime.now();
     final day = _viewDay;
     if (LogCacheReader.isSameDay(day, now)) return context.tr('Today');
-    if (LogCacheReader.isSameDay(day, now.subtract(const Duration(days: 1)))) {
+    if (LogCacheReader.isSameDay(day, now.subtract(Duration(days: 1)))) {
       return context.tr('Yesterday');
     }
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), //
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec'),
     ];
     return '${context.tr(months[day.month - 1])} ${day.day}';
   }
@@ -685,52 +685,48 @@ List<TourStep> dashboardTourSteps({
       TourStep(
         targetKey: ringKey,
         icon: CupertinoIcons.flame_fill,
-        title: 'Your daily budget',
-        body: 'The ring shows how many calories you have left today. '
-            'It fills up as you log meals.',
+        title: tr('Your daily budget'),
+        body: tr('The ring shows how many calories you have left today. It fills up as you log meals.'),
         radius: AppRadii.container,
         padding: 6,
       ),
       TourStep(
         targetKey: cameraButtonKey,
         icon: CupertinoIcons.camera_fill,
-        title: 'Snap your meal',
-        body: "Take a picture of your plate. We'll spot the foods and estimate "
-            'portions for you to check before saving. Each meal has its own camera button too.',
+        title: tr('Snap your meal'),
+        body: tr("Take a picture of your plate. We'll spot the foods and estimate portions for you to check before saving. Each meal has its own camera button too."),
         shape: TourShape.circle,
         padding: 6,
       ),
       TourStep(
         targetKey: searchButtonKey,
         icon: CupertinoIcons.search,
-        title: 'Or search by name',
-        body: 'No photo? Search for any food, then enter how much you had.',
+        title: tr('Or search by name'),
+        body: tr('No photo? Search for any food, then enter how much you had.'),
         shape: TourShape.circle,
         padding: 5,
       ),
       TourStep(
         targetKey: MainShell.insightsTabKey,
         icon: CupertinoIcons.chart_bar_alt_fill,
-        title: 'Your weekly coach',
-        body: 'Insights shows your trends, your weight and personal tips based on '
-            "what you've logged.",
+        title: tr('Your weekly coach'),
+        body: tr("Insights shows your trends, your weight and personal tips based on what you've logged."),
         shape: TourShape.pill,
         padding: 6,
       ),
       TourStep(
         targetKey: MainShell.friendsTabKey,
         icon: CupertinoIcons.person_2_fill,
-        title: 'Eat with friends',
-        body: 'Add friends, send each other food bites and keep a streak going together.',
+        title: tr('Eat with friends'),
+        body: tr('Add friends, send each other food bites and keep a streak going together.'),
         shape: TourShape.pill,
         padding: 6,
       ),
       TourStep(
         targetKey: MainShell.profileTabKey,
         icon: CupertinoIcons.person_crop_circle_fill,
-        title: 'Your plan and settings',
-        body: 'Profile has your targets and progress. The gear opens Settings: '
-            'appearance, notifications, your account and this tutorial again.',
+        title: tr('Your plan and settings'),
+        body: tr('Profile has your targets and progress. The gear opens Settings: appearance, notifications, your account and this tutorial again.'),
         shape: TourShape.pill,
         padding: 6,
       ),

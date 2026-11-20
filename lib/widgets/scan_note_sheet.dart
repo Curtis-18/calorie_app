@@ -6,6 +6,7 @@ import '../services/voice_note.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
+import '../l10n/app_strings.dart';
 
 /// "Anything to add?": say or type what the photo can't show ("half of this,
 /// cooked in butter, with a diet soda"). Returns the note, or null if skipped.
@@ -80,10 +81,10 @@ class _ScanNoteSheetState extends State<_ScanNoteSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Anything to add?', style: AppType.title()),
+            Text(tr('Anything to add?'), style: AppType.title()),
             const SizedBox(height: 4),
             Text(
-              'Say or type what the photo can’t show, like “half of this, cooked in butter”. We’ll scan it again with your note.',
+              tr('Say or type what the photo can’t show, like “half of this, cooked in butter”. We’ll scan it again with your note.'),
               style: AppType.callout(size: 12),
             ),
             const SizedBox(height: 12),
@@ -96,7 +97,7 @@ class _ScanNoteSheetState extends State<_ScanNoteSheet> {
                     maxLength: ScanQueueNotifier.maxNoteLength,
                     maxLines: 3,
                     minLines: 1,
-                    placeholder: 'Half of this, with a diet soda…',
+                    placeholder: tr('Half of this, with a diet soda…'),
                     style: AppType.body(size: 14),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -134,12 +135,12 @@ class _ScanNoteSheetState extends State<_ScanNoteSheet> {
             if (_listening)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text('Listening…', style: AppType.caption(size: 12)),
+                child: Text(tr('Listening…'), style: AppType.caption(size: 12)),
               ),
             const SizedBox(height: 14),
             AppButton(
               key: const ValueKey('scan_note_apply'),
-              label: 'Scan again with this note',
+              label: tr('Scan again with this note'),
               onPressed: () {
                 final text = _text.text.trim();
                 if (text.isEmpty) return;
@@ -150,7 +151,7 @@ class _ScanNoteSheetState extends State<_ScanNoteSheet> {
             Center(
               child: CupertinoButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Not now', style: AppType.callout(color: TrackerColors.textSecondary)),
+                child: Text(tr('Not now'), style: AppType.callout(color: TrackerColors.textSecondary)),
               ),
             ),
           ],

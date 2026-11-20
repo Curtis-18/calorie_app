@@ -17,6 +17,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/glass.dart';
 import '../widgets/pressable.dart';
 import 'friends_screen.dart' show FriendAvatar;
+import '../l10n/app_strings.dart';
 
 /// Open the conversation with a friend, over the tab bar.
 Future<void> openChat(
@@ -237,21 +238,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       builder: (sheet) => CupertinoActionSheet(
         actions: [
-          CupertinoActionSheetAction(onPressed: () => Navigator.pop(sheet, 'copy'), child: const Text('Copy')),
+          CupertinoActionSheetAction(onPressed: () => Navigator.pop(sheet, 'copy'), child: Text(tr('Copy'))),
           if (message.mine)
             CupertinoActionSheetAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.pop(sheet, 'delete'),
-              child: const Text('Delete for everyone'),
+              child: Text(tr('Delete for everyone')),
             )
           else
             CupertinoActionSheetAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.pop(sheet, 'report'),
-              child: const Text('Report message'),
+              child: Text(tr('Report message')),
             ),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(sheet), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(sheet), child: Text(tr('Cancel'))),
       ),
     );
     if (!mounted) return;
@@ -281,16 +282,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _report(ChatMessage message) async {
     final sure = await showAppDialog(
       context: context,
-      title: 'Report this message?',
-      message: 'Our team will read it. You can also block @${widget.username} from your friends list.',
-      confirmLabel: 'Report',
-      cancelLabel: 'Cancel',
+      title: tr('Report this message?'),
+      message: tr('Our team will read it. You can also block @{v1} from your friends list.', {'v1': widget.username}),
+      confirmLabel: tr('Report'),
+      cancelLabel: tr('Cancel'),
       destructive: true,
     );
     if (sure != true || !mounted) return;
     try {
       await _service.report(message.id);
-      _say("Thanks. We'll take a look.");
+      _say(tr("Thanks. We'll take a look."));
     } on MessagesException catch (e) {
       _say(e.message);
     }
@@ -340,7 +341,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         padding: const EdgeInsets.all(32),
         child: AppEmptyState(
           icon: CupertinoIcons.chat_bubble_2,
-          title: "Couldn't open this conversation",
+          title: tr("Couldn't open this conversation"),
           message: _loadError,
           accent: TrackerColors.error,
         ),
@@ -351,8 +352,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         padding: const EdgeInsets.all(32),
         child: AppEmptyState(
           icon: CupertinoIcons.chat_bubble_text,
-          title: 'Say hi to @${widget.username}',
-          message: 'Messages stay between the two of you.',
+          title: tr('Say hi to @{v1}', {'v1': widget.username}),
+          message: tr('Messages stay between the two of you.'),
         ),
       );
     }
@@ -373,7 +374,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: CupertinoButton(
               key: const ValueKey('chat_earlier'),
               onPressed: _loadingMore ? null : _loadEarlier,
-              child: Text(_loadingMore ? 'Loading…' : 'Earlier messages', style: AppType.caption(size: 13)),
+              child: Text(_loadingMore ? tr('Loading…') : tr('Earlier messages'), style: AppType.caption(size: 13)),
             ),
           );
         }
@@ -476,13 +477,13 @@ class _Bubble extends StatelessWidget {
       bottomRight: Radius.circular(mine ? 6 : 20),
     );
     final status = switch (message.state) {
-      SendState.sending => 'Sending…',
-      SendState.failed => '${message.error ?? "Not sent"}. Tap to try again.',
+      SendState.sending => tr('Sending…'),
+      SendState.failed => tr('{error}. Tap to try again.', {'error': message.error ?? tr('Not sent')}),
       SendState.sent => !isLastMine
           ? null
           : message.readAt != null
-              ? 'Seen'
-              : 'Sent',
+              ? tr('Seen')
+              : tr('Sent'),
     };
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -590,7 +591,7 @@ class _Composer extends StatelessWidget {
                       key: const ValueKey('chat_input'),
                       controller: controller,
                       enabled: !disabled,
-                      placeholder: 'Message @$username',
+                      placeholder: tr('Message @{username}', {'username': username}),
                       minLines: 1,
                       maxLines: 5,
                       keyboardType: TextInputType.multiline,
@@ -610,7 +611,7 @@ class _Composer extends StatelessWidget {
                   const SizedBox(width: 8),
                   Semantics(
                     button: true,
-                    label: 'Send message',
+                    label: tr('Send message'),
                     child: Pressable(
                       key: const ValueKey('chat_send'),
                       onTap: canSend ? onSend : null,
@@ -665,9 +666,9 @@ class _RecipeCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Recipe', style: AppType.caption(size: 11, color: ink.withValues(alpha: 0.75))),
+                Text(tr('Recipe'), style: AppType.caption(size: 11, color: ink.withValues(alpha: 0.75))),
                 Text(card.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 15.5, color: ink)),
-                Text('${card.calories} kcal per serving · tap to open', style: AppType.caption(size: 11.5, color: ink.withValues(alpha: 0.8))),
+                Text(tr('{n} kcal per serving · tap to open', {'n': card.calories}), style: AppType.caption(size: 11.5, color: ink.withValues(alpha: 0.8))),
               ],
             ),
           ),

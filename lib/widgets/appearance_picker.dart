@@ -65,7 +65,7 @@ class _ModeTile extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: '${mode.label} appearance',
+      label: tr('{mode} appearance', {'mode': tr(mode.label)}),
       child: Pressable(
         onTap: () {
           HapticFeedback.selectionClick();

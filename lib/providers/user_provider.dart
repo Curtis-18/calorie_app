@@ -8,6 +8,7 @@ import '../models/user_profile.dart';
 import '../config/api_config.dart';
 import '../services/targets_handoff.dart';
 import '../services/user_cache.dart';
+import '../l10n/app_strings.dart';
 
 /// The signed-in user's profile and targets.
 ///
@@ -187,7 +188,7 @@ class ProfileSaveException implements Exception {
         return ProfileSaveException(detail);
       }
     } catch (_) {}
-    return const ProfileSaveException("We couldn't save your profile. Please try again.");
+    return ProfileSaveException(tr("We couldn't save your profile. Please try again."));
   }
 
   @override

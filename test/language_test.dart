@@ -6,6 +6,7 @@ import 'package:calorie_app/main.dart' show appLocalizationsDelegates;
 import 'package:calorie_app/providers/language_provider.dart';
 import 'package:calorie_app/screens/settings_screen.dart';
 import 'package:calorie_app/theme/app_theme.dart';
+import 'package:calorie_app/widgets/language_scope.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -116,6 +117,7 @@ void main() {
 
   group('Settings', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
+    tearDown(() => AppStrings.active = 'en');
 
     Future<ProviderContainer> pump(WidgetTester tester, {String? saved}) async {
       tester.view.physicalSize = const Size(750, 2400);
@@ -127,10 +129,10 @@ void main() {
       addTearDown(container.dispose);
       await tester.pumpWidget(UncontrolledProviderScope(
         container: container,
-        child: Consumer(
-          builder: (context, ref, _) => CupertinoApp(
+        child: LanguageScope(
+          builder: (context, locale) => CupertinoApp(
             theme: AppTheme.cupertino,
-            locale: Locale(ref.watch(activeLanguageProvider)),
+            locale: locale,
             supportedLocales: [for (final l in supportedLanguages) Locale(l.code)],
             localizationsDelegates: appLocalizationsDelegates,
             home: const SettingsView(profile: null),

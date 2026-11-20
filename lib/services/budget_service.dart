@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../models/week_budget.dart';
+import '../l10n/app_strings.dart';
 
 /// The weekly budget endpoints. Reads never throw (the budget is an extra: the
 /// dashboard must work without it); a save returns a message when it failed.
@@ -57,15 +58,15 @@ class BudgetService {
   /// Save some choices. Returns null on success, otherwise a message to show.
   Future<String?> save(Map<String, Object?> changes) async {
     final r = await _send((c, h) => c.post(Uri.parse('${ApiConfig.baseUrl}/budget/prefs'), headers: h, body: jsonEncode(changes)));
-    if (r == null) return "Couldn't reach the server. Check your connection and try again.";
+    if (r == null) return tr("Couldn't reach the server. Check your connection and try again.");
     if (r.statusCode == 200) return null;
     if (r.statusCode == 422) {
       try {
         final detail = (jsonDecode(r.body) as Map<String, dynamic>)['detail'];
         if (detail is String) return detail;
       } catch (_) {}
-      return "That isn't allowed for your plan.";
+      return tr("That isn't allowed for your plan.");
     }
-    return "Couldn't save that right now. Please try again.";
+    return tr("Couldn't save that right now. Please try again.");
   }
 }

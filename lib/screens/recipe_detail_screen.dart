@@ -8,6 +8,7 @@ import '../widgets/app_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/glass.dart';
 import '../widgets/shimmer.dart';
+import '../l10n/app_strings.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final String recipeId;
@@ -41,7 +42,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not load recipe.';
+        _error = tr('Could not load recipe.');
         _loading = false;
       });
     }
@@ -64,15 +65,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             : _error != null
                 ? AppEmptyState(
                     icon: CupertinoIcons.wifi_exclamationmark,
-                    title: 'Something went wrong',
+                    title: tr('Something went wrong'),
                     message: _error,
                     accent: TrackerColors.error,
                   )
                 : _recipe == null
                     ? AppEmptyState(
                         icon: CupertinoIcons.book,
-                        title: 'Recipe not found',
-                        message: 'This recipe may no longer be available.',
+                        title: tr('Recipe not found'),
+                        message: tr('This recipe may no longer be available.'),
                         accent: TrackerColors.textSecondary,
                       )
                     : _RecipeContent(recipe: _recipe!),
@@ -128,7 +129,7 @@ class _RecipeContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              SectionHeader(label: 'Ingredients'),
+              SectionHeader(label: tr('Ingredients')),
               const SizedBox(height: AppSpacing.md),
               AppCard(
                 child: Column(
@@ -168,7 +169,7 @@ class _RecipeContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              SectionHeader(label: 'Instructions'),
+              SectionHeader(label: tr('Instructions')),
               const SizedBox(height: AppSpacing.md),
               Text(
                 recipe.instructions,

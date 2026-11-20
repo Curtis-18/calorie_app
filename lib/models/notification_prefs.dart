@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 /// The person's notification choices, as the server keeps them.
 ///
 /// Push delivery is not switched on yet (it needs the iOS build), so these
@@ -77,8 +78,9 @@ class NotificationPrefs {
 /// "8 AM", "12 PM", "10 PM".
 String hourLabel(int hour) {
   final h = hour % 12 == 0 ? 12 : hour % 12;
+  if (AppStrings.active != 'en') return tr('{h}:00', {'h': hour});
   return '$h ${hour < 12 ? 'AM' : 'PM'}';
 }
 
 /// "10 PM to 8 AM", or "Off" when the two are the same hour.
-String quietHoursLabel(int start, int end) => start == end ? 'Off' : '${hourLabel(start)} to ${hourLabel(end)}';
+String quietHoursLabel(int start, int end) => start == end ? tr('Off') : tr('{start} to {end}', {'start': hourLabel(start), 'end': hourLabel(end)});

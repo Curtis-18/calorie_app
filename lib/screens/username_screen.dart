@@ -12,6 +12,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/animated_logo.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_field.dart';
+import '../l10n/app_strings.dart';
 
 enum _NameStatus { empty, invalid, checking, available, unavailable, error }
 
@@ -112,11 +113,11 @@ class _UsernameScreenState extends State<UsernameScreen> {
 
   Widget _statusLine() {
     final (icon, color, text) = switch (_status) {
-      _NameStatus.available => (CupertinoIcons.checkmark_circle_fill, TrackerColors.accentStartText, "It's yours if you want it"),
-      _NameStatus.checking => (CupertinoIcons.time, TrackerColors.textTertiary, 'Checking…'),
+      _NameStatus.available => (CupertinoIcons.checkmark_circle_fill, TrackerColors.accentStartText, tr("It's yours if you want it")),
+      _NameStatus.checking => (CupertinoIcons.time, TrackerColors.textTertiary, tr('Checking…')),
       _NameStatus.invalid || _NameStatus.unavailable || _NameStatus.error =>
         (CupertinoIcons.exclamationmark_circle, TrackerColors.warning, _message ?? ''),
-      _NameStatus.empty => (null, TrackerColors.textTertiary, '3–20 letters, numbers or underscores'),
+      _NameStatus.empty => (null, TrackerColors.textTertiary, tr('3–20 letters, numbers or underscores')),
     };
     return Row(
       children: [
@@ -133,7 +134,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
           ? CupertinoNavigationBar(
               backgroundColor: TrackerColors.navFill,
               border: AppDecor.hairlineTop,
-              middle: const Text('Username'),
+              middle: Text(tr('Username')),
             )
           : null,
       child: AppBackdrop(
@@ -148,16 +149,14 @@ class _UsernameScreenState extends State<UsernameScreen> {
                   const SizedBox(height: AppSpacing.xl),
                 ],
                 Text(
-                  widget.changing ? 'Change your username' : 'Pick your username',
+                  widget.changing ? tr('Change your username') : tr('Pick your username'),
                   style: AppType.navLargeTitle(size: 28),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   widget.changing
-                      ? "You're @${widget.current} now. Friends keep you on their list and see the new name. "
-                          'You can change it once every 30 days.'
-                      : 'This is how friends will find you and send you food bites. '
-                          'You can change it once every 30 days.',
+                      ? '${tr("You're @{name} now. Friends keep you on their list and see the new name.", {'name': widget.current})} ${tr('You can change it once every 30 days.')}'
+                      : '${tr('This is how friends will find you and send you food bites.')} ${tr('You can change it once every 30 days.')}',
                   style: AppType.body(color: TrackerColors.textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -180,7 +179,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 AppButton(
-                  label: _saving ? 'Saving…' : (widget.changing ? 'Save' : 'Continue'),
+                  label: _saving ? tr('Saving…') : (widget.changing ? tr('Save') : tr('Continue')),
                   onPressed: _status == _NameStatus.available && !_saving ? _save : null,
                 ),
                 if (widget.onSignOut != null) ...[
@@ -188,7 +187,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
                   Center(
                     child: CupertinoButton(
                       onPressed: widget.onSignOut,
-                      child: Text('Sign out', style: AppType.caption(color: TrackerColors.textTertiary, size: 13)),
+                      child: Text(tr('Sign out'), style: AppType.caption(color: TrackerColors.textTertiary, size: 13)),
                     ),
                   ),
                 ],

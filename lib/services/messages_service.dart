@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/messages.dart';
 import 'snaps_service.dart' show newSnapId;
+import '../l10n/app_strings.dart';
 
 class MessagesException implements Exception {
   const MessagesException(this.message, {this.statusCode});
@@ -40,15 +41,15 @@ class MessagesService {
     Duration timeout = const Duration(seconds: 30),
   }) async {
     final token = (_tokenProvider ?? _supabaseToken)();
-    if (token == null) throw const MessagesException("You've been signed out. Please log in again.");
+    if (token == null) throw MessagesException(tr("You've been signed out. Please log in again."));
     final client = _client ?? (_shared ??= http.Client());
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(timeout);
     } on TimeoutException {
-      throw const MessagesException('The server is taking too long. It may be waking up, so try again.');
+      throw MessagesException(tr('The server is taking too long. It may be waking up, so try again.'));
     } on http.ClientException {
-      throw const MessagesException("Couldn't reach the server. Check your connection and try again.");
+      throw MessagesException(tr("Couldn't reach the server. Check your connection and try again."));
     }
   }
 
@@ -73,7 +74,7 @@ class MessagesService {
   Future<ConversationsData> conversations() async {
     final r = await _send((c, h) => c.get(_uri('/messages'), headers: h));
     if (r.statusCode != 200) {
-      throw MessagesException(_detail(r, "Couldn't load your messages."), statusCode: r.statusCode);
+      throw MessagesException(_detail(r, tr("Couldn't load your messages.")), statusCode: r.statusCode);
     }
     return ConversationsData.fromJson(_json(r));
   }
@@ -87,7 +88,7 @@ class MessagesService {
       ),
     );
     if (r.statusCode != 200) {
-      throw MessagesException(_detail(r, "Couldn't load this conversation."), statusCode: r.statusCode);
+      throw MessagesException(_detail(r, tr("Couldn't load this conversation.")), statusCode: r.statusCode);
     }
     return ChatThread.fromJson(_json(r));
   }
@@ -98,7 +99,7 @@ class MessagesService {
       (c, h) => c.post(_uri('/messages/with/$friendId'), headers: h, body: jsonEncode({'id': id, 'body': body})),
     );
     if (r.statusCode == 200) return ChatMessage.fromJson(_json(r));
-    throw MessagesException(_detail(r, "Couldn't send that message."), statusCode: r.statusCode);
+    throw MessagesException(_detail(r, tr("Couldn't send that message.")), statusCode: r.statusCode);
   }
 
   Future<void> _action(Future<http.Response> Function(http.Client, Map<String, String>) call, String failure) async {
@@ -108,13 +109,13 @@ class MessagesService {
   }
 
   Future<void> markRead(String friendId) =>
-      _action((c, h) => c.post(_uri('/messages/with/$friendId/read'), headers: h), "Couldn't mark those as read.");
+      _action((c, h) => c.post(_uri('/messages/with/$friendId/read'), headers: h), tr("Couldn't mark those as read."));
 
   Future<void> unsend(String messageId) =>
-      _action((c, h) => c.delete(_uri('/messages/$messageId'), headers: h), "Couldn't delete that message.");
+      _action((c, h) => c.delete(_uri('/messages/$messageId'), headers: h), tr("Couldn't delete that message."));
 
   Future<void> report(String messageId, {String? reason}) => _action(
         (c, h) => c.post(_uri('/messages/$messageId/report'), headers: h, body: jsonEncode({'reason': reason})),
-        "Couldn't send your report.",
+        tr("Couldn't send your report."),
       );
 }

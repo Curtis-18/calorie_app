@@ -4,6 +4,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_card.dart';
+import '../l10n/app_strings.dart';
 
 /// Slim progress bar with a spring-animated fill, glow and a macro colour.
 class MacroBar extends StatelessWidget {
@@ -108,7 +109,7 @@ class MacroBar extends StatelessWidget {
         if (target > 0) ...[
           const SizedBox(height: 6),
           Text(
-            remaining >= 0 ? '$remaining$unit left today' : '${remaining.abs()}$unit over',
+            remaining >= 0 ? tr('{n}{unit} left today', {'n': remaining, 'unit': unit}) : tr('{n}{unit} over', {'n': remaining.abs(), 'unit': unit}),
             style: AppType.caption(color: TrackerColors.textTertiary, size: 11),
           ),
         ],
@@ -152,21 +153,21 @@ class MacroBreakdownCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           MacroBar(
-            label: 'Protein',
+            label: tr('Protein'),
             current: protein,
             target: proteinTarget.toDouble(),
             color: TrackerColors.macroProtein,
           ),
           const SizedBox(height: AppSpacing.lg),
           MacroBar(
-            label: 'Carbs',
+            label: tr('Carbs'),
             current: carbs,
             target: carbsTarget.toDouble(),
             color: TrackerColors.macroCarbs,
           ),
           const SizedBox(height: AppSpacing.lg),
           MacroBar(
-            label: 'Fat',
+            label: tr('Fat'),
             current: fat,
             target: fatTarget.toDouble(),
             color: TrackerColors.macroFat,

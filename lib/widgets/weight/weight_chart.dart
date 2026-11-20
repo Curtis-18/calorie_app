@@ -6,6 +6,7 @@ import '../../models/weight.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/tracker_colors.dart';
+import '../../l10n/app_strings.dart';
 
 /// Weigh-ins as faint dots with the smoothed trend drawn over them as a
 /// glowing gradient line. The trend is the honest signal; the dots show the
@@ -156,7 +157,7 @@ class _WeightChartPainter extends CustomPainter {
       9,
       Paint()
         ..color = TrackerColors.alpha(TrackerColors.accentEnd, 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
     );
     canvas.drawCircle(last, 4.5, Paint()..color = TrackerColors.accentEnd);
     canvas.drawCircle(last, 2, Paint()..color = TrackerColors.textPrimary);
@@ -188,7 +189,7 @@ class _WeightChartPainter extends CustomPainter {
   }
 
   static String _short(DateTime d) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
     return '${months[d.month - 1]} ${d.day}';
   }
 

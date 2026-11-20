@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import 'user_profile.dart';
+import '../l10n/app_strings.dart';
 
 /// The words users see for the profile answers. The enums keep their API
 /// names (`sedentary`, `maintain`, ...); this is only how they read on screen.
@@ -10,26 +11,26 @@ import 'user_profile.dart';
 /// pick the level by recognising themselves, not by the label.
 extension GenderCopy on Gender {
   String get title => switch (this) {
-    Gender.female => 'Female',
-    Gender.male => 'Male',
+    Gender.female => tr('Female'),
+    Gender.male => tr('Male'),
   };
 }
 
 extension ActivityLevelCopy on ActivityLevel {
   String get title => switch (this) {
-    ActivityLevel.sedentary => 'Mostly sitting',
-    ActivityLevel.light => 'Lightly active',
-    ActivityLevel.moderate => 'Moderately active',
-    ActivityLevel.active => 'Very active',
-    ActivityLevel.veryActive => 'Athlete level',
+    ActivityLevel.sedentary => tr('Mostly sitting'),
+    ActivityLevel.light => tr('Lightly active'),
+    ActivityLevel.moderate => tr('Moderately active'),
+    ActivityLevel.active => tr('Very active'),
+    ActivityLevel.veryActive => tr('Athlete level'),
   };
 
   String get blurb => switch (this) {
-    ActivityLevel.sedentary => 'Desk job or studying, and little or no exercise.',
-    ActivityLevel.light => 'On your feet a fair bit, or exercise 1 to 3 days a week.',
-    ActivityLevel.moderate => 'Exercise or sport 3 to 5 days a week.',
-    ActivityLevel.active => 'Hard exercise 6 or 7 days a week, or a physical job.',
-    ActivityLevel.veryActive => 'Intense training every day, or a very physical job.',
+    ActivityLevel.sedentary => tr('Desk job or studying, and little or no exercise.'),
+    ActivityLevel.light => tr('On your feet a fair bit, or exercise 1 to 3 days a week.'),
+    ActivityLevel.moderate => tr('Exercise or sport 3 to 5 days a week.'),
+    ActivityLevel.active => tr('Hard exercise 6 or 7 days a week, or a physical job.'),
+    ActivityLevel.veryActive => tr('Intense training every day, or a very physical job.'),
   };
 
   IconData get icon => switch (this) {
@@ -43,15 +44,15 @@ extension ActivityLevelCopy on ActivityLevel {
 
 extension GoalCopy on Goal {
   String get title => switch (this) {
-    Goal.lose => 'Lose weight',
-    Goal.maintain => 'Stay the same',
-    Goal.gain => 'Gain weight',
+    Goal.lose => tr('Lose weight'),
+    Goal.maintain => tr('Stay the same'),
+    Goal.gain => tr('Gain weight'),
   };
 
   String get blurb => switch (this) {
-    Goal.lose => 'A small, steady daily cut. No crash diets.',
-    Goal.maintain => 'Keep your weight steady and build good habits.',
-    Goal.gain => 'A small daily boost to build up gradually.',
+    Goal.lose => tr('A small, steady daily cut. No crash diets.'),
+    Goal.maintain => tr('Keep your weight steady and build good habits.'),
+    Goal.gain => tr('A small daily boost to build up gradually.'),
   };
 
   IconData get icon => switch (this) {

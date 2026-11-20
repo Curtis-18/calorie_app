@@ -9,6 +9,7 @@ import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'glass.dart';
 import 'pressable.dart';
+import '../l10n/app_strings.dart';
 
 /// How the person wants to add food.
 enum LogMethod { photo, search }
@@ -61,12 +62,12 @@ class _LogFoodSheetState extends State<_LogFoodSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(photo ? 'Snap your meal' : 'Search for a food', style: AppType.title(), textAlign: TextAlign.center),
+        Text(photo ? tr('Snap your meal') : tr('Search for a food'), style: AppType.title(), textAlign: TextAlign.center),
         const SizedBox(height: 4),
         Text(
           photo
-              ? "We'll spot the foods and estimate portions for you to check."
-              : 'Find a food by name and enter how much you had.',
+              ? tr("We'll spot the foods and estimate portions for you to check.")
+              : tr('Find a food by name and enter how much you had.'),
           style: AppType.callout(),
           textAlign: TextAlign.center,
         ),
@@ -95,14 +96,14 @@ class _LogFoodSheetState extends State<_LogFoodSheet> {
         if (photo)
           AppButton(
             key: const ValueKey('log_continue'),
-            label: 'Open camera',
+            label: tr('Open camera'),
             icon: CupertinoIcons.camera_fill,
             onPressed: () => Navigator.of(context).pop(_meal),
           )
         else
           AppButton.glass(
             key: const ValueKey('log_continue'),
-            label: 'Search',
+            label: tr('Search'),
             icon: CupertinoIcons.search,
             onPressed: () => Navigator.of(context).pop(_meal),
           ),

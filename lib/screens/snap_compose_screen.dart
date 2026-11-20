@@ -15,6 +15,7 @@ import '../widgets/app_button.dart';
 import '../widgets/pressable.dart';
 import '../widgets/snaps/flame.dart';
 import 'friends_screen.dart' show FriendAvatar;
+import '../l10n/app_strings.dart';
 
 /// What a share did: the per-friend streak results of a bite, and whether the
 /// photo also went on the person's story.
@@ -28,9 +29,9 @@ class ComposeResult {
 /// One line saying where the photo went.
 String shareSummary(ComposeResult r) {
   final n = r.outcomes.length;
-  if (n == 0) return 'Added to your story.';
-  final who = n == 1 ? '@${r.outcomes.first.username}' : '$n friends';
-  return r.addedToStory ? 'Sent to $who and added to your story.' : 'Sent to $who.';
+  if (n == 0) return tr('Added to your story.');
+  final who = n == 1 ? '@${r.outcomes.first.username}' : tr('{n} friends', {'n': n});
+  return r.addedToStory ? tr('Sent to {who} and added to your story.', {'who': who}) : tr('Sent to {who}.', {'who': who});
 }
 
 /// The photo you just took, a caption, and who gets it: your story (every
@@ -80,7 +81,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
       _error = null;
       if (!_selected.remove(p.userId)) {
         if (_selected.length >= maxRecipients) {
-          _error = 'You can send to $maxRecipients friends at a time.';
+          _error = tr('You can send to {maxRecipients} friends at a time.', {'maxRecipients': maxRecipients});
         } else {
           _selected.add(p.userId);
         }
@@ -115,7 +116,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
         setState(() {
           _sending = false;
           _error = _storyPosted && _selected.isNotEmpty
-              ? "It's on your story, but the bite didn't send. ${e.message}"
+              ? tr("It's on your story, but the bite didn't send. {v1}", {'v1': e.message})
               : e.message;
         });
       }
@@ -125,8 +126,8 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
   String get _label {
     final n = _selected.length;
     final friends = '$n ${n == 1 ? 'friend' : 'friends'}';
-    if (_story) return n == 0 ? 'Add to your story' : 'Share to story and $friends';
-    return n == 0 ? 'Pick who gets it' : 'Send to $friends';
+    if (_story) return n == 0 ? tr('Add to your story') : tr('Share to story and {friends}', {'friends': friends});
+    return n == 0 ? tr('Pick who gets it') : tr('Send to {friends}', {'friends': friends});
   }
 
   @override
@@ -138,7 +139,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
       backgroundColor: TrackerColors.background,
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
-        middle: Text('Send a bite', style: AppType.headline()),
+        middle: Text(tr('Send a bite'), style: AppType.headline()),
         border: Border(bottom: BorderSide(color: TrackerColors.border)),
       ),
       child: SafeArea(
@@ -161,7 +162,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                   const SizedBox(height: AppSpacing.md),
                   CupertinoTextField(
                     controller: _caption,
-                    placeholder: 'Add a caption…',
+                    placeholder: tr('Add a caption…'),
                     maxLength: 120,
                     maxLines: 2,
                     minLines: 1,
@@ -175,7 +176,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  Text('Share to', style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
+                  Text(tr('Share to'), style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
                   const SizedBox(height: AppSpacing.sm),
                   _StoryChoice(
                     selected: _story,
@@ -189,12 +190,12 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                   ),
                   if (friends.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.sm),
-                    Text('Send as a bite', style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
+                    Text(tr('Send as a bite'), style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
                     const SizedBox(height: AppSpacing.sm),
                   ],
                   if (friends.isEmpty)
                     Text(
-                      'Add a friend first, then you can send them bites.',
+                      tr('Add a friend first, then you can send them bites.'),
                       style: AppType.body(color: TrackerColors.textSecondary),
                     )
                   else
@@ -271,9 +272,9 @@ class _StoryChoice extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Your story', style: AppType.body(size: 15)),
+                    Text(tr('Your story'), style: AppType.body(size: 15)),
                     Text(
-                      'All your friends can see it for 24 hours',
+                      tr('All your friends can see it for 24 hours'),
                       style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5),
                     ),
                   ],

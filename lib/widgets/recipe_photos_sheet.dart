@@ -13,6 +13,7 @@ import 'app_dialog.dart';
 import 'glass.dart';
 import 'pressable.dart';
 import 'recipe_gallery.dart';
+import '../l10n/app_strings.dart';
 
 const maxRecipeSlides = 5;
 
@@ -65,15 +66,15 @@ class _RecipePhotosSheetState extends ConsumerState<RecipePhotosSheet> {
     final choice = await showCupertinoModalPopup<String>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: Text(position == 0 ? 'Cover photo' : 'Slide $position'),
-        message: const Text('Only you and the friends who can open this recipe will see it.'),
+        title: Text(position == 0 ? tr('Cover photo') : tr('Slide {position}', {'position': position})),
+        message: Text(tr('Only you and the friends who can open this recipe will see it.')),
         actions: [
-          CupertinoActionSheetAction(key: const ValueKey('photo_camera'), onPressed: () => Navigator.pop(context, 'camera'), child: const Text('Take a photo')),
-          CupertinoActionSheetAction(key: const ValueKey('photo_library'), onPressed: () => Navigator.pop(context, 'library'), child: const Text('Choose from library')),
+          CupertinoActionSheetAction(key: const ValueKey('photo_camera'), onPressed: () => Navigator.pop(context, 'camera'), child: Text(tr('Take a photo'))),
+          CupertinoActionSheetAction(key: const ValueKey('photo_library'), onPressed: () => Navigator.pop(context, 'library'), child: Text(tr('Choose from library'))),
           if (has)
-            CupertinoActionSheetAction(key: const ValueKey('photo_remove'), isDestructiveAction: true, onPressed: () => Navigator.pop(context, 'remove'), child: const Text('Remove photo')),
+            CupertinoActionSheetAction(key: const ValueKey('photo_remove'), isDestructiveAction: true, onPressed: () => Navigator.pop(context, 'remove'), child: Text(tr('Remove photo'))),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
       ),
     );
     if (choice == null || !mounted) return;
@@ -84,7 +85,7 @@ class _RecipePhotosSheetState extends ConsumerState<RecipePhotosSheet> {
       if (!mounted) return;
       if (error == null) await _refresh();
       setState(() => _busy = null);
-      if (error != null) await _tell("Couldn't remove it", error);
+      if (error != null) await _tell(tr("Couldn't remove it"), error);
       return;
     }
     final source = choice == 'camera' ? ImageSource.camera : ImageSource.gallery;
@@ -99,7 +100,7 @@ class _RecipePhotosSheetState extends ConsumerState<RecipePhotosSheet> {
     }
     if (!mounted) return;
     setState(() => _busy = null);
-    if (error != null) await _tell("Couldn't save that photo", error);
+    if (error != null) await _tell(tr("Couldn't save that photo"), error);
   }
 
   Future<Uint8List?> _pick(ImageSource source) async {
@@ -107,8 +108,8 @@ class _RecipePhotosSheetState extends ConsumerState<RecipePhotosSheet> {
       return await ref.read(recipePhotoPickerProvider)(source);
     } catch (_) {
       await _tell(
-        source == ImageSource.camera ? "Couldn't open the camera" : "Couldn't open your photos",
-        'Allow access in Settings, then try again.',
+        source == ImageSource.camera ? tr("Couldn't open the camera") : tr("Couldn't open your photos"),
+        tr('Allow access in Settings, then try again.'),
       );
       return null;
     }
@@ -120,10 +121,10 @@ class _RecipePhotosSheetState extends ConsumerState<RecipePhotosSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Photos', style: AppType.title()),
+          Text(tr('Photos'), style: AppType.title()),
           const SizedBox(height: 4),
           Text(
-            'A cover, then up to $maxRecipeSlides slides: the ingredients, the steps, the finished dish.',
+            tr('A cover, then up to {maxRecipeSlides} slides: the ingredients, the steps, the finished dish.', {'maxRecipeSlides': maxRecipeSlides}),
             style: AppType.caption(size: 12),
           ),
           const SizedBox(height: 14),
@@ -134,7 +135,7 @@ class _RecipePhotosSheetState extends ConsumerState<RecipePhotosSheet> {
               for (var position = 0; position <= maxRecipeSlides; position++)
                 _Slot(
                   key: ValueKey('photo_slot_$position'),
-                  label: position == 0 ? 'Cover' : '$position',
+                  label: position == 0 ? tr('Cover') : '$position',
                   url: _urlAt(position),
                   busy: _busy == position,
                   onTap: () => _slot(position),

@@ -10,6 +10,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'glass.dart';
+import '../l10n/app_strings.dart';
 
 enum TourShape { circle, roundedRect, pill }
 
@@ -330,7 +331,7 @@ class _TourCard extends StatelessWidget {
     return Semantics(
       container: true,
       liveRegion: true,
-      label: 'Step ${index + 1} of $count',
+      label: tr('Step {v1} of {count}', {'v1': index + 1, 'count': count}),
       // Swallow taps on the card so they don't fall through to the scrim.
       child: GestureDetector(
         onTap: () {},
@@ -379,7 +380,7 @@ class _TourCard extends StatelessWidget {
                     const Spacer(),
                     if (!isLast)
                       AppButton(
-                        label: 'Skip',
+                        label: tr('Skip'),
                         style: AppButtonStyle.quiet,
                         expand: false,
                         height: 40,
@@ -387,7 +388,7 @@ class _TourCard extends StatelessWidget {
                       ),
                     const SizedBox(width: AppSpacing.xs),
                     AppButton(
-                      label: isLast ? 'Got it' : 'Next',
+                      label: isLast ? tr('Got it') : tr('Next'),
                       expand: false,
                       height: 40,
                       onPressed: onNext,

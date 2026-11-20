@@ -15,6 +15,7 @@ import '../widgets/recipe_gallery.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/shimmer.dart';
 import 'new_recipe_screen.dart';
+import '../l10n/app_strings.dart';
 
 /// "Mine": the person's own recipes. Private; log one in a tap.
 class MyRecipesView extends ConsumerStatefulWidget {
@@ -42,23 +43,23 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
       context: context,
       builder: (context) => CupertinoActionSheet(
         title: Text(c.name),
-        message: c.items.isEmpty ? const Text('Nothing here yet. Add recipes from a recipe’s Collections button.') : null,
+        message: c.items.isEmpty ? Text(tr('Nothing here yet. Add recipes from a recipe’s Collections button.')) : null,
         actions: [
           for (final i in c.items)
             CupertinoActionSheetAction(
               key: ValueKey('collection_item_${i.id}'),
               onPressed: () => Navigator.pop(context, i),
-              child: Text(i.mine ? i.title : '${i.title} (from a friend)'),
+              child: Text(i.mine ? i.title : tr('{title} (from a friend)', {'title': i.title})),
             ),
           if (!c.isDefault)
             CupertinoActionSheetAction(
               key: const ValueKey('delete_collection'),
               isDestructiveAction: true,
               onPressed: () => Navigator.pop(context, 'delete'),
-              child: const Text('Delete this collection'),
+              child: Text(tr('Delete this collection')),
             ),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Close'))),
       ),
     );
     if (!mounted || picked == null) return;
@@ -67,7 +68,7 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
     } else {
       final error = await ref.read(houseRecipesProvider.notifier).deleteCollection(c.id);
       if (error != null && mounted) {
-        await showAppDialog(context: context, title: "Couldn't delete it", message: error, confirmLabel: 'OK');
+        await showAppDialog(context: context, title: tr("Couldn't delete it"), message: error, confirmLabel: 'OK');
       }
     }
   }
@@ -85,7 +86,7 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
       children: [
-        AppButton(key: const ValueKey('new_recipe'), label: 'New recipe', icon: CupertinoIcons.add, onPressed: _create),
+        AppButton(key: const ValueKey('new_recipe'), label: tr('New recipe'), icon: CupertinoIcons.add, onPressed: _create),
         const SizedBox(height: AppSpacing.lg),
         if (state.loading && state.recipes.isEmpty)
           const SkeletonRows(count: 3)
@@ -94,27 +95,26 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
             children: [
               AppEmptyState(
                 icon: CupertinoIcons.wifi_exclamationmark,
-                title: "Couldn't load your recipes",
-                message: 'Check your connection and try again.',
+                title: tr("Couldn't load your recipes"),
+                message: tr('Check your connection and try again.'),
                 accent: TrackerColors.error,
               ),
               CupertinoButton(
                 key: const ValueKey('retry_recipes'),
                 onPressed: () => ref.read(houseRecipesProvider.notifier).load(),
-                child: const Text('Try again'),
+                child: Text(tr('Try again')),
               ),
             ],
           )
         else if (state.recipes.isEmpty)
-          const AppEmptyState(
+          AppEmptyState(
             icon: CupertinoIcons.book,
-            title: 'Your recipes live here',
-            message: 'Save the dishes you cook often, then log them in one tap. '
-                'You can also save a meal you’ve already logged from Today.',
+            title: tr('Your recipes live here'),
+            message: tr('Save the dishes you cook often, then log them in one tap. You can also save a meal you’ve already logged from Today.'),
           )
         else ...[
           if (state.highlights.isNotEmpty) ...[
-            SectionHeader(label: 'Highlights'),
+            SectionHeader(label: tr('Highlights')),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
               height: 96,
@@ -133,7 +133,7 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
             const SizedBox(height: AppSpacing.lg),
           ],
           if (state.collections.isNotEmpty) ...[
-            SectionHeader(label: 'Collections'),
+            SectionHeader(label: tr('Collections')),
             const SizedBox(height: AppSpacing.md),
             for (final c in state.collections)
               Padding(
@@ -142,7 +142,7 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
               ),
             const SizedBox(height: AppSpacing.lg),
           ],
-          SectionHeader(label: 'All recipes'),
+          SectionHeader(label: tr('All recipes')),
           const SizedBox(height: AppSpacing.md),
           for (final r in state.recipes)
             Padding(
@@ -185,7 +185,7 @@ class _Row extends StatelessWidget {
                   Text(recipe.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 15)),
                   const SizedBox(height: 4),
                   Text(
-                    '${recipe.calories} kcal per serving${recipe.estimated ? ' · estimated' : ''}',
+                    recipe.estimated ? tr('{n} kcal per serving · estimated', {'n': recipe.calories}) : tr('{n} kcal per serving', {'n': recipe.calories}),
                     style: AppType.caption(size: 12),
                   ),
                 ],

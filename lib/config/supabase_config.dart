@@ -38,11 +38,7 @@ String? validateKeyPair({required String url, required String anonKey}) {
   final key = anonKey.trim();
 
   if (key.isEmpty) {
-    return 'SUPABASE_ANON_KEY was not supplied at build time.\n\n'
-        'Rebuild with:\n'
-        '--dart-define=SUPABASE_URL=$url\n'
-        '--dart-define=SUPABASE_ANON_KEY=<your anon key>\n\n'
-        'Project Settings > API Keys in the Supabase dashboard.';
+    return 'SUPABASE_ANON_KEY was not supplied at build time.\n\nRebuild with:\n--dart-define=SUPABASE_URL=$url\n--dart-define=SUPABASE_ANON_KEY=<your anon key>\n\nProject Settings > API Keys in the Supabase dashboard.';
   }
 
   final urlRef = projectRefFromUrl(url);
@@ -58,10 +54,7 @@ String? validateKeyPair({required String url, required String anonKey}) {
   }
 
   if (keyRef != urlRef) {
-    return 'The anon key belongs to project "$keyRef" but SUPABASE_URL points '
-        'at "$urlRef".\n\n'
-        'Supabase rejects this pairing with "Invalid API key". Use the key '
-        'from the same project as the URL.';
+    return 'The anon key belongs to project "$keyRef" but SUPABASE_URL points at "$urlRef".\n\nSupabase rejects this pairing with "Invalid API key". Use the key from the same project as the URL.';
   }
   return null;
 }

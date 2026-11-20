@@ -78,7 +78,7 @@ void main() {
     final n = build();
     await _settle();
     n.start(photo, MealType.dinner);
-    calls.single.completeError(const PhotoAnalysisException(PhotoEstimationService.tooLargeMessage));
+    calls.single.completeError(PhotoAnalysisException(PhotoEstimationService.tooLargeMessage));
     await _settle();
     expect(n.state.single.status, ScanStatus.failed);
     expect(n.state.single.message, PhotoEstimationService.tooLargeMessage);
@@ -90,7 +90,7 @@ void main() {
     final n = build();
     await _settle();
     n.start(photo, MealType.breakfast);
-    calls[0].completeError(const PhotoAnalysisException(PhotoEstimationService.timeoutMessage, retryable: true));
+    calls[0].completeError(PhotoAnalysisException(PhotoEstimationService.timeoutMessage, retryable: true));
     await _settle();
     expect(calls, hasLength(2));
     expect(n.state.single.status, ScanStatus.scanning);
@@ -103,7 +103,7 @@ void main() {
     final n = build(delays: const [Duration(milliseconds: 5)]);
     await _settle();
     n.start(photo, MealType.snack);
-    const timeout = PhotoAnalysisException(PhotoEstimationService.timeoutMessage, retryable: true);
+    final timeout = PhotoAnalysisException(PhotoEstimationService.timeoutMessage, retryable: true);
     calls[0].completeError(timeout);
     await _settle();
     calls[1].completeError(timeout);

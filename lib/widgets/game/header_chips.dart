@@ -9,6 +9,7 @@ import '../../theme/tracker_colors.dart';
 import '../glass.dart';
 import '../pressable.dart';
 import 'flame_style.dart';
+import '../../l10n/app_strings.dart';
 
 /// Header pill: the streak flame (tinted by tier), the day count and any
 /// streak freezes held. Dims when today hasn't been logged yet.
@@ -23,14 +24,15 @@ class FlameStreakPill extends StatelessWidget {
     final days = streak.current;
     final dim = days == 0 || streak.atRisk;
     final style = FlameStyle.of(streak.tier, dim: days == 0);
-    final label = days == 0 ? 'Start a streak' : '$days day${days == 1 ? '' : 's'}';
+    final label = days == 0 ? tr('Start a streak') : (days == 1 ? tr('1 day') : tr('{n} days', {'n': days}));
 
     return Semantics(
       button: true,
       label: days == 0
-          ? 'No streak yet. Open progress.'
-          : '$days day streak, ${streak.tier.label}'
-              '${streak.atRisk ? ', log today to keep it' : ''}. Open progress.',
+          ? tr('No streak yet. Open progress.')
+          : streak.atRisk
+              ? tr('{days} day streak, {tier}, log today to keep it. Open progress.', {'days': days, 'tier': tr(streak.tier.label)})
+              : tr('{days} day streak, {tier}. Open progress.', {'days': days, 'tier': tr(streak.tier.label)}),
       child: Pressable(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -96,7 +98,7 @@ class LevelBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Level ${level.level}, ${level.xpIntoLevel} of ${level.xpForLevel} XP. Open progress.',
+      label: tr('Level {v1}, {v2} of {v3} XP. Open progress.', {'v1': level.level, 'v2': level.xpIntoLevel, 'v3': level.xpForLevel}),
       child: Pressable(
         onTap: onTap,
         borderRadius: BorderRadius.circular(size),

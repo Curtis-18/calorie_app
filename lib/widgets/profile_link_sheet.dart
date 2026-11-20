@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'glass.dart';
+import '../l10n/app_strings.dart';
 
 /// What opening someone's profile link shows: who they are and whether to add
 /// them. Nothing is sent until the person taps Add.
@@ -73,10 +74,10 @@ class _ProfileLinkContentState extends State<ProfileLinkContent> {
       setState(() {
         _stage = _Stage.done;
         _message = switch (result.outcome) {
-          RequestOutcome.accepted => 'You and @${person.username} are now friends!',
-          RequestOutcome.alreadyFriends => "You're already friends with @${person.username}.",
-          RequestOutcome.alreadySent => 'You already asked @${person.username}. Waiting for them.',
-          RequestOutcome.sent => 'Request sent to @${person.username}.',
+          RequestOutcome.accepted => tr('You and @{v1} are now friends!', {'v1': person.username}),
+          RequestOutcome.alreadyFriends => tr("You're already friends with @{v1}.", {'v1': person.username}),
+          RequestOutcome.alreadySent => tr('You already asked @{v1}. Waiting for them.', {'v1': person.username}),
+          RequestOutcome.sent => tr('Request sent to @{v1}.', {'v1': person.username}),
         };
       });
     } on FriendsException catch (e) {
@@ -99,22 +100,22 @@ class _ProfileLinkContentState extends State<ProfileLinkContent> {
     switch (_stage) {
       case _Stage.looking:
         header = const CupertinoActivityIndicator();
-        line = 'Finding @$name…';
+        line = tr('Finding @{name}…', {'name': name});
       case _Stage.self:
         header = Icon(CupertinoIcons.person_crop_circle, size: 56, color: TrackerColors.textTertiary);
-        line = "That's your own link. Share it with friends so they can add you.";
+        line = tr("That's your own link. Share it with friends so they can add you.");
       case _Stage.missing:
         header = Icon(CupertinoIcons.person_crop_circle_badge_xmark, size: 56, color: TrackerColors.textTertiary);
-        line = "We couldn't find @$name. The link may be out of date, or they may have changed their username.";
+        line = tr("We couldn't find @{name}. The link may be out of date, or they may have changed their username.", {'name': name});
       default:
         header = FriendAvatar(username: person?.username ?? name, size: 72, imageUrl: person?.avatarUrl);
         line = switch (_stage) {
           _Stage.done || _Stage.failed => _message,
           _ => switch (relation) {
-              Relation.friend => "You're already friends.",
-              Relation.requested => 'You already asked them. Waiting for their answer.',
-              Relation.wantsYou => 'They asked to be your friend.',
-              Relation.none => 'Add them to swap food bites and build a streak.',
+              Relation.friend => tr("You're already friends."),
+              Relation.requested => tr('You already asked them. Waiting for their answer.'),
+              Relation.wantsYou => tr('They asked to be your friend.'),
+              Relation.none => tr('Add them to swap food bites and build a streak.'),
             },
         };
     }
@@ -144,19 +145,19 @@ class _ProfileLinkContentState extends State<ProfileLinkContent> {
         if (showAdd)
           AppButton(
             key: const ValueKey('profile_link_add'),
-            label: _stage == _Stage.sending ? 'Sending…' : (relation == Relation.wantsYou ? 'Accept' : 'Add friend'),
+            label: _stage == _Stage.sending ? tr('Sending…') : (relation == Relation.wantsYou ? tr('Accept') : tr('Add friend')),
             icon: CupertinoIcons.person_add_solid,
             onPressed: _stage == _Stage.sending ? null : _add,
           )
         else
           AppButton.glass(
             key: const ValueKey('profile_link_close'),
-            label: _stage == _Stage.done ? 'Done' : 'Close',
+            label: _stage == _Stage.done ? tr('Done') : tr('Close'),
             onPressed: () => Navigator.of(context).pop(),
           ),
         if (showAdd) ...[
           const SizedBox(height: AppSpacing.sm),
-          AppButton.glass(label: 'Not now', onPressed: () => Navigator.of(context).pop()),
+          AppButton.glass(label: tr('Not now'), onPressed: () => Navigator.of(context).pop()),
         ],
       ],
     );

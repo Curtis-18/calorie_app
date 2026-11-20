@@ -16,6 +16,7 @@ import 'screens/onboarding_screen.dart';
 import 'theme/app_shapes.dart';
 import 'theme/tracker_colors.dart';
 import 'widgets/glass.dart';
+import 'widgets/language_scope.dart';
 import 'widgets/splash.dart';
 import 'widgets/theme_host.dart';
 
@@ -75,51 +76,30 @@ Future<void> main() async {
   ));
 }
 
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key, this.configError});
 
   final String? configError;
 
   @override
-  ConsumerState<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  /// The device's language list changed (in the phone's settings): follow it
-  /// while the choice here is "automatic".
-  @override
-  void didChangeLocales(List<Locale>? locales) => ref.invalidate(activeLanguageProvider);
-
-  @override
   Widget build(BuildContext context) {
-    final configError = widget.configError;
-    final language = ref.watch(activeLanguageProvider);
-    return ThemeHost(
-      builder: (context, theme) => CupertinoApp(
-        title: 'NuStreak',
-        theme: theme,
-        locale: Locale(language),
-        supportedLocales: [for (final l in supportedLanguages) Locale(l.code)],
-        localizationsDelegates: appLocalizationsDelegates,
-        home: SplashGate(
-          child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError),
+    final configError = this.configError;
+    return LanguageScope(
+      builder: (context, locale) => ThemeHost(
+        builder: (context, theme) => CupertinoApp(
+          title: 'NuStreak',
+          theme: theme,
+          locale: locale,
+          supportedLocales: [for (final l in supportedLanguages) Locale(l.code)],
+          localizationsDelegates: appLocalizationsDelegates,
+          home: SplashGate(
+            child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError),
+          ),
+          routes: {
+            '/onboarding': (context) => const OnboardingScreen(),
+            '/dashboard': (context) => const MainShell(),
+          },
         ),
-        routes: {
-          '/onboarding': (context) => const OnboardingScreen(),
-          '/dashboard': (context) => const MainShell(),
-        },
       ),
     );
   }

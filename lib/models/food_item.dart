@@ -1,4 +1,5 @@
 import 'nutrients.dart';
+import '../l10n/app_strings.dart';
 
 /// `data_type` the backend sends for the barcode fallback.
 const openFoodFactsDataType = 'Open Food Facts';
@@ -33,7 +34,7 @@ class FoodItem {
   /// One result from the backend's `GET /foods/search`.
   factory FoodItem.fromApiJson(Map<String, dynamic> json) => FoodItem(
         fdcId: (json['fdc_id'] as num).toInt(),
-        description: json['description'] as String? ?? 'Unknown food',
+        description: json['description'] as String? ?? tr('Unknown food'),
         dataType: json['data_type'] as String?,
         caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble(),
         proteinPer100g: (json['protein_g_per_100g'] as num?)?.toDouble(),

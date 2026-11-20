@@ -5,6 +5,7 @@ import '../config/api_config.dart';
 import '../models/detected_food.dart';
 import 'food_search_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_strings.dart';
 
 /// A photo-analysis failure with a message that is safe to show the user.
 ///
@@ -45,17 +46,14 @@ class PhotoEstimationService {
   /// retries. At 25 s a cold start alone was enough to fail the scan.
   final Duration timeout;
 
-  static const signedOutMessage = "You've been signed out. Please log in again.";
-  static const sessionExpiredMessage = 'Your session has expired. Please log in again.';
-  static const timeoutMessage =
-      'The server is taking too long to respond. It may be waking up, so try again in a moment.';
-  static const networkMessage = "Couldn't reach the server. Check your connection and try again.";
-  static const tooLargeMessage = 'That photo is too large. Try again with a smaller photo.';
-  static const unreadableMessage = "We couldn't read that photo. Try taking it again.";
-  static const serviceBusyMessage =
-      'Meal analysis is busy right now. Please try again in a moment.';
-  static const badResponseMessage =
-      'Got an unexpected response from the server. Please try again.';
+  static String get signedOutMessage => tr("You've been signed out. Please log in again.");
+  static String get sessionExpiredMessage => tr('Your session has expired. Please log in again.');
+  static String get timeoutMessage => tr('The server is taking too long to respond. It may be waking up, so try again in a moment.');
+  static String get networkMessage => tr("Couldn't reach the server. Check your connection and try again.");
+  static String get tooLargeMessage => tr('That photo is too large. Try again with a smaller photo.');
+  static String get unreadableMessage => tr("We couldn't read that photo. Try taking it again.");
+  static String get serviceBusyMessage => tr('Meal analysis is busy right now. Please try again in a moment.');
+  static String get badResponseMessage => tr('Got an unexpected response from the server. Please try again.');
 
   Future<String?> _getFreshToken() async {
     final auth = Supabase.instance.client.auth;
@@ -77,9 +75,9 @@ class PhotoEstimationService {
     try {
       token = await (_tokenProvider ?? _getFreshToken)();
     } on AuthException {
-      throw const PhotoAnalysisException(sessionExpiredMessage);
+      throw PhotoAnalysisException(sessionExpiredMessage);
     }
-    if (token == null) throw const PhotoAnalysisException(signedOutMessage);
+    if (token == null) throw PhotoAnalysisException(signedOutMessage);
 
     final client = _client ?? http.Client();
     final http.Response response;
@@ -101,10 +99,10 @@ class PhotoEstimationService {
           )
           .timeout(timeout);
     } on TimeoutException {
-      throw const PhotoAnalysisException(timeoutMessage, retryable: true);
+      throw PhotoAnalysisException(timeoutMessage, retryable: true);
     } on http.ClientException {
       // Covers no connection, DNS failure and (on web) a CORS rejection.
-      throw const PhotoAnalysisException(networkMessage, retryable: true);
+      throw PhotoAnalysisException(networkMessage, retryable: true);
     } finally {
       if (_client == null) client.close();
     }
@@ -125,7 +123,7 @@ class PhotoEstimationService {
       // backend only sends name + grams; then do the lookups here as before.
       enrichedByServer = data.every((item) => item.containsKey('matched'));
     } catch (_) {
-      throw const PhotoAnalysisException(badResponseMessage);
+      throw PhotoAnalysisException(badResponseMessage);
     }
 
     if (!enrichedByServer && foods.isNotEmpty) {
@@ -149,13 +147,13 @@ class PhotoEstimationService {
       case 422:
         return unreadableMessage;
       case 429:
-        return "You've scanned a lot of photos. Try again in a little while.";
+        return tr("You've scanned a lot of photos. Try again in a little while.");
       case 502:
       case 503:
       case 504:
         return serviceBusyMessage;
       default:
-        return 'Photo analysis failed (error $status). Please try again.';
+        return tr('Photo analysis failed (error {status}). Please try again.', {'status': status});
     }
   }
 }

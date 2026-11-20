@@ -7,6 +7,7 @@ import '../../theme/app_typography.dart';
 import '../../theme/tracker_colors.dart';
 import '../app_button.dart';
 import '../glass.dart';
+import '../../l10n/app_strings.dart';
 
 /// The payoff at the end of onboarding: the plan that was just worked out,
 /// in plain words. [maintenanceNotice] explains why a weight-loss goal came
@@ -48,27 +49,27 @@ class PlanReady extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text('Your plan is ready', textAlign: TextAlign.center, style: AppType.title()),
+        Text(tr('Your plan is ready'), textAlign: TextAlign.center, style: AppType.title()),
         const SizedBox(height: AppSpacing.lg),
         Text(
           NumberFormat.decimalPattern().format(calories),
           textAlign: TextAlign.center,
           style: AppType.display(size: 58, color: TrackerColors.accentEndText),
         ),
-        Text('calories a day', textAlign: TextAlign.center, style: AppType.callout().copyWith(fontSize: 15)),
+        Text(tr('calories a day'), textAlign: TextAlign.center, style: AppType.callout().copyWith(fontSize: 15)),
         const SizedBox(height: AppSpacing.xl),
         Row(
           children: [
             Expanded(
-              child: _Macro(label: 'Protein', grams: profile.proteinTargetG, color: TrackerColors.macroProtein),
+              child: _Macro(label: tr('Protein'), grams: profile.proteinTargetG, color: TrackerColors.macroProtein),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: _Macro(label: 'Carbs', grams: profile.carbsTargetG, color: TrackerColors.macroCarbs),
+              child: _Macro(label: tr('Carbs'), grams: profile.carbsTargetG, color: TrackerColors.macroCarbs),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: _Macro(label: 'Fat', grams: profile.fatTargetG, color: TrackerColors.macroFat),
+              child: _Macro(label: tr('Fat'), grams: profile.fatTargetG, color: TrackerColors.macroFat),
             ),
           ],
         ),
@@ -86,12 +87,12 @@ class PlanReady extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
         Text(
-          "It's a starting estimate. Log your meals for a week or two and we'll help you fine-tune it.",
+          tr("It's a starting estimate. Log your meals for a week or two and we'll help you fine-tune it."),
           textAlign: TextAlign.center,
           style: AppType.callout(),
         ),
         const SizedBox(height: AppSpacing.xl),
-        AppButton(label: "Let's go", onPressed: onDone),
+        AppButton(label: tr("Let's go"), onPressed: onDone),
       ],
     );
   }

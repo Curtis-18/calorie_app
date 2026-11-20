@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 /// Username rules, mirroring the backend (`app/services/username_service.py`)
 /// so the picker can say what's wrong while the user types. The server is
 /// still the authority.
@@ -16,16 +17,16 @@ final _allowed = RegExp(r'^[A-Za-z][A-Za-z0-9_]*$');
 String? validateUsername(String raw) {
   final name = raw.trim();
   if (name.length < usernameMinLength) {
-    return 'Usernames need at least $usernameMinLength characters.';
+    return tr('Usernames need at least {usernameMinLength} characters.', {'usernameMinLength': usernameMinLength});
   }
   if (name.length > usernameMaxLength) {
-    return 'Usernames can be at most $usernameMaxLength characters.';
+    return tr('Usernames can be at most {usernameMaxLength} characters.', {'usernameMaxLength': usernameMaxLength});
   }
-  if (!RegExp(r'^[A-Za-z]').hasMatch(name)) return 'Usernames must start with a letter.';
-  if (!_allowed.hasMatch(name)) return 'Use only letters, numbers and underscores.';
+  if (!RegExp(r'^[A-Za-z]').hasMatch(name)) return tr('Usernames must start with a letter.');
+  if (!_allowed.hasMatch(name)) return tr('Use only letters, numbers and underscores.');
   if (name.endsWith('_') || name.contains('__')) {
-    return "Underscores can't be doubled or go at the end.";
+    return tr("Underscores can't be doubled or go at the end.");
   }
-  if (_reserved.contains(name.toLowerCase())) return "That name isn't available.";
+  if (_reserved.contains(name.toLowerCase())) return tr("That name isn't available.");
   return null;
 }

@@ -25,9 +25,14 @@ class AppStrings {
 
   final String code;
 
+  /// The language on screen, for text built where there is no `BuildContext`
+  /// (services, models, providers). Kept up to date by [LanguageScope].
+  static String active = fallbackLanguage;
+
   static const delegate = _AppStringsDelegate();
 
-  static AppStrings? maybeOf(BuildContext context) => Localizations.of<AppStrings>(context, AppStrings);
+  static AppStrings? maybeOf(BuildContext context) =>
+      Localizations.of<AppStrings>(context, AppStrings);
 
   String t(String english, [Map<String, Object?>? args]) {
     var text = translationTables[code]?[english] ?? english;
@@ -45,7 +50,11 @@ class _AppStringsDelegate extends LocalizationsDelegate<AppStrings> {
   bool isSupported(Locale locale) => isSupportedLanguage(locale.languageCode);
 
   @override
-  Future<AppStrings> load(Locale locale) async => AppStrings(isSupportedLanguage(locale.languageCode) ? locale.languageCode : fallbackLanguage);
+  Future<AppStrings> load(Locale locale) async => AppStrings(
+    isSupportedLanguage(locale.languageCode)
+        ? locale.languageCode
+        : fallbackLanguage,
+  );
 
   @override
   bool shouldReload(_AppStringsDelegate old) => false;
@@ -56,5 +65,16 @@ extension AppTranslate on BuildContext {
   /// widget rebuilds when it changes. Without translations in the tree
   /// (a screen under test) it is just [english].
   String tr(String english, [Map<String, Object?>? args]) =>
-      (AppStrings.maybeOf(this) ?? const AppStrings(fallbackLanguage)).t(english, args);
+      (AppStrings.maybeOf(this) ?? const AppStrings(fallbackLanguage)).t(
+        english,
+        args,
+      );
 }
+
+/// [english] in the language on screen, from anywhere (no context needed).
+/// Widgets use it in `build`; the whole app rebuilds when the language
+/// changes, so nothing stays in the old language. Text that is stored (a
+/// constant, a list built once) must keep the English and be passed through
+/// here when it is shown.
+String tr(String english, [Map<String, Object?>? args]) =>
+    AppStrings(AppStrings.active).t(english, args);

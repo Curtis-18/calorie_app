@@ -21,7 +21,8 @@ const supportedLanguages = <AppLanguage>[
 
 const fallbackLanguage = 'en';
 
-bool isSupportedLanguage(String? code) => supportedLanguages.any((l) => l.code == code);
+bool isSupportedLanguage(String? code) =>
+    supportedLanguages.any((l) => l.code == code);
 
 String? languageName(String? code) {
   for (final l in supportedLanguages) {

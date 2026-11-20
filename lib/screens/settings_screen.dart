@@ -121,7 +121,7 @@ class SettingsView extends ConsumerWidget {
   }
 
   String _languageValue(BuildContext context, String? saved, String active) {
-    final name = languageName(active) ?? 'English';
+    final name = languageName(active) ?? tr('English');
     return saved == null ? '${context.tr('Automatic')} · $name' : name;
   }
 

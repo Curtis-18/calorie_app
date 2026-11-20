@@ -14,6 +14,7 @@ import '../pressable.dart';
 import '../share/share_sheet.dart';
 import 'flame_style.dart';
 import 'header_chips.dart';
+import '../../l10n/app_strings.dart';
 
 Future<void> showProgressSheet(BuildContext context) {
   return showAppSheet<void>(
@@ -35,11 +36,11 @@ class _ProgressSheetContent extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Your progress', style: AppType.title())),
+              Expanded(child: Text(tr('Your progress'), style: AppType.title())),
               if (progress != null)
                 Semantics(
                   button: true,
-                  label: 'Share progress',
+                  label: tr('Share progress'),
                   child: AppIconButton(
                     icon: CupertinoIcons.share,
                     size: 36,
@@ -49,31 +50,31 @@ class _ProgressSheetContent extends ConsumerWidget {
                 ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           if (progress == null)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 60),
               child: Center(child: PulsingRing(size: 40, strokeWidth: 4)),
             )
           else ...[
             StreakHeroCard(streak: progress.streak),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             LevelCard(level: progress.level, todayXp: progress.today.xp),
-            const SizedBox(height: 22),
+            SizedBox(height: 22),
             Row(
               children: [
-                Text('Badges', style: AppType.headline()),
-                const Spacer(),
+                Text(tr('Badges'), style: AppType.headline()),
+                Spacer(),
                 Text(
                   '${progress.unlockedCount} / ${progress.achievements.length}',
                   style: AppType.caption(color: TrackerColors.textTertiary),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            SizedBox(height: AppSpacing.md),
             BadgeGrid(achievements: progress.achievements),
-            const SizedBox(height: 22),
-            const _HowToEarn(),
+            SizedBox(height: 22),
+            _HowToEarn(),
           ],
         ],
       ),
@@ -123,14 +124,16 @@ class StreakHeroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      streak.current == 0 ? 'No streak yet' : '${streak.current}-day streak',
+                      streak.current == 0 ? tr('No streak yet') : tr('{n}-day streak', {'n': streak.current}),
                       style: AppType.display(size: 24),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       streak.current == 0
-                          ? 'Log a meal to light your first flame.'
-                          : '${streak.tier.label} · best ${streak.best} day${streak.best == 1 ? '' : 's'}',
+                          ? tr('Log a meal to light your first flame.')
+                          : streak.best == 1
+                              ? tr('{tier} · best 1 day', {'tier': tr(streak.tier.label)})
+                              : tr('{tier} · best {n} days', {'tier': tr(streak.tier.label), 'n': streak.best}),
                       style: AppType.callout(color: streak.current == 0 ? TrackerColors.textSecondary : style.color),
                     ),
                   ],
@@ -144,8 +147,8 @@ class StreakHeroCard extends StatelessWidget {
               icon: CupertinoIcons.clock_fill,
               color: TrackerColors.accentEndText,
               text: streak.freezes > 0
-                  ? "Log something today to grow your streak. If you can't, a freeze will save it."
-                  : 'Log something today to keep your streak alive.',
+                  ? tr("Log something today to grow your streak. If you can't, a freeze will save it.")
+                  : tr('Log something today to keep your streak alive.'),
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
@@ -164,7 +167,7 @@ class StreakHeroCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Streak freezes cover a missed day. You earn one every 7 days.',
+                  tr('Streak freezes cover a missed day. You earn one every 7 days.'),
                   style: AppType.caption(color: TrackerColors.textSecondary),
                 ),
               ),
@@ -173,7 +176,9 @@ class StreakHeroCard extends StatelessWidget {
           if (next != null && streak.current > 0) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
-              '$daysToNext more day${daysToNext == 1 ? '' : 's'} to ${next.label}',
+              daysToNext == 1
+                  ? tr('1 more day to {tier}', {'tier': tr(next.label)})
+                  : tr('{n} more days to {tier}', {'n': daysToNext, 'tier': tr(next.label)}),
               style: AppType.caption(color: TrackerColors.textTertiary),
             ),
           ],
@@ -231,10 +236,10 @@ class LevelCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Level ${level.level}', style: AppType.headline()),
+                    Text(tr('Level {v1}', {'v1': level.level}), style: AppType.headline()),
                     const SizedBox(height: 2),
                     Text(
-                      '${level.xp} XP total',
+                      tr('{xp} XP total', {'xp': level.xp}),
                       style: AppType.caption(color: TrackerColors.textTertiary),
                     ),
                   ],
@@ -248,7 +253,7 @@ class LevelCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: Text(
-                    '+$todayXp today',
+                    tr('+{xp} today', {'xp': todayXp}),
                     style: AppType.caption(color: TrackerColors.accentEndText, size: 12)
                         .copyWith(fontWeight: FontWeight.w800),
                   ),
@@ -259,7 +264,7 @@ class LevelCard extends StatelessWidget {
           XpBar(fraction: level.fraction),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '${level.xpIntoLevel} / ${level.xpForLevel} XP to level ${level.level + 1}',
+            tr('{a} / {b} XP to level {l}', {'a': level.xpIntoLevel, 'b': level.xpForLevel, 'l': level.level + 1}),
             style: AppType.caption(color: TrackerColors.textSecondary),
           ),
         ],
@@ -277,8 +282,8 @@ class BadgeGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const columns = 3;
-        const gap = 12.0;
+        final columns = 3;
+        final gap = 12.0;
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
           spacing: gap,
@@ -300,13 +305,13 @@ class BadgeTile extends StatelessWidget {
   void _explain(BuildContext context) {
     final a = achievement;
     final status = a.unlocked
-        ? (a.unlockedOn != null ? 'Unlocked ${_formatDate(a.unlockedOn!)}.' : 'Unlocked.')
-        : (a.goal > 1 ? 'Progress: ${a.progress} of ${a.goal}.' : 'Not unlocked yet.');
+        ? (a.unlockedOn != null ? tr('Unlocked {v1}.', {'v1': _formatDate(a.unlockedOn!)}) : tr('Unlocked.'))
+        : (a.goal > 1 ? tr('Progress: {v1} of {v2}.', {'v1': a.progress, 'v2': a.goal}) : tr('Not unlocked yet.'));
     showAppDialog(context: context, title: a.title, message: '${a.description}\n\n$status');
   }
 
   static String _formatDate(DateTime d) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
@@ -316,7 +321,7 @@ class BadgeTile extends StatelessWidget {
     const size = 64.0;
     return Semantics(
       button: true,
-      label: '${a.title}, ${a.unlocked ? 'unlocked' : 'locked'}',
+      label: a.unlocked ? tr('{title}, unlocked', {'title': a.title}) : tr('{title}, locked', {'title': a.title}),
       child: Pressable(
         onTap: () => _explain(context),
         borderRadius: AppRadii.buttonAll,
@@ -363,7 +368,7 @@ class BadgeTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               a.title,
               textAlign: TextAlign.center,
@@ -389,13 +394,13 @@ class BadgeTile extends StatelessWidget {
 class _HowToEarn extends StatelessWidget {
   const _HowToEarn();
 
-  static const _rows = [
-    (CupertinoIcons.plus_circle_fill, 'Log a meal', '+10'),
-    (CupertinoIcons.camera_fill, 'Log it with a photo', '+5'),
-    (CupertinoIcons.square_grid_2x2_fill, 'Log all four meals', '+20'),
-    (CupertinoIcons.bolt_fill, 'Hit your protein target', '+20'),
-    (CupertinoIcons.scope, 'Land within 10% of your calories', '+30'),
-    (CupertinoIcons.flame_fill, 'Streak bonus, per day', 'up to +30'),
+  static final _rows = [
+    (CupertinoIcons.plus_circle_fill, tr('Log a meal'), '+10'),
+    (CupertinoIcons.camera_fill, tr('Log it with a photo'), '+5'),
+    (CupertinoIcons.square_grid_2x2_fill, tr('Log all four meals'), '+20'),
+    (CupertinoIcons.bolt_fill, tr('Hit your protein target'), '+20'),
+    (CupertinoIcons.scope, tr('Land within 10% of your calories'), '+30'),
+    (CupertinoIcons.flame_fill, tr('Streak bonus, per day'), 'up to +30'),
   ];
 
   @override

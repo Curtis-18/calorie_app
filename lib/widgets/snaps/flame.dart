@@ -8,6 +8,7 @@ import '../../theme/app_typography.dart';
 import '../../models/progress.dart';
 import '../../theme/tracker_colors.dart';
 import '../game/flame_style.dart';
+import '../../l10n/app_strings.dart';
 
 /// The flame tier a shared streak of [days] has earned: the same tiers as your
 /// own daily streak, so a long streak with a friend burns hotter.
@@ -193,7 +194,7 @@ class StreakBadge extends StatelessWidget {
     final style = FlameStyle.of(tier, dim: !lit);
     final color = style.color;
     return Semantics(
-      label: '$count day streak${lit ? '' : ', not kept yet today'}',
+      label: lit ? tr('{n} day streak', {'n': count}) : tr('{n} day streak, not kept yet today', {'n': count}),
       excludeSemantics: true,
       child: Container(
         key: const ValueKey('streak_badge'),
@@ -394,7 +395,7 @@ class _StreakCelebrationState extends State<_StreakCelebration> with SingleTicke
                       ),
                     ),
                     Text(
-                      'day streak with @${widget.username}',
+                      tr('day streak with @{name}', {'name': widget.username}),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

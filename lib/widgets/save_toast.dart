@@ -4,6 +4,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'glass.dart';
+import '../l10n/app_strings.dart';
 
 enum SaveToastState { initial, loading, success }
 
@@ -63,16 +64,16 @@ class SaveToast extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 isLoading
-                    ? 'Saving…'
+                    ? tr('Saving…')
                     : isSuccess
-                        ? 'Saved'
-                        : 'Unsaved changes',
+                        ? tr('Saved')
+                        : tr('Unsaved changes'),
                 style: AppType.caption(color: TrackerColors.textPrimary, size: 13),
               ),
               if (state == SaveToastState.initial) ...[
                 const SizedBox(width: AppSpacing.md),
                 AppButton(
-                  label: 'Reset',
+                  label: tr('Reset'),
                   style: AppButtonStyle.quiet,
                   expand: false,
                   height: 30,
@@ -80,7 +81,7 @@ class SaveToast extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 AppButton(
-                  label: 'Save',
+                  label: tr('Save'),
                   expand: false,
                   height: 30,
                   onPressed: onSave,

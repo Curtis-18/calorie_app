@@ -21,6 +21,7 @@ import 'pressable.dart';
 import 'recipe_access.dart';
 import 'recipe_gallery.dart';
 import 'recipe_photos_sheet.dart';
+import '../l10n/app_strings.dart';
 
 /// One of the person's recipes: its numbers per serving, what is in it, and
 /// "Log this" with a servings stepper.
@@ -36,8 +37,8 @@ Future<void> openRecipeById(BuildContext context, HouseRecipesNotifier notifier,
   if (recipe == null) {
     await showAppDialog(
       context: context,
-      title: "Can't open this recipe",
-      message: "It may have been unshared or deleted, or you're offline.",
+      title: tr("Can't open this recipe"),
+      message: tr("It may have been unshared or deleted, or you're offline."),
       confirmLabel: 'OK',
     );
     return;
@@ -112,13 +113,13 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
   Future<void> _pin() async {
     final error = await ref.read(houseRecipesProvider.notifier).togglePin(_recipe);
     if (!mounted) return;
-    if (error != null) await _tell("Couldn't change Highlights", error);
+    if (error != null) await _tell(tr("Couldn't change Highlights"), error);
   }
 
   Future<void> _save() async {
     final error = await ref.read(houseRecipesProvider.notifier).saveRecipe(_recipe.id);
     if (!mounted) return;
-    await (error == null ? _tell('Saved', 'It’s in your Saved collection.') : _tell("Couldn't save it", error));
+    await (error == null ? _tell(tr('Saved'), tr('It’s in your Saved collection.')) : _tell(tr("Couldn't save it"), error));
   }
 
   Future<void> _collections() async {
@@ -127,7 +128,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
     final picked = await showCupertinoModalPopup<Object>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: const Text('Collections'),
+        title: Text(tr('Collections')),
         actions: [
           for (final c in all)
             CupertinoActionSheetAction(
@@ -138,10 +139,10 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
           CupertinoActionSheetAction(
             key: const ValueKey('new_collection'),
             onPressed: () => Navigator.pop(context, 'new'),
-            child: const Text('New collection…'),
+            child: Text(tr('New collection…')),
           ),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
       ),
     );
     if (!mounted || picked == null) return;
@@ -158,7 +159,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
         if (created.isNotEmpty) error = await notifier.setInCollection(created.first, _recipe.id, inside: true);
       }
     }
-    if (error != null && mounted) await _tell("Couldn't update that", error);
+    if (error != null && mounted) await _tell(tr("Couldn't update that"), error);
   }
 
   Future<String?> _askName() async {
@@ -166,17 +167,17 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
     final result = await showCupertinoDialog<String>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Name the collection'),
+        title: Text(tr('Name the collection')),
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: CupertinoTextField(key: const ValueKey('collection_name'), controller: c, autofocus: true, placeholder: 'Meal prep'),
+          child: CupertinoTextField(key: const ValueKey('collection_name'), controller: c, autofocus: true, placeholder: tr('Meal prep')),
         ),
         actions: [
-          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
           CupertinoDialogAction(
             key: const ValueKey('collection_name_ok'),
             onPressed: () => Navigator.pop(context, c.text.trim().isEmpty ? null : c.text.trim()),
-            child: const Text('Create'),
+            child: Text(tr('Create')),
           ),
         ],
       ),
@@ -188,19 +189,19 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
   Future<void> _send() async {
     final friends = ref.read(friendsProvider).valueOrNull?.friends ?? const [];
     if (friends.isEmpty) {
-      await _tell('No friends yet', 'Add a friend from the Friends tab, then you can send them recipes.');
+      await _tell(tr('No friends yet'), tr('Add a friend from the Friends tab, then you can send them recipes.'));
       return;
     }
     final friend = await showCupertinoModalPopup<dynamic>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: const Text('Send to a friend'),
-        message: const Text('They can open it, save it and log it. You can take access back later.'),
+        title: Text(tr('Send to a friend')),
+        message: Text(tr('They can open it, save it and log it. You can take access back later.')),
         actions: [
           for (final f in friends)
             CupertinoActionSheetAction(key: ValueKey('send_to_${f.userId}'), onPressed: () => Navigator.pop(context, f), child: Text(f.username)),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
       ),
     );
     if (friend == null || !mounted) return;
@@ -208,7 +209,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
     final error = await ref.read(houseRecipesProvider.notifier).service.share(_recipe.id, friend.userId as String, newRecipeId());
     if (!mounted) return;
     setState(() => _busy = false);
-    await (error == null ? _tell('Sent', 'Your recipe is in your chat with ${friend.username}.') : _tell("Couldn't send it", error));
+    await (error == null ? _tell(tr('Sent'), tr('Your recipe is in your chat with {v1}.', {'v1': friend.username})) : _tell(tr("Couldn't send it"), error));
   }
 
   Future<void> _setVisibility(bool friends) async {
@@ -218,7 +219,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (error != null) {
-      await _tell("Couldn't change that", error);
+      await _tell(tr("Couldn't change that"), error);
       return;
     }
     await _reload();
@@ -246,16 +247,16 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
   Future<void> _report() async {
     final ok = await showAppDialog(
       context: context,
-      title: 'Report this recipe?',
-      message: "We'll take a look. You can also block the person from your Friends tab.",
-      confirmLabel: 'Report',
-      cancelLabel: 'Cancel',
+      title: tr('Report this recipe?'),
+      message: tr("We'll take a look. You can also block the person from your Friends tab."),
+      confirmLabel: tr('Report'),
+      cancelLabel: tr('Cancel'),
       destructive: true,
     );
     if (ok != true || !mounted) return;
     final error = await ref.read(houseRecipesProvider.notifier).service.report(_recipe.id);
     if (!mounted) return;
-    await (error == null ? _tell('Thanks for telling us', "We'll take a look.") : _tell("Couldn't send that", error));
+    await (error == null ? _tell(tr('Thanks for telling us'), tr("We'll take a look.")) : _tell(tr("Couldn't send that"), error));
   }
 
   Future<void> _delete() async {
@@ -270,7 +271,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
     await showCupertinoDialog<void>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text("Couldn't delete it"),
+        title: Text(tr("Couldn't delete it")),
         content: Text(error),
         actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
       ),
@@ -294,24 +295,21 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
           if (!r.mine) ...[
             const SizedBox(height: 2),
             Text(
-              r.ownerName == null ? 'Shared with you' : 'From ${r.ownerName}',
+              r.ownerName == null ? tr('Shared with you') : tr('From {v1}', {'v1': r.ownerName}),
               key: const ValueKey('recipe_from'),
               style: AppType.caption(size: 12),
             ),
           ],
           const SizedBox(height: 4),
           Text(
-            '${r.caloriesFor(_portions)} kcal'
-            ' · ${(r.proteinG * _portions).round()} g protein'
-            ' · ${(r.carbsG * _portions).round()} g carbs'
-            ' · ${(r.fatG * _portions).round()} g fat',
+            tr('{kcal} kcal · {p} g protein · {c} g carbs · {f} g fat', {'kcal': r.caloriesFor(_portions), 'p': (r.proteinG * _portions).round(), 'c': (r.carbsG * _portions).round(), 'f': (r.fatG * _portions).round()}),
             key: const ValueKey('recipe_numbers'),
             style: AppType.body(size: 14, color: TrackerColors.textSecondary),
           ),
           if (r.estimated) ...[
             const SizedBox(height: 4),
             Text(
-              'Estimated: some numbers were typed in rather than looked up.',
+              tr('Estimated: some numbers were typed in rather than looked up.'),
               key: const ValueKey('recipe_estimated'),
               style: AppType.caption(size: 12),
             ),
@@ -328,7 +326,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Text('Servings', style: AppType.body(size: 14)),
+              Text(tr('Servings'), style: AppType.body(size: 14)),
               const Spacer(),
               _StepButton(key: const ValueKey('servings_minus'), icon: CupertinoIcons.minus, onTap: () => _step(-0.5)),
               SizedBox(
@@ -367,7 +365,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          AppButton(key: const ValueKey('log_recipe'), label: 'Log this', onPressed: _busy ? null : _log),
+          AppButton(key: const ValueKey('log_recipe'), label: tr('Log this'), onPressed: _busy ? null : _log),
           const SizedBox(height: 10),
           if (r.mine)
             Row(
@@ -376,7 +374,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
                   child: _Chip(
                     key: const ValueKey('pin_recipe'),
                     icon: pinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
-                    label: pinned ? 'Unpin' : 'Pin',
+                    label: pinned ? tr('Unpin') : tr('Pin'),
                     onTap: _busy ? null : _pin,
                   ),
                 ),
@@ -387,7 +385,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
               ],
             )
           else
-            AppButton.glass(key: const ValueKey('save_shared'), label: 'Save to my recipes', icon: CupertinoIcons.bookmark, onPressed: _busy ? null : _save),
+            AppButton.glass(key: const ValueKey('save_shared'), label: tr('Save to my recipes'), icon: CupertinoIcons.bookmark, onPressed: _busy ? null : _save),
           if (r.mine) ...[
             const SizedBox(height: 8),
             Row(
@@ -396,14 +394,14 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
                   child: _Chip(
                     key: const ValueKey('recipe_photos'),
                     icon: CupertinoIcons.photo,
-                    label: 'Photos',
+                    label: tr('Photos'),
                     onTap: _busy ? null : () => showRecipePhotosSheet(context, _recipe, onChanged: (fresh) => setState(() => _recipe = fresh)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(child: _Chip(key: const ValueKey('edit_recipe'), icon: CupertinoIcons.pencil, label: 'Edit', onTap: _busy ? null : _edit)),
                 const SizedBox(width: 8),
-                Expanded(child: _Chip(key: const ValueKey('shared_with'), icon: CupertinoIcons.person_2, label: 'Shared with', onTap: _busy ? null : () => showSharedWithSheet(context, _recipe))),
+                Expanded(child: _Chip(key: const ValueKey('shared_with'), icon: CupertinoIcons.person_2, label: tr('Shared with'), onTap: _busy ? null : () => showSharedWithSheet(context, _recipe))),
               ],
             ),
             const SizedBox(height: 14),
@@ -413,12 +411,12 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Friends can open this', style: AppType.body(size: 14)),
+                      Text(tr('Friends can open this'), style: AppType.body(size: 14)),
                       const SizedBox(height: 2),
                       Text(
                         r.sharedWithFriends
-                            ? 'Friends can open and log this. Nobody else can.'
-                            : 'Only you, and friends you send it to.',
+                            ? tr('Friends can open and log this. Nobody else can.')
+                            : tr('Only you, and friends you send it to.'),
                         key: const ValueKey('visibility_note'),
                         style: AppType.caption(size: 12),
                       ),
@@ -433,7 +431,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
               child: CupertinoButton(
                 key: const ValueKey('report_recipe'),
                 onPressed: _busy ? null : _report,
-                child: Text('Report this recipe', style: AppType.caption(size: 13, color: TrackerColors.textTertiary)),
+                child: Text(tr('Report this recipe'), style: AppType.caption(size: 13, color: TrackerColors.textTertiary)),
               ),
             ),
           if (r.mine)
@@ -441,7 +439,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
               child: CupertinoButton(
                 key: const ValueKey('delete_recipe'),
                 onPressed: _busy ? null : _delete,
-                child: Text('Delete recipe', style: AppType.caption(size: 13, color: TrackerColors.error)),
+                child: Text(tr('Delete recipe'), style: AppType.caption(size: 13, color: TrackerColors.error)),
               ),
             ),
         ],

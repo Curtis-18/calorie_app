@@ -20,6 +20,7 @@ import '../app_button.dart';
 import '../app_dialog.dart';
 import '../glass.dart';
 import 'share_card.dart';
+import '../../l10n/app_strings.dart';
 
 /// Hands the image to the platform. Swappable in tests.
 typedef ShareHandler = Future<ShareResult> Function(ShareParams params);
@@ -93,11 +94,11 @@ class _ShareProgressSheetState extends ConsumerState<ShareProgressSheet> {
     }
     await WidgetsBinding.instance.endOfFrame;
     final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary == null) throw StateError('The card is not on screen.');
+    if (boundary == null) throw StateError(tr('The card is not on screen.'));
     final image = await boundary.toImage(pixelRatio: ProgressShareCard.pixelRatio);
     try {
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (bytes == null) throw StateError('Could not encode the card.');
+      if (bytes == null) throw StateError(tr('Could not encode the card.'));
       return bytes.buffer.asUint8List();
     } finally {
       image.dispose();
@@ -131,17 +132,17 @@ class _ShareProgressSheetState extends ConsumerState<ShareProgressSheet> {
         // No Web Share in this browser: share_plus downloaded the image.
         await showAppDialog(
           context: context,
-          title: 'Card saved',
-          message: 'Your progress card was downloaded as an image, ready to post anywhere.',
-          confirmLabel: 'Got it',
+          title: tr('Card saved'),
+          message: tr('Your progress card was downloaded as an image, ready to post anywhere.'),
+          confirmLabel: tr('Got it'),
         );
       }
     } catch (_) {
       if (mounted) {
         await showAppDialog(
           context: context,
-          title: "Couldn't share",
-          message: 'Something went wrong preparing your card. Please try again.',
+          title: tr("Couldn't share"),
+          message: tr('Something went wrong preparing your card. Please try again.'),
         );
       }
     } finally {
@@ -173,9 +174,9 @@ class _ShareProgressSheetState extends ConsumerState<ShareProgressSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Share progress', style: AppType.title()),
+        Text(tr('Share progress'), style: AppType.title()),
         const SizedBox(height: 4),
-        Text('Your streak, level and badges. No calorie numbers.', style: AppType.callout()),
+        Text(tr('Your streak, level and badges. No calorie numbers.'), style: AppType.callout()),
         const SizedBox(height: AppSpacing.lg),
         Center(
           child: SizedBox(
@@ -206,7 +207,7 @@ class _ShareProgressSheetState extends ConsumerState<ShareProgressSheet> {
         KeyedSubtree(
           key: _buttonKey,
           child: AppButton(
-            label: 'Share',
+            label: tr('Share'),
             icon: CupertinoIcons.share,
             loading: _sharing,
             onPressed: _sharing ? null : () => _share(data),
@@ -238,10 +239,10 @@ class _WeightToggle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Include weight change', style: AppType.headline().copyWith(fontSize: 15)),
+                Text(tr('Include weight change'), style: AppType.headline().copyWith(fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(
-                  'Shows only how much your trend changed, never your weight.',
+                  tr('Shows only how much your trend changed, never your weight.'),
                   style: AppType.caption(color: TrackerColors.textSecondary),
                 ),
               ],

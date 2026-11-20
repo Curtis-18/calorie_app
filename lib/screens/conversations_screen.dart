@@ -12,6 +12,7 @@ import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 import 'chat_screen.dart';
 import 'friends_screen.dart' show FriendAvatar;
+import '../l10n/app_strings.dart';
 
 /// Every conversation, newest first, with the ones waiting for you marked.
 class ConversationsScreen extends ConsumerStatefulWidget {
@@ -61,7 +62,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                       onPressed: () => Navigator.of(context).maybePop(),
                       child: Icon(CupertinoIcons.chevron_left, color: TrackerColors.textPrimary, size: 22),
                     ),
-                    Text('Messages', style: AppType.headline()),
+                    Text(tr('Messages'), style: AppType.headline()),
                   ],
                 ),
               ),
@@ -91,8 +92,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
         return [
           AppEmptyState(
             icon: CupertinoIcons.wifi_exclamationmark,
-            title: "Couldn't load your messages",
-            message: 'Pull down to try again.',
+            title: tr("Couldn't load your messages"),
+            message: tr('Pull down to try again.'),
             accent: TrackerColors.error,
           ),
         ];
@@ -104,8 +105,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
         const SizedBox(height: 40),
         AppEmptyState(
           icon: CupertinoIcons.chat_bubble_text,
-          title: 'No messages yet',
-          message: 'Tap the message button next to a friend to start a conversation.',
+          title: tr('No messages yet'),
+          message: tr('Tap the message button next to a friend to start a conversation.'),
         ),
       ];
     }
@@ -147,7 +148,7 @@ class _ConversationRow extends StatelessWidget {
                     Text('@${c.username}', style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 2),
                     Text(
-                      c.lastMine ? 'You: ${c.lastBody}' : c.lastBody,
+                      c.lastMine ? tr('You: {v1}', {'v1': c.lastBody}) : c.lastBody,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppType.caption(
@@ -188,7 +189,7 @@ class UnreadCount extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '$count unread',
+      label: tr('{n} unread', {'n': count}),
       excludeSemantics: true,
       child: Container(
         constraints: const BoxConstraints(minWidth: 18),

@@ -21,6 +21,7 @@ import '../widgets/onboarding/plan_ready_sheet.dart';
 import '../widgets/save_toast.dart';
 import '../widgets/step_progress.dart';
 import '../widgets/welcome_overlay.dart';
+import '../l10n/app_strings.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   final UserProfile? existingProfile;
@@ -142,17 +143,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     switch (step) {
       case 0:
         if (_dateOfBirth == null) {
-          _ask('When were you born?', 'Please choose your date of birth.');
+          _ask(tr('When were you born?'), tr('Please choose your date of birth.'));
           return false;
         }
         if (_dateOfBirth!.isAfter(_latestAdultBirthday)) {
           // Mifflin-St Jeor is an adult equation, and paediatric guidance
           // advises against calorie counting for teens.
-          _ask('Adults only', 'Calorie plans are designed for adults. You need to be 18 or older to use them.');
+          _ask(tr('Adults only'), tr('Calorie plans are designed for adults. You need to be 18 or older to use them.'));
           return false;
         }
         if (_gender == null) {
-          _ask('One more thing', 'Please choose Female or Male. It only affects the calorie maths.');
+          _ask(tr('One more thing'), tr('Please choose Female or Male. It only affects the calorie maths.'));
           return false;
         }
         return true;
@@ -160,13 +161,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         return _formKey.currentState?.validate() ?? false;
       case 2:
         if (_activity == null) {
-          _ask('How active are you?', 'Pick the one that sounds most like your usual week.');
+          _ask(tr('How active are you?'), tr('Pick the one that sounds most like your usual week.'));
           return false;
         }
         return true;
       case 3:
         if (_goal == null) {
-          _ask('What is your goal?', 'Pick the one that fits best. You can change it any time.');
+          _ask(tr('What is your goal?'), tr('Pick the one that fits best. You can change it any time.'));
           return false;
         }
         return true;
@@ -232,9 +233,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         context,
         profile: saved,
         maintenanceNotice: landedOnMaintenance
-            ? 'Your body already uses close to the least we would suggest eating without medical advice, '
-                'so your plan keeps you steady at $target calories. Moving a bit more is the safest way '
-                'to make progress, and a doctor or dietitian can help with a bigger plan.'
+            ? tr('Your body already uses close to the least we would suggest eating without medical advice, so your plan keeps you steady at {target} calories. Moving a bit more is the safest way to make progress, and a doctor or dietitian can help with a bigger plan.', {'target': target})
             : null,
       );
       if (!mounted) return;
@@ -244,8 +243,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         setState(() => _saveState = SaveToastState.initial);
         await showAppDialog(
           context: context,
-          title: 'Could not save',
-          message: e is ProfileSaveException ? e.message : "We couldn't save your profile. Please try again.",
+          title: tr('Could not save'),
+          message: e is ProfileSaveException ? e.message : tr("We couldn't save your profile. Please try again."),
           confirmLabel: 'OK',
         );
       }
@@ -298,7 +297,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Date of birth', style: AppType.title()),
+            Text(tr('Date of birth'), style: AppType.title()),
             const SizedBox(height: AppSpacing.lg),
             SizedBox(
               height: 220,
@@ -312,7 +311,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppButton(
-              label: 'Done',
+              label: tr('Done'),
               onPressed: () => Navigator.of(sheetContext).pop(selected),
             ),
           ],
@@ -337,8 +336,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
-          "Let's get to know you",
-          'This helps us work out how much energy your body uses each day.',
+          tr("Let's get to know you"),
+          tr('This helps us work out how much energy your body uses each day.'),
           CupertinoIcons.hand_raised,
           TrackerColors.macroProtein,
         ),
@@ -346,16 +345,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _fieldLabel('When were you born?'),
+              _fieldLabel(tr('When were you born?')),
               GestureDetector(
                 onTap: _pickDateOfBirth,
                 child: InputDecorator(
-                  decoration: const InputDecoration(
-                    hintText: 'Tap to choose',
+                  decoration: InputDecoration(
+                    hintText: tr('Tap to choose'),
                     suffixIcon: Icon(Icons.calendar_today, size: 16),
                   ),
                   child: Text(
-                    _dateOfBirth == null ? 'Tap to choose' : DateFormat.yMMMMd().format(_dateOfBirth!),
+                    _dateOfBirth == null ? tr('Tap to choose') : DateFormat.yMMMMd().format(_dateOfBirth!),
                     style: AppType.body(
                       size: 15,
                       color: _dateOfBirth == null ? TrackerColors.textTertiary : TrackerColors.textPrimary,
@@ -364,9 +363,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Text('You need to be 18 or older.', style: AppType.caption(color: TrackerColors.textTertiary)),
+              Text(tr('You need to be 18 or older.'), style: AppType.caption(color: TrackerColors.textTertiary)),
               const SizedBox(height: AppSpacing.xl),
-              _fieldLabel('Are you female or male?'),
+              _fieldLabel(tr('Are you female or male?')),
               Row(
                 children: [
                   for (final g in Gender.values) ...[
@@ -383,7 +382,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Bodies burn energy a little differently, so we need this for the maths. Nothing else.',
+                tr('Bodies burn energy a little differently, so we need this for the maths. Nothing else.'),
                 style: AppType.caption(color: TrackerColors.textTertiary),
               ),
             ],
@@ -398,8 +397,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
-          'Your body',
-          'Just two numbers. A rough guess is fine, you can fix them later.',
+          tr('Your body'),
+          tr('Just two numbers. A rough guess is fine, you can fix them later.'),
           CupertinoIcons.person_crop_circle,
           TrackerColors.accentStart,
         ),
@@ -408,7 +407,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _fieldLabel(
-                'How much do you weigh?',
+                tr('How much do you weigh?'),
                 trailing: UnitPills<WeightUnit>(
                   options: {for (final u in WeightUnit.values) u: u.label},
                   value: _weightUnit,
@@ -428,7 +427,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               _fieldLabel(
-                'How tall are you?',
+                tr('How tall are you?'),
                 trailing: UnitPills<HeightUnit>(
                   options: {for (final u in HeightUnit.values) u: u.label},
                   value: _heightUnit,
@@ -505,8 +504,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
-          'How active are you?',
-          'Think about a normal week, including your job. Choose the one that sounds most like you.',
+          tr('How active are you?'),
+          tr('Think about a normal week, including your job. Choose the one that sounds most like you.'),
           CupertinoIcons.flame,
           TrackerColors.macroCarbs,
         ),
@@ -523,7 +522,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),
           child: Text(
-            'Not sure? Pick the lower one. You can change it any time.',
+            tr('Not sure? Pick the lower one. You can change it any time.'),
             style: AppType.caption(color: TrackerColors.textTertiary),
           ),
         ),
@@ -536,8 +535,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
-          "What's your goal?",
-          "We'll set a gentle daily plan to match.",
+          tr("What's your goal?"),
+          tr("We'll set a gentle daily plan to match."),
           CupertinoIcons.scope,
           TrackerColors.macroFat,
         ),
@@ -554,7 +553,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),
           child: Text(
-            'Your plan never goes below the minimum that health guidelines suggest.',
+            tr('Your plan never goes below the minimum that health guidelines suggest.'),
             style: AppType.caption(color: TrackerColors.textTertiary),
           ),
         ),
@@ -570,7 +569,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           if (_currentStep > 0) ...[
             Expanded(
               child: AppButton.glass(
-                label: 'Back',
+                label: tr('Back'),
                 onPressed: _prev,
               ),
             ),
@@ -579,7 +578,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Expanded(
             flex: 2,
             child: AppButton(
-              label: _currentStep == _stepCount - 1 ? 'Build my plan' : 'Next',
+              label: _currentStep == _stepCount - 1 ? tr('Build my plan') : tr('Next'),
               onPressed: _next,
             ),
           ),
@@ -628,7 +627,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Step ${_currentStep + 1} of $_stepCount',
+                                        tr('Step {v1} of {_stepCount}', {'v1': _currentStep + 1, '_stepCount': _stepCount}),
                                         style: AppType.sectionLabel(),
                                       ),
                                       const SizedBox(height: AppSpacing.lg),

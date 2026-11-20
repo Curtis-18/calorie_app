@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../models/friends.dart';
+import '../l10n/app_strings.dart';
 
 class FriendsException implements Exception {
   const FriendsException(this.message);
@@ -33,15 +34,15 @@ class FriendsService {
     bool keepAlive = false,
   }) async {
     final token = (_tokenProvider ?? _supabaseToken)();
-    if (token == null) throw const FriendsException("You've been signed out. Please log in again.");
+    if (token == null) throw FriendsException(tr("You've been signed out. Please log in again."));
     final client = _client ?? (keepAlive ? (_searchClient ??= http.Client()) : http.Client());
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 45));
     } on TimeoutException {
-      throw const FriendsException('The server is taking too long. It may be waking up, so try again.');
+      throw FriendsException(tr('The server is taking too long. It may be waking up, so try again.'));
     } on http.ClientException {
-      throw const FriendsException("Couldn't reach the server. Check your connection and try again.");
+      throw FriendsException(tr("Couldn't reach the server. Check your connection and try again."));
     } finally {
       if (_client == null && !keepAlive) client.close();
     }
@@ -66,7 +67,7 @@ class FriendsService {
       _send((c, h) => c.get(_uri('/me'), headers: h)),
     ]);
     final friends = results[0];
-    if (friends.statusCode != 200) throw const FriendsException("Couldn't load your friends. Please try again.");
+    if (friends.statusCode != 200) throw FriendsException(tr("Couldn't load your friends. Please try again."));
     String? mine, myPhoto;
     if (results[1].statusCode == 200) {
       final me = jsonDecode(results[1].body) as Map<String, dynamic>;
@@ -104,7 +105,7 @@ class FriendsService {
       final json = jsonDecode(r.body) as Map<String, dynamic>;
       return RequestResult(RequestOutcome.fromApi(json['outcome'] as String?), json['username'] as String? ?? username);
     }
-    throw FriendsException(_detail(r, "Couldn't send that request. Please try again."));
+    throw FriendsException(_detail(r, tr("Couldn't send that request. Please try again.")));
   }
 
   Future<void> _action(Future<http.Response> Function(http.Client, Map<String, String>) call, String failure) async {
@@ -114,29 +115,29 @@ class FriendsService {
   }
 
   Future<void> accept(String friendshipId) => _action(
-      (c, h) => c.post(_uri('/friends/requests/$friendshipId/accept'), headers: h), "Couldn't accept that request.");
+      (c, h) => c.post(_uri('/friends/requests/$friendshipId/accept'), headers: h), tr("Couldn't accept that request."));
 
   Future<void> decline(String friendshipId) => _action(
-      (c, h) => c.post(_uri('/friends/requests/$friendshipId/decline'), headers: h), "Couldn't decline that request.");
+      (c, h) => c.post(_uri('/friends/requests/$friendshipId/decline'), headers: h), tr("Couldn't decline that request."));
 
   /// Unfriend, or cancel a request you sent.
   Future<void> remove(String friendshipId) =>
-      _action((c, h) => c.delete(_uri('/friends/$friendshipId'), headers: h), "Couldn't remove them. Please try again.");
+      _action((c, h) => c.delete(_uri('/friends/$friendshipId'), headers: h), tr("Couldn't remove them. Please try again."));
 
   Future<void> block(String friendshipId) => _action(
-      (c, h) => c.post(_uri('/friends/$friendshipId/block'), headers: h), "Couldn't block them. Please try again.");
+      (c, h) => c.post(_uri('/friends/$friendshipId/block'), headers: h), tr("Couldn't block them. Please try again."));
 
   /// Report the profile picture of a friend or of someone in a request.
   Future<void> reportPhoto(String friendshipId) => _action(
       (c, h) => c.post(_uri('/friends/$friendshipId/report-photo'), headers: h, body: jsonEncode({})),
-      "Couldn't send your report.");
+      tr("Couldn't send your report."));
 
   Future<List<Person>> blocks() async {
     final r = await _send((c, h) => c.get(_uri('/blocks'), headers: h));
-    if (r.statusCode != 200) throw const FriendsException("Couldn't load your blocked list.");
+    if (r.statusCode != 200) throw FriendsException(tr("Couldn't load your blocked list."));
     return (jsonDecode(r.body) as List).map((e) => Person.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<void> unblock(String userId) =>
-      _action((c, h) => c.delete(_uri('/blocks/$userId'), headers: h), "Couldn't unblock them. Please try again.");
+      _action((c, h) => c.delete(_uri('/blocks/$userId'), headers: h), tr("Couldn't unblock them. Please try again."));
 }

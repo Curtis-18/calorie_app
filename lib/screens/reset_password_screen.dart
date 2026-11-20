@@ -7,6 +7,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_field.dart';
+import '../l10n/app_strings.dart';
 
 /// Shown when the user opens the emailed reset link: choose a new password.
 /// They are already signed in by the link, so saving continues into the app.
@@ -74,14 +75,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Choose a new password', style: AppType.title()),
+                  Text(tr('Choose a new password'), style: AppType.title()),
                   const SizedBox(height: 6),
-                  Text('Pick something you haven\'t used before. At least $minPasswordLength characters.',
+                  Text(tr('Pick something you haven\'t used before. At least {minPasswordLength} characters.', {'minPasswordLength': minPasswordLength}),
                       style: AppType.callout()),
                   const SizedBox(height: AppSpacing.xl),
                   AppField(
                     controller: _password,
-                    placeholder: 'New password',
+                    placeholder: tr('New password'),
                     icon: CupertinoIcons.lock,
                     obscure: true,
                     autofocus: true,
@@ -89,7 +90,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   AppField(
                     controller: _confirm,
-                    placeholder: 'Type it again',
+                    placeholder: tr('Type it again'),
                     icon: CupertinoIcons.lock_shield,
                     obscure: true,
                   ),
@@ -106,9 +107,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                   ],
                   const SizedBox(height: AppSpacing.xl),
-                  AppButton(label: 'Save password', loading: _saving, onPressed: _saving ? null : _save),
+                  AppButton(label: tr('Save password'), loading: _saving, onPressed: _saving ? null : _save),
                   const SizedBox(height: AppSpacing.sm),
-                  AppButton(label: 'Cancel', style: AppButtonStyle.quiet, height: 44, onPressed: widget.onCancel),
+                  AppButton(label: tr('Cancel'), style: AppButtonStyle.quiet, height: 44, onPressed: widget.onCancel),
                 ],
               ),
             ),

@@ -16,6 +16,7 @@ import '../widgets/app_dialog.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/pressable.dart';
 import 'food_search_screen.dart';
+import '../l10n/app_strings.dart';
 
 class PhotoReviewScreen extends StatefulWidget {
   final List<DetectedFood> items;
@@ -147,10 +148,9 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
   void _explainEstimate(DetectedFood item) {
     showAppDialog(
       context: context,
-      title: 'About this estimate',
-      message: 'We couldn’t find an exact match for ${item.name}, so this is a typical value for the dish. '
-          '${item.estimateBasis ?? ''}\n\nCheck the portion and any oil, and change the amount if it looks off. '
-          'You can also tap Change to pick a food from the list.',
+      title: tr('About this estimate'),
+      message: '${tr('We couldn’t find an exact match for {name}, so this is a typical value for the dish.', {'name': item.name})} '
+          '${item.estimateBasis == null ? '' : tr(item.estimateBasis!)}\n\n${tr('Check the portion and any oil, and change the amount if it looks off. You can also tap Change to pick a food from the list.')}',
       confirmLabel: 'OK',
     );
   }
@@ -195,7 +195,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
         border: AppDecor.hairlineTop,
-        middle: const Text('Review detected foods'),
+        middle: Text(tr('Review detected foods')),
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(color: TrackerColors.background),
@@ -214,7 +214,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'These are estimates. Check each food and its amount. Tap Change if the match looks wrong, or remove it.',
+                      tr('These are estimates. Check each food and its amount. Tap Change if the match looks wrong, or remove it.'),
                       style: AppType.callout(size: 12),
                     ),
                   ),
@@ -227,7 +227,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Anything the camera can’t see?', style: AppType.callout(size: 12)),
+                    Text(tr('Anything the camera can’t see?'), style: AppType.callout(size: 12)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
@@ -236,7 +236,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                         for (final a in _adjustments.where((a) => a.appliesTo(_items)))
                           _Chip(
                             key: ValueKey('extra_${a.id}'),
-                            label: _isOn(a) ? '✓ ${a.label.replaceFirst('+ ', '')}' : a.isScale ? '${a.label} (estimate)' : a.label,
+                            label: _isOn(a) ? '✓ ${a.label.replaceFirst('+ ', '')}' : a.isScale ? tr('{label} (estimate)', {'label': a.label}) : a.label,
                             color: _isOn(a) ? TrackerColors.accentStartText : TrackerColors.textSecondary,
                             onTap: () => _toggle(a),
                           ),
@@ -249,8 +249,8 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               child: _items.isEmpty
                   ? AppEmptyState(
                       icon: CupertinoIcons.trash,
-                      title: 'No items left to add',
-                      message: 'Go back and scan the photo again.',
+                      title: tr('No items left to add'),
+                      message: tr('Go back and scan the photo again.'),
                       accent: TrackerColors.textSecondary,
                     )
                   : AnimatedSwitcher(
@@ -287,7 +287,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                               key: ValueKey('estimated_${identityHashCode(item)}'),
                                               onTap: () => _explainEstimate(item),
                                               child: Text(
-                                                'Estimated · ${item.estimateBasis ?? ''}  ⓘ',
+                                                '${tr('Estimated')} · ${item.estimateBasis == null ? '' : tr(item.estimateBasis!)}  ⓘ',
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: AppType.caption(size: 11, color: TrackerColors.warning),
@@ -298,7 +298,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                           Padding(
                                             padding: const EdgeInsets.only(top: 2),
                                             child: Text(
-                                              'Matched: ${item.matchedDescription}',
+                                              tr('Matched: {v1}', {'v1': item.matchedDescription}),
                                               key: ValueKey('matched_${identityHashCode(item)}'),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
@@ -309,7 +309,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                           Padding(
                                             padding: const EdgeInsets.only(top: 2),
                                             child: Text(
-                                              'From your note: ${item.noteApplied}',
+                                              tr('From your note: {v1}', {'v1': item.noteApplied}),
                                               key: ValueKey('note_applied_${identityHashCode(item)}'),
                                               style: AppType.caption(size: 11, color: TrackerColors.accentStartText),
                                             ),
@@ -332,13 +332,13 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                             Flexible(
                                               child: item.matched
                                                   ? _Chip(
-                                                      label: 'Change',
+                                                      label: tr('Change'),
                                                       color: TrackerColors.textSecondary,
                                                       icon: CupertinoIcons.search,
                                                       onTap: () => _findMatch(index),
                                                     )
                                                   : _Chip(
-                                                      label: 'No match · Find',
+                                                      label: tr('No match · Find'),
                                                       color: TrackerColors.warning,
                                                       icon: CupertinoIcons.search,
                                                       onTap: () => _findMatch(index),
@@ -369,8 +369,9 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
                 child: Text(
-                  "$_unmatchedCount item${_unmatchedCount == 1 ? '' : 's'} without nutrition data "
-                  "won't be saved. Tap Find to choose the right food.",
+                  _unmatchedCount == 1
+                          ? tr("1 item without nutrition data won't be saved. Tap Find to choose the right food.")
+                          : tr("{n} items without nutrition data won't be saved. Tap Find to choose the right food.", {'n': _unmatchedCount}),
                   textAlign: TextAlign.center,
                   style: AppType.caption(color: TrackerColors.warning, size: 12),
                 ),
@@ -379,7 +380,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  'About $_totalCalories kcal in total',
+                  tr('About {_totalCalories} kcal in total', {'_totalCalories': _totalCalories}),
                   key: const ValueKey('review_total'),
                   style: AppType.caption(size: 12),
                 ),
@@ -387,7 +388,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
             Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 20, 16 + bottomInset),
               child: AppButton(
-                label: 'Add ${_matched.length} item${_matched.length == 1 ? '' : 's'}',
+                label: _matched.length == 1 ? tr('Add 1 item') : tr('Add {n} items', {'n': _matched.length}),
                 onPressed: _matched.isEmpty ? null : _confirm,
               ),
             ),

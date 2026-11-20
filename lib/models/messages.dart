@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 /// Where a message is on its way to the server.
 enum SendState { sent, sending, failed }
 
@@ -124,7 +125,7 @@ class Conversation {
 }
 
 class ConversationsData {
-  const ConversationsData(this.conversations);
+  ConversationsData(this.conversations);
 
   /// Newest first.
   final List<Conversation> conversations;
@@ -139,7 +140,7 @@ class ConversationsData {
   }
 
   factory ConversationsData.fromJson(Map<String, dynamic> json) => ConversationsData(
-        ((json['conversations'] as List?) ?? const [])
+        ((json['conversations'] as List?) ?? [])
             .map((e) => Conversation.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
@@ -154,9 +155,9 @@ String chatTimeLabel(DateTime at, DateTime now) {
   final day = DateTime(at.year, at.month, at.day);
   final diff = today.difference(day).inDays;
   if (diff == 0) return time;
-  if (diff == 1) return 'Yesterday $time';
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (diff == 1) return tr('Yesterday {time}', {'time': time});
+  final weekdays = [tr('Mon'), tr('Tue'), tr('Wed'), tr('Thu'), tr('Fri'), tr('Sat'), tr('Sun')];
+  final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
   if (diff > 1 && diff < 7) return '${weekdays[at.weekday - 1]} $time';
   return '${at.day} ${months[at.month - 1]} $time';
 }
@@ -167,9 +168,9 @@ String conversationTimeLabel(DateTime at, DateTime now) {
   final day = DateTime(at.year, at.month, at.day);
   final diff = today.difference(day).inDays;
   if (diff == 0) return chatTimeLabel(at, now);
-  if (diff == 1) return 'Yesterday';
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (diff == 1) return tr('Yesterday');
+  final weekdays = [tr('Mon'), tr('Tue'), tr('Wed'), tr('Thu'), tr('Fri'), tr('Sat'), tr('Sun')];
+  final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
   if (diff > 1 && diff < 7) return weekdays[at.weekday - 1];
   return '${at.day} ${months[at.month - 1]}';
 }

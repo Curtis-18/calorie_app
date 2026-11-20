@@ -10,6 +10,7 @@ import '../../theme/app_typography.dart';
 import '../../theme/tracker_colors.dart';
 import '../app_button.dart';
 import '../glass.dart';
+import '../../l10n/app_strings.dart';
 
 const _emberColors = [
   TrackerColors.flameStart,
@@ -152,7 +153,7 @@ void showPerfectDayBurst(BuildContext context, GlobalKey target) {
                 },
               ),
             ),
-            const _RisingChip(label: 'Perfect day', detail: '+30 XP'),
+            _RisingChip(label: tr('Perfect day'), detail: '+30 XP'),
           ],
         ),
       ),
@@ -237,8 +238,8 @@ class _CelebrationCard extends StatelessWidget {
         ),
       LevelUpCelebration(:final level) => (
           'LEVEL UP',
-          'Level $level',
-          'Every meal you log earns XP. Keep it going to reach level ${level + 1}.',
+          tr('Level {level}', {'level': level}),
+          tr('Every meal you log earns XP. Keep it going to reach level {v1}.', {'v1': level + 1}),
           Text('$level', style: AppType.display(size: 44)) as Widget,
         ),
       PerfectDayCelebration() => ('', '', '', const SizedBox() as Widget),
@@ -310,7 +311,7 @@ class _CelebrationCard extends StatelessWidget {
                     style: AppType.body(color: TrackerColors.textSecondary).copyWith(height: 1.45),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  AppButton(label: 'Nice!', onPressed: () => Navigator.of(context).pop()),
+                  AppButton(label: tr('Nice!'), onPressed: () => Navigator.of(context).pop()),
                 ],
               ),
             ),

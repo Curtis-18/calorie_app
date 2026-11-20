@@ -20,6 +20,7 @@ import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_field.dart';
 import 'food_search_screen.dart';
+import '../l10n/app_strings.dart';
 
 /// A random version-4 UUID. The app chooses the id so that a retry after a lost
 /// response saves the recipe once, not twice.
@@ -113,27 +114,27 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
           CupertinoActionSheetAction(
             key: const ValueKey('add_search'),
             onPressed: () => Navigator.pop(context, 'search'),
-            child: const Text('Search for a food'),
+            child: Text(tr('Search for a food')),
           ),
           CupertinoActionSheetAction(
             key: const ValueKey('add_typed'),
             onPressed: () => Navigator.pop(context, 'typed'),
-            child: const Text('Type my own (like a spice paste)'),
+            child: Text(tr('Type my own (like a spice paste)')),
           ),
           if (!_editing) ...[
             CupertinoActionSheetAction(
               key: const ValueKey('add_photo_camera'),
               onPressed: () => Navigator.pop(context, 'photo_camera'),
-              child: const Text('Photograph the finished dish'),
+              child: Text(tr('Photograph the finished dish')),
             ),
             CupertinoActionSheetAction(
               key: const ValueKey('add_photo_library'),
               onPressed: () => Navigator.pop(context, 'photo_library'),
-              child: const Text('Use a photo of the dish'),
+              child: Text(tr('Use a photo of the dish')),
             ),
           ],
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
       ),
     );
     if (!mounted || choice == null) return;
@@ -172,7 +173,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
     try {
       photo = await ref.read(recipePhotoPickerProvider)(source);
     } catch (_) {
-      if (mounted) setState(() => _error = "Couldn't open the ${source == ImageSource.camera ? 'camera' : 'photos'}. Allow access in Settings, then try again.");
+      if (mounted) setState(() => _error = source == ImageSource.camera ? tr("Couldn't open the camera. Allow access in Settings, then try again.") : tr("Couldn't open the photos. Allow access in Settings, then try again."));
       return;
     }
     if (photo == null || !mounted) return;
@@ -187,7 +188,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
       setState(() {
         _looking = false;
         if (found.isEmpty) {
-          _error = "We couldn't tell what's in that photo. Try a clearer one, or add the ingredients yourself.";
+          _error = tr("We couldn't tell what's in that photo. Try a clearer one, or add the ingredients yourself.");
           return;
         }
         _dishPhoto = photo;
@@ -216,7 +217,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
       if (mounted) {
         setState(() {
           _looking = false;
-          _error = "Couldn't look at that photo. Check your connection and try again.";
+          _error = tr("Couldn't look at that photo. Check your connection and try again.");
         });
       }
     }
@@ -227,7 +228,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
     final result = await showCupertinoDialog<double>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('How much?'),
+        title: Text(tr('How much?')),
         content: Column(
           children: [
             Text(name, maxLines: 2, overflow: TextOverflow.ellipsis),
@@ -242,14 +243,14 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
           ],
         ),
         actions: [
-          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
           CupertinoDialogAction(
             key: const ValueKey('grams_ok'),
             onPressed: () {
               final v = double.tryParse(c.text.trim().replaceAll(',', '.'));
               Navigator.pop(context, v != null && v > 0 && v <= 20000 ? v : null);
             },
-            child: const Text('Add'),
+            child: Text(tr('Add')),
           ),
         ],
       ),
@@ -266,7 +267,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
     final result = await showCupertinoDialog<DraftIngredient>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Your own ingredient'),
+        title: Text(tr('Your own ingredient')),
         content: Column(
           children: [
             const SizedBox(height: 8),
@@ -275,20 +276,20 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
             CupertinoTextField(
               key: const ValueKey('typed_grams'),
               controller: grams,
-              placeholder: 'Grams used',
+              placeholder: tr('Grams used'),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: 6),
             CupertinoTextField(
               key: const ValueKey('typed_kcal'),
               controller: kcal,
-              placeholder: 'Calories per 100 g',
+              placeholder: tr('Calories per 100 g'),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
           ],
         ),
         actions: [
-          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
           CupertinoDialogAction(
             key: const ValueKey('typed_ok'),
             onPressed: () {
@@ -301,7 +302,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
               }
               Navigator.pop(context, DraftIngredient(name: n, grams: g, caloriesPer100g: k));
             },
-            child: const Text('Add'),
+            child: Text(tr('Add')),
           ),
         ],
       ),
@@ -373,18 +374,18 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
     return CupertinoPageScaffold(
       backgroundColor: TrackerColors.background,
       navigationBar: CupertinoNavigationBar(
-        middle: Text(_editing ? 'Edit recipe' : (_fromMeal ? 'Save as recipe' : 'New recipe')),
+        middle: Text(_editing ? tr('Edit recipe') : (_fromMeal ? tr('Save as recipe') : tr('New recipe'))),
         backgroundColor: TrackerColors.background,
       ),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           children: [
-            AppField(key: const ValueKey('recipe_title_field'), placeholder: 'Recipe name', controller: _title, onChanged: (_) => setState(() {})),
+            AppField(key: const ValueKey('recipe_title_field'), placeholder: tr('Recipe name'), controller: _title, onChanged: (_) => setState(() {})),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: Text('Servings it makes', style: AppType.body(size: 14))),
+                Expanded(child: Text(tr('Servings it makes'), style: AppType.body(size: 14))),
                 SizedBox(
                   width: 90,
                   child: AppField(
@@ -401,9 +402,9 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
             if (meal != null)
               AppCard(
                 child: Text(
-                  '${meal.length} logged food${meal.length == 1 ? '' : 's'}, '
-                  '${meal.fold<int>(0, (a, e) => a + e.calories)} kcal in total. '
-                  'Saved as an estimate, since the ingredients aren’t listed.',
+                  meal.length == 1
+                ? tr('1 logged food, {kcal} kcal in total. Saved as an estimate, since the ingredients aren’t listed.', {'kcal': meal.fold<int>(0, (a, e) => a + e.calories)})
+                : tr('{n} logged foods, {kcal} kcal in total. Saved as an estimate, since the ingredients aren’t listed.', {'n': meal.length, 'kcal': meal.fold<int>(0, (a, e) => a + e.calories)}),
                   key: const ValueKey('from_meal_note'),
                   style: AppType.body(size: 14, color: TrackerColors.textSecondary),
                 ),
@@ -425,7 +426,9 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
                             children: [
                               Text(_items[i].name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.body(size: 14)),
                               Text(
-                                '${_items[i].grams.round()} g${_items[i].fromEstimate ? ' · estimated' : (_items[i].typedByHand ? ' · typed by you' : '')}',
+                                _items[i].fromEstimate
+                      ? tr('{g} g · estimated', {'g': _items[i].grams.round()})
+                      : (_items[i].typedByHand ? tr('{g} g · typed by you', {'g': _items[i].grams.round()}) : '${_items[i].grams.round()} g'),
                                 style: AppType.caption(size: 12),
                               ),
                             ],
@@ -450,20 +453,20 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
                     children: [
                       const CupertinoActivityIndicator(),
                       const SizedBox(width: 10),
-                      Text('Looking at your photo…', style: AppType.caption(size: 13)),
+                      Text(tr('Looking at your photo…'), style: AppType.caption(size: 13)),
                     ],
                   ),
                 ),
               AppButton.glass(
                 key: const ValueKey('add_ingredient'),
-                label: 'Add an ingredient',
+                label: tr('Add an ingredient'),
                 icon: CupertinoIcons.add,
                 onPressed: _looking ? null : _addIngredient,
               ),
               if (_dishPhoto != null) ...[
                 const SizedBox(height: 10),
                 Text(
-                  'Read from your photo. It becomes the recipe’s cover. Check the amounts: they are estimates.',
+                  tr('Read from your photo. It becomes the recipe’s cover. Check the amounts: they are estimates.'),
                   key: const ValueKey('dish_photo_note'),
                   style: AppType.caption(size: 12),
                 ),
@@ -471,7 +474,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
               if (preview != null) ...[
                 const SizedBox(height: 12),
                 Text(
-                  'About $preview kcal per serving. The exact numbers are worked out when you save.',
+                  tr('About {preview} kcal per serving. The exact numbers are worked out when you save.', {'preview': preview}),
                   key: const ValueKey('recipe_preview'),
                   style: AppType.caption(size: 12),
                 ),
@@ -482,7 +485,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
               Text(_error!, key: const ValueKey('recipe_error'), style: AppType.body(size: 13, color: TrackerColors.error)),
             ],
             const SizedBox(height: 20),
-            AppButton(key: const ValueKey('save_recipe'), label: _editing ? 'Save changes' : 'Save recipe', loading: _saving, onPressed: _canSave ? _save : null),
+            AppButton(key: const ValueKey('save_recipe'), label: _editing ? tr('Save changes') : tr('Save recipe'), loading: _saving, onPressed: _canSave ? _save : null),
           ],
         ),
       ),

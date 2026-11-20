@@ -4,6 +4,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'split_text.dart';
+import '../l10n/app_strings.dart';
 
 class WelcomeOverlay extends StatefulWidget {
   const WelcomeOverlay({super.key, required this.onFinished});
@@ -54,21 +55,21 @@ class _WelcomeOverlayState extends State<WelcomeOverlay> {
             if (_step == 0)
               SplitText(
                 key: const ValueKey(0),
-                text: 'Hello, you!',
+                text: tr('Hello, you!'),
                 style: AppType.display(size: 34, color: TrackerColors.textPrimary),
                 onComplete: _next,
               ),
             if (_step == 1)
               SplitText(
                 key: const ValueKey(1),
-                text: 'Welcome to NuStreak',
+                text: tr('Welcome to NuStreak'),
                 style: AppType.display(size: 30, color: TrackerColors.accentEndText),
                 onComplete: _next,
               ),
             if (_step == 2)
               SplitText(
                 key: const ValueKey(2),
-                text: "Let's build your plan in a minute.",
+                text: tr("Let's build your plan in a minute."),
                 style: AppType.body(size: 18, color: TrackerColors.textSecondary),
                 onComplete: _next,
               ),

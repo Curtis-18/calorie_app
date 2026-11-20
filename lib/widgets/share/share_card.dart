@@ -6,6 +6,7 @@ import '../../theme/app_typography.dart';
 import '../../theme/tracker_colors.dart';
 import '../game/flame_style.dart';
 import '../game/header_chips.dart';
+import '../../l10n/app_strings.dart';
 
 /// The card always uses the dark palette, so a shared image looks the same
 /// whichever mode the app is in.
@@ -80,7 +81,7 @@ class ProgressShareCard extends StatelessWidget {
                 ],
                 const SizedBox(height: 18),
                 Text(
-                  'Small habits, every day.',
+                  tr('Small habits, every day.'),
                   textAlign: TextAlign.center,
                   style: AppType.caption(color: _p.textTertiary, size: 11.5),
                 ),
@@ -162,7 +163,7 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'day streak',
+            tr('day streak'),
             textAlign: TextAlign.center,
             style: AppType.title(color: _p.textSecondary),
           ),
@@ -171,19 +172,19 @@ class _Hero extends StatelessWidget {
             child: _Pill(
               color: style.color,
               text: data.bestStreak > data.streakDays
-                  ? '${data.tier.label} · best ${data.bestStreak}'
-                  : '${data.tier.label} · personal best',
+                  ? tr('{tier} · best {n}', {'tier': tr(data.tier.label), 'n': data.bestStreak})
+                  : tr('{tier} · personal best', {'tier': tr(data.tier.label)}),
             ),
           ),
         ] else ...[
           Text(
-            'Level ${data.level}',
+            tr('Level {v1}', {'v1': data.level}),
             textAlign: TextAlign.center,
             style: AppType.display(size: 56, color: _p.textPrimary),
           ),
           const SizedBox(height: 8),
           Text(
-            'and just getting started',
+            tr('and just getting started'),
             textAlign: TextAlign.center,
             style: AppType.title(color: _p.textSecondary),
           ),

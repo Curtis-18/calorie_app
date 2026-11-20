@@ -88,7 +88,7 @@ class MealSection extends StatelessWidget {
                 if (onSaveRecipe != null && entries.isNotEmpty) ...[
                   Semantics(
                     button: true,
-                    label: 'Save $title as a recipe',
+                    label: tr('Save {title} as a recipe', {'title': title}),
                     child: Pressable(
                       key: ValueKey('meal_save_recipe_$title'),
                       onTap: () {
@@ -114,7 +114,7 @@ class MealSection extends StatelessWidget {
                 if (onSearch != null)
                   Semantics(
                     button: true,
-                    label: 'Search for a food for $title',
+                    label: tr('Search for a food for {title}', {'title': title}),
                     child: Pressable(
                       key: ValueKey('meal_search_$title'),
                       onTap: () {
@@ -139,7 +139,7 @@ class MealSection extends StatelessWidget {
                   const SizedBox(width: 8),
                   Semantics(
                     button: true,
-                    label: 'Take a photo of your $title',
+                    label: tr('Take a photo of your {title}', {'title': title}),
                     child: Pressable(
                       key: ValueKey('meal_photo_$title'),
                       onTap: () {

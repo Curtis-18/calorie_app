@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/food_entry.dart';
 import '../models/house_recipe.dart';
+import '../l10n/app_strings.dart';
 
 class RecipeSaveResult {
   const RecipeSaveResult.ok(this.recipe) : error = null;
@@ -63,7 +64,7 @@ class HouseRecipeService {
   }
 
   String _message(http.Response? r) {
-    if (r == null) return "Couldn't reach the server. Check your connection and try again.";
+    if (r == null) return tr("Couldn't reach the server. Check your connection and try again.");
     if (r.statusCode == 422) {
       try {
         final detail = (jsonDecode(r.body) as Map<String, dynamic>)['detail'];
@@ -74,14 +75,14 @@ class HouseRecipeService {
           if (msg is String) return msg.replaceFirst('Value error, ', '');
         }
       } catch (_) {}
-      return "That recipe isn't complete yet.";
+      return tr("That recipe isn't complete yet.");
     }
-    if (r.statusCode == 503) return "Recipes aren't available right now. Please try again later.";
-    if (r.statusCode == 403) return 'You can only send recipes to your friends.';
-    if (r.statusCode == 404) return "That recipe isn't available any more.";
-    if (r.statusCode == 413) return 'That photo is too large.';
-    if (r.statusCode == 415) return "That photo can't be used. Try a different one.";
-    return "Couldn't save that right now. Please try again.";
+    if (r.statusCode == 503) return tr("Recipes aren't available right now. Please try again later.");
+    if (r.statusCode == 403) return tr('You can only send recipes to your friends.');
+    if (r.statusCode == 404) return tr("That recipe isn't available any more.");
+    if (r.statusCode == 413) return tr('That photo is too large.');
+    if (r.statusCode == 415) return tr("That photo can't be used. Try a different one.");
+    return tr("Couldn't save that right now. Please try again.");
   }
 
   /// Save a new recipe from ingredients, or (no ingredients) from one
@@ -106,7 +107,7 @@ class HouseRecipeService {
         ));
     if (r == null || (r.statusCode != 200 && r.statusCode != 201)) return RecipeSaveResult.failed(_message(r));
     final recipe = HouseRecipe.fromJson(jsonDecode(r.body));
-    return recipe == null ? const RecipeSaveResult.failed("Couldn't read the saved recipe.") : RecipeSaveResult.ok(recipe);
+    return recipe == null ? RecipeSaveResult.failed(tr("Couldn't read the saved recipe.")) : RecipeSaveResult.ok(recipe);
   }
 
   /// Null on success, otherwise a message.
@@ -263,6 +264,6 @@ class HouseRecipeService {
         ));
     if (r == null || r.statusCode != 200) return RecipeSaveResult.failed(_message(r));
     final recipe = HouseRecipe.fromJson(jsonDecode(r.body));
-    return recipe == null ? const RecipeSaveResult.failed("Couldn't read the saved recipe.") : RecipeSaveResult.ok(recipe);
+    return recipe == null ? RecipeSaveResult.failed(tr("Couldn't read the saved recipe.")) : RecipeSaveResult.ok(recipe);
   }
 }

@@ -24,6 +24,7 @@ import '../providers/whats_new_provider.dart';
 import 'notifications_screen.dart';
 import 'onboarding_screen.dart';
 import 'settings_screen.dart';
+import '../l10n/app_strings.dart';
 
 /// The Profile tab: who you are, your progress, your plan and your body
 /// numbers, with Settings behind the gear. Replaces the old profile sheet.
@@ -92,7 +93,7 @@ class ProfileView extends StatelessWidget {
         child: Column(
           children: [
             PageHeader(
-              title: 'Profile',
+              title: tr('Profile'),
               actions: [
                 AppIconButton(
                   key: const ValueKey('open_settings'),
@@ -117,33 +118,33 @@ class ProfileView extends StatelessWidget {
                     AppCard(
                       child: Column(
                         children: [
-                          Text('Finish setting up', style: AppType.headline()),
+                          Text(tr('Finish setting up'), style: AppType.headline()),
                           const SizedBox(height: 4),
                           Text(
-                            'Answer a few questions to get your daily calorie and macro targets.',
+                            tr('Answer a few questions to get your daily calorie and macro targets.'),
                             style: AppType.callout(),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           AppButton(
-                            label: 'Set up profile',
+                            label: tr('Set up profile'),
                             onPressed: () => _pushOver(context, (_) => const OnboardingScreen()),
                           ),
                         ],
                       ),
                     )
                   else ...[
-                    const SectionHeader(label: 'Your plan'),
+                    SectionHeader(label: tr('Your plan')),
                     const SizedBox(height: AppSpacing.md),
                     _PlanCard(profile: p),
                     const SizedBox(height: AppSpacing.xxl),
-                    const SectionHeader(label: 'Body'),
+                    SectionHeader(label: tr('Body')),
                     const SizedBox(height: AppSpacing.md),
                     _BodyCard(profile: p, unit: unit),
                     const SizedBox(height: AppSpacing.md),
                     AppButton.glass(
                       key: const ValueKey('edit_plan'),
-                      label: 'Update my details',
+                      label: tr('Update my details'),
                       icon: CupertinoIcons.pencil,
                       onPressed: () => _pushOver(context, (_) => OnboardingScreen(existingProfile: p)),
                     ),
@@ -155,8 +156,8 @@ class ProfileView extends StatelessWidget {
                         key: const ValueKey('profile_notifications'),
                         icon: CupertinoIcons.bell,
                         color: TrackerColors.macroFat,
-                        title: 'Notifications',
-                        subtitle: hasUnreadNotifications ? 'What’s new' : null,
+                        title: tr('Notifications'),
+                        subtitle: hasUnreadNotifications ? tr('What’s new') : null,
                         trailing: hasUnreadNotifications ? const UnreadDot() : null,
                         onTap: () => _pushOver(context, (_) => const NotificationsScreen()),
                       ),
@@ -164,8 +165,8 @@ class ProfileView extends StatelessWidget {
                         key: const ValueKey('profile_settings'),
                         icon: CupertinoIcons.gear_alt,
                         color: TrackerColors.textSecondary,
-                        title: 'Settings',
-                        subtitle: 'Appearance, units, privacy, account',
+                        title: tr('Settings'),
+                        subtitle: tr('Appearance, units, privacy, account'),
                         onTap: () => _openSettings(context),
                       ),
                     ],
@@ -184,7 +185,7 @@ class ProfileView extends StatelessWidget {
     final details = p == null
         ? null
         : name != null
-            ? '${p.age} years old · ${p.goal.title}'
+            ? '${tr('{age} years old', {'age': p.age})} · ${p.goal.title}'
             : '${p.goal.title} · ${p.activityLevel.title}';
     return AppCard(
       glow: TrackerColors.accentStart,
@@ -215,7 +216,7 @@ class ProfileView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name != null ? '@$name' : (p != null ? '${p.age} years old' : 'Your profile'),
+                  name != null ? '@$name' : (p != null ? tr('{age} years old', {'age': p.age}) : tr('Your profile')),
                   style: AppType.title(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -252,8 +253,8 @@ class _ProgressRow extends StatelessWidget {
             icon: CupertinoIcons.flame_fill,
             color: flame.color,
             value: '${streak.current}',
-            label: 'day streak',
-            sub: 'Best ${streak.best}',
+            label: tr('day streak'),
+            sub: tr('Best {v1}', {'v1': streak.best}),
             onTap: onTap,
           ),
         ),
@@ -265,7 +266,7 @@ class _ProgressRow extends StatelessWidget {
             color: TrackerColors.accentEnd,
             value: '${progress.level.level}',
             label: 'level',
-            sub: '${progress.level.xp} XP',
+            sub: tr('{xp} XP', {'xp': progress.level.xp}),
             onTap: onTap,
           ),
         ),
@@ -366,7 +367,7 @@ class _PlanCard extends StatelessWidget {
               Flexible(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 5),
-                  child: Text('calories a day', style: AppType.callout(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child: Text(tr('calories a day'), style: AppType.callout(), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
               ),
             ],
@@ -376,9 +377,9 @@ class _PlanCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
-              Expanded(child: _Macro(label: 'Protein', grams: p.proteinTargetG, color: TrackerColors.macroProtein)),
-              Expanded(child: _Macro(label: 'Carbs', grams: p.carbsTargetG, color: TrackerColors.macroCarbs)),
-              Expanded(child: _Macro(label: 'Fat', grams: p.fatTargetG, color: TrackerColors.macroFat)),
+              Expanded(child: _Macro(label: tr('Protein'), grams: p.proteinTargetG, color: TrackerColors.macroProtein)),
+              Expanded(child: _Macro(label: tr('Carbs'), grams: p.carbsTargetG, color: TrackerColors.macroCarbs)),
+              Expanded(child: _Macro(label: tr('Fat'), grams: p.fatTargetG, color: TrackerColors.macroFat)),
             ],
           ),
         ],
@@ -436,8 +437,8 @@ class _BodyCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _Metric(label: 'Weight', value: unit.format(p.weightKg, decimals: 0))),
-              Expanded(child: _Metric(label: 'Height', value: '${(p.heightCm / 100).toStringAsFixed(2)} m')),
+              Expanded(child: _Metric(label: tr('Weight'), value: unit.format(p.weightKg, decimals: 0))),
+              Expanded(child: _Metric(label: tr('Height'), value: '${(p.heightCm / 100).toStringAsFixed(2)} m')),
               Expanded(child: _Metric(label: 'BMI', value: p.bmi?.toStringAsFixed(1) ?? '—', sub: p.bmiCategory)),
             ],
           ),
@@ -448,10 +449,10 @@ class _BodyCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _Metric(label: 'At rest', value: p.bmr?.round().toString() ?? '—', sub: 'calories burned'),
+                child: _Metric(label: tr('At rest'), value: p.bmr?.round().toString() ?? '—', sub: tr('calories burned')),
               ),
               Expanded(
-                child: _Metric(label: 'Per day', value: p.tdee?.round().toString() ?? '—', sub: 'calories burned'),
+                child: _Metric(label: tr('Per day'), value: p.tdee?.round().toString() ?? '—', sub: 'calories burned'),
               ),
               const Expanded(child: SizedBox()),
             ],

@@ -12,6 +12,7 @@ import 'app_field.dart';
 import 'glass.dart';
 import 'onboarding/choice_card.dart';
 import 'pressable.dart';
+import '../l10n/app_strings.dart';
 
 /// The grams a search entry was logged with, read from its name
 /// ("Rice, white, cooked (150g)"). Null for photo entries, which have none.
@@ -60,7 +61,7 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
   double _factor = 1;
   bool _gramsValid = true;
 
-  static final _portions = <double, String>{0.5: '½×', 1: 'Same', 1.5: '1½×', 2: '2×'};
+  static Map<double, String> get _portions => <double, String>{0.5: '½×', 1: tr('Same'), 1.5: '1½×', 2: '2×'};
 
   @override
   void dispose() {
@@ -128,25 +129,25 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Edit entry', style: AppType.title(), textAlign: TextAlign.center),
+        Text(tr('Edit entry'), style: AppType.title(), textAlign: TextAlign.center),
         const SizedBox(height: AppSpacing.lg),
-        _label('Name'),
+        _label(tr('Name')),
         AppField(
           key: const ValueKey('edit_name'),
-          placeholder: 'What was it?',
+          placeholder: tr('What was it?'),
           controller: _name,
           inputFormatters: [LengthLimitingTextInputFormatter(120)],
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: AppSpacing.lg),
-        _label('Meal'),
+        _label(tr('Meal')),
         _MealPicker(value: _meal, onChanged: (meal) => setState(() => _meal = meal)),
         const SizedBox(height: AppSpacing.lg),
-        _label('How much'),
+        _label(tr('How much')),
         if (_baseGrams != null)
           AppField(
             key: const ValueKey('edit_grams'),
-            placeholder: 'Amount',
+            placeholder: tr('Amount'),
             controller: _grams,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             suffix: Text('g', style: AppType.body(color: TrackerColors.textTertiary)),
@@ -164,9 +165,8 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
         const SizedBox(height: AppSpacing.sm),
         Text(
           _gramsValid
-              ? '${preview.calories} kcal · ${preview.proteinG.round()}g protein · '
-                  '${preview.carbsG.round()}g carbs · ${preview.fatG.round()}g fat'
-              : 'Enter an amount between 1 and ${maxPortionGrams.round()} g',
+              ? tr('{kcal} kcal · {p}g protein · {c}g carbs · {f}g fat', {'kcal': preview.calories, 'p': preview.proteinG.round(), 'c': preview.carbsG.round(), 'f': preview.fatG.round()})
+              : tr('Enter an amount between 1 and {v1} g', {'v1': maxPortionGrams.round()}),
           key: const ValueKey('edit_preview'),
           style: AppType.caption(
             color: _gramsValid ? TrackerColors.accentEndText : TrackerColors.error,
@@ -176,7 +176,7 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
         const SizedBox(height: AppSpacing.lg),
         AppButton.glass(
           key: const ValueKey('edit_change_food'),
-          label: 'Wrong food? Pick another',
+          label: tr('Wrong food? Pick another'),
           icon: CupertinoIcons.search,
           height: 48,
           onPressed: _changeFood,
@@ -185,13 +185,13 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
         Row(
           children: [
             Expanded(
-              child: AppButton.glass(label: 'Cancel', height: 48, onPressed: () => Navigator.of(context).pop()),
+              child: AppButton.glass(label: tr('Cancel'), height: 48, onPressed: () => Navigator.of(context).pop()),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: AppButton(
-                key: const ValueKey('edit_save'),
-                label: 'Save',
+                key: ValueKey('edit_save'),
+                label: tr('Save'),
                 height: 48,
                 onPressed: canSave ? _save : null,
               ),
@@ -205,7 +205,7 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        padding: EdgeInsets.only(bottom: AppSpacing.sm),
         child: Text(text.toUpperCase(), style: AppType.sectionLabel()),
       );
 }
@@ -218,11 +218,11 @@ class _MealPicker extends StatelessWidget {
   final MealType value;
   final ValueChanged<MealType> onChanged;
 
-  static const _labels = {
-    MealType.breakfast: 'Breakfast',
-    MealType.lunch: 'Lunch',
-    MealType.dinner: 'Dinner',
-    MealType.snack: 'Snack',
+  static Map<MealType, String> get _labels => {
+    MealType.breakfast: tr('Breakfast'),
+    MealType.lunch: tr('Lunch'),
+    MealType.dinner: tr('Dinner'),
+    MealType.snack: tr('Snack'),
   };
 
   @override

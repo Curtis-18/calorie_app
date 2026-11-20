@@ -7,6 +7,7 @@ import '../services/avatar_service.dart';
 import '../theme/tracker_colors.dart';
 import 'app_dialog.dart';
 import 'pressable.dart';
+import '../l10n/app_strings.dart';
 
 /// Your own picture, with a camera badge: tap to take a photo, choose one
 /// from the library, or go back to the coloured initial.
@@ -68,25 +69,25 @@ class _ProfilePhotoButtonState extends State<ProfilePhotoButton> {
     final choice = await showCupertinoModalPopup<String>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: const Text('Profile photo'),
-        message: const Text('Your friends, and people you send a friend request to, can see it.'),
+        title: Text(tr('Profile photo')),
+        message: Text(tr('Your friends, and people you send a friend request to, can see it.')),
         actions: [
           CupertinoActionSheetAction(
             onPressed: () => Navigator.pop(context, 'camera'),
-            child: const Text('Take a photo'),
+            child: Text(tr('Take a photo')),
           ),
           CupertinoActionSheetAction(
             onPressed: () => Navigator.pop(context, 'library'),
-            child: const Text('Choose from library'),
+            child: Text(tr('Choose from library')),
           ),
           if (_hasPhoto)
             CupertinoActionSheetAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.pop(context, 'remove'),
-              child: const Text('Remove photo'),
+              child: Text(tr('Remove photo')),
             ),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
       ),
     );
     if (choice == null || !mounted) return;
@@ -98,8 +99,8 @@ class _ProfilePhotoButtonState extends State<ProfilePhotoButton> {
       file = await (widget.pick ?? _pick)(source);
     } catch (_) {
       return _fail(
-        source == ImageSource.camera ? "Couldn't open the camera" : "Couldn't open your photos",
-        'Allow access in Settings, then try again.',
+        source == ImageSource.camera ? tr("Couldn't open the camera") : tr("Couldn't open your photos"),
+        tr('Allow access in Settings, then try again.'),
       );
     }
     if (file == null || !mounted) return;
@@ -110,7 +111,7 @@ class _ProfilePhotoButtonState extends State<ProfilePhotoButton> {
       try {
         photo = await (widget.prepare ?? prepareAvatar)(await file.readAsBytes());
       } catch (_) {
-        await _fail("That photo can't be used", 'Try a different one.');
+        await _fail(tr("That photo can't be used"), tr('Try a different one.'));
         return;
       }
       await _service.upload(photo);
@@ -122,7 +123,7 @@ class _ProfilePhotoButtonState extends State<ProfilePhotoButton> {
       });
       widget.onChanged?.call();
     } on AvatarException catch (e) {
-      await _fail("Couldn't save your photo", e.message);
+      await _fail(tr("Couldn't save your photo"), e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -139,7 +140,7 @@ class _ProfilePhotoButtonState extends State<ProfilePhotoButton> {
       });
       widget.onChanged?.call();
     } on AvatarException catch (e) {
-      await _fail("Couldn't remove your photo", e.message);
+      await _fail(tr("Couldn't remove your photo"), e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -151,7 +152,7 @@ class _ProfilePhotoButtonState extends State<ProfilePhotoButton> {
     final fresh = _fresh;
     return Semantics(
       button: true,
-      label: _hasPhoto ? 'Change profile photo' : 'Add a profile photo',
+      label: _hasPhoto ? tr('Change profile photo') : tr('Add a profile photo'),
       child: Pressable(
         onTap: _choose,
         child: SizedBox(

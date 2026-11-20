@@ -9,6 +9,7 @@ import '../app_dialog.dart';
 import '../glass.dart';
 import '../pressable.dart';
 import '../shimmer.dart';
+import '../../l10n/app_strings.dart';
 
 /// The bites you sent in the last 24 hours: who has opened each one, how they
 /// reacted, and a way to take one back.
@@ -52,10 +53,10 @@ class _SentBitesSheetState extends State<SentBitesSheet> {
   Future<void> _takeBack(SentSnap snap) async {
     final sure = await showAppDialog(
       context: context,
-      title: 'Take this bite back?',
-      message: "Your friends won't be able to see it any more. Today still counts toward your streaks.",
-      confirmLabel: 'Take back',
-      cancelLabel: 'Keep',
+      title: tr('Take this bite back?'),
+      message: tr("Your friends won't be able to see it any more. Today still counts toward your streaks."),
+      confirmLabel: tr('Take back'),
+      cancelLabel: tr('Keep'),
       destructive: true,
     );
     if (sure != true || !mounted) return;
@@ -76,9 +77,9 @@ class _SentBitesSheetState extends State<SentBitesSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Bites you sent', style: AppType.title()),
+          Text(tr('Bites you sent'), style: AppType.title()),
           const SizedBox(height: AppSpacing.sm),
-          Text('From the last 24 hours. After that they disappear for everyone.', style: AppType.callout()),
+          Text(tr('From the last 24 hours. After that they disappear for everyone.'), style: AppType.callout()),
           const SizedBox(height: AppSpacing.lg),
           if (_error != null) ...[
             Text(_error!, style: AppType.caption(color: TrackerColors.warning, size: 13)),
@@ -88,7 +89,7 @@ class _SentBitesSheetState extends State<SentBitesSheet> {
             const SkeletonRows(count: 2)
           else if (sent != null && sent.isEmpty)
             Text(
-              "You haven't sent a bite in the last 24 hours.",
+              tr("You haven't sent a bite in the last 24 hours."),
               style: AppType.body(color: TrackerColors.textSecondary),
             )
           else
@@ -105,9 +106,9 @@ String sentStatus(SentSnap snap) {
   final seen = snap.recipients.where((r) => r.viewed).length;
   if (total == 1) {
     final name = '@${snap.recipients.first.username}';
-    return seen == 1 ? 'Seen by $name' : 'Sent to $name · not opened yet';
+    return seen == 1 ? tr('Seen by {name}', {'name': name}) : tr('Sent to {name} · not opened yet', {'name': name});
   }
-  return seen == 0 ? 'Sent to $total friends · not opened yet' : 'Seen by $seen of $total';
+  return seen == 0 ? tr('Sent to {total} friends · not opened yet', {'total': total}) : tr('Seen by {seen} of {total}', {'seen': seen, 'total': total});
 }
 
 class _SentRow extends StatelessWidget {
@@ -181,7 +182,7 @@ class _SentRow extends StatelessWidget {
             ),
             Semantics(
               button: true,
-              label: 'Take this bite back',
+              label: tr('Take this bite back'),
               child: Pressable(
                 onTap: onTakeBack,
                 child: SizedBox(

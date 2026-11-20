@@ -4,6 +4,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'glass.dart';
 import 'pressable.dart';
+import '../l10n/app_strings.dart';
 
 /// Warm-accent glass pill showing the current logging streak.
 class StreakPill extends StatelessWidget {
@@ -33,7 +34,7 @@ class StreakPill extends StatelessWidget {
             ),
             const SizedBox(width: 5),
             Text(
-              '$days day${days == 1 ? '' : 's'}',
+              days == 1 ? tr('1 day') : tr('{n} days', {'n': days}),
               style: AppType.caption(color: TrackerColors.accentEndText, size: 12)
                   .copyWith(fontWeight: FontWeight.w800),
             ),
@@ -65,12 +66,12 @@ class DayArrows extends StatelessWidget {
           children: [
             Semantics(
               button: true,
-              label: 'Previous day',
+              label: tr('Previous day'),
               child: _Arrow(key: const ValueKey('day_previous'), icon: CupertinoIcons.chevron_left, onTap: onPrevious),
             ),
             Semantics(
               button: true,
-              label: 'Next day',
+              label: tr('Next day'),
               child: _Arrow(
                 key: const ValueKey('day_next'),
                 icon: CupertinoIcons.chevron_right,

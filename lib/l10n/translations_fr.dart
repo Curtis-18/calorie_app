@@ -25,71 +25,90 @@ const Map<String, String> french = {
   'breakfast': 'petit-déjeuner',
   'lunch': 'déjeuner',
   'dinner': 'dîner',
-  'snack': 'collation',
+  'snack': 'en-cas',
   'Today\'s meals': 'Repas d’aujourd’hui',
   'Meals': 'Repas',
   'Nothing yet': 'Rien pour l’instant',
   '1 item': '1 élément',
   '{n} items': '{n} éléments',
-  'Tap a food to edit it, swipe left to delete it': 'Touchez un aliment pour le modifier, balayez vers la gauche pour le supprimer',
-  'Past days are read-only. Go back to Today to log.': 'Les jours passés sont en lecture seule. Revenez à Aujourd’hui pour ajouter.',
+  'Tap a food to edit it, swipe left to delete it':
+      'Touchez un aliment pour le modifier, balayez vers la gauche pour le supprimer',
+  'Past days are read-only. Go back to Today to log.':
+      'Les jours passés sont en lecture seule. Revenez à Aujourd’hui pour ajouter.',
   'Search for a food': 'Rechercher un aliment',
   'Take a photo of your meal': 'Prenez votre repas en photo',
   'Perfect day': 'Journée parfaite',
   'Cached day': 'Jour en cache',
   'Nothing logged': 'Rien d’enregistré',
   'Nothing was logged for this meal.': 'Rien n’a été enregistré pour ce repas.',
-  'Take a photo of your meal, or search by name.': 'Prenez votre repas en photo ou cherchez par nom.',
+  'Take a photo of your meal, or search by name.':
+      'Prenez votre repas en photo ou cherchez par nom.',
   'Delete': 'Supprimer',
   'Estimated': 'Estimé',
   'Notifications': 'Notifications',
   'Notifications, something new': 'Notifications, du nouveau',
+  'OK': 'OK',
   'Cancel': 'Annuler',
   'Couldn\'t do that': 'Impossible de le faire',
   'Couldn\'t save your meal': 'Impossible d’enregistrer votre repas',
-  'Something went wrong while saving your meal. Please try again.': 'Un problème est survenu lors de l’enregistrement. Veuillez réessayer.',
+  'Something went wrong while saving your meal. Please try again.':
+      'Un problème est survenu lors de l’enregistrement. Veuillez réessayer.',
   'Couldn\'t save that food': 'Impossible d’enregistrer cet aliment',
-  'It was not added to your log. Check your connection and try again.': 'Il n’a pas été ajouté à votre journal. Vérifiez votre connexion et réessayez.',
+  'It was not added to your log. Check your connection and try again.':
+      'Il n’a pas été ajouté à votre journal. Vérifiez votre connexion et réessayez.',
   'Couldn\'t delete that food': 'Impossible de supprimer cet aliment',
-  'It is still in your log. Check your connection and try again.': 'Il est toujours dans votre journal. Vérifiez votre connexion et réessayez.',
+  'It is still in your log. Check your connection and try again.':
+      'Il est toujours dans votre journal. Vérifiez votre connexion et réessayez.',
   'Couldn\'t save that change': 'Impossible d’enregistrer cette modification',
-  'Your entry is unchanged. Check your connection and try again.': 'Votre entrée est inchangée. Vérifiez votre connexion et réessayez.',
+  'Your entry is unchanged. Check your connection and try again.':
+      'Votre entrée est inchangée. Vérifiez votre connexion et réessayez.',
   'Finish your other photos first': 'Terminez d’abord vos autres photos',
-  'You have {n} meals waiting to be checked. Review or dismiss one, then take the next.': '{n} repas attendent d’être vérifiés. Validez-en ou écartez-en un, puis prenez le suivant.',
+  'You have {n} meals waiting to be checked. Review or dismiss one, then take the next.':
+      '{n} repas attendent d’être vérifiés. Validez-en ou écartez-en un, puis prenez le suivant.',
   'Settings': 'Réglages',
   'Account': 'Compte',
   'Username': 'Nom d’utilisateur',
   'Set up profile': 'Configurer le profil',
   'Profile and goals': 'Profil et objectifs',
-  'Answer a few questions to get your targets': 'Répondez à quelques questions pour obtenir vos objectifs',
+  'Answer a few questions to get your targets':
+      'Répondez à quelques questions pour obtenir vos objectifs',
   'Weight, height, activity and goal': 'Poids, taille, activité et objectif',
   'Today screen': 'Écran du jour',
-  'Calories and meals always show. These cards are optional.': 'Les calories et les repas s’affichent toujours. Ces cartes sont facultatives.',
+  'Calories and meals always show. These cards are optional.':
+      'Les calories et les repas s’affichent toujours. Ces cartes sont facultatives.',
   'Macros': 'Macros',
   'Protein, carbs and fat': 'Protéines, glucides et lipides',
   'Nutrients': 'Nutriments',
-  'A "View nutrients" row under macros': 'Une ligne « Voir les nutriments » sous les macros',
+  'A "View nutrients" row under macros':
+      'Une ligne « Voir les nutriments » sous les macros',
   'Open the camera at launch': 'Ouvrir l’appareil photo au lancement',
-  'Start a meal photo as soon as the app opens': 'Commencer une photo de repas dès l’ouverture de l’app',
+  'Start a meal photo as soon as the app opens':
+      'Commencer une photo de repas dès l’ouverture de l’app',
   'Food': 'Alimentation',
-  'Helps the camera name regional dishes. You can always correct what it finds.': 'Aide l’appareil photo à nommer les plats régionaux. Vous pouvez toujours corriger ce qu’il trouve.',
+  'Helps the camera name regional dishes. You can always correct what it finds.':
+      'Aide l’appareil photo à nommer les plats régionaux. Vous pouvez toujours corriger ce qu’il trouve.',
   'Where you mostly eat': 'Où vous mangez le plus souvent',
   'Not set': 'Non défini',
   'Weekly budget': 'Budget hebdomadaire',
-  'Eat a bit more one day and the rest of the week eases gently, inside your healthy range. Days you don’t log are left out.': 'Mangez un peu plus un jour et le reste de la semaine s’ajuste en douceur, dans votre plage saine. Les jours non enregistrés sont ignorés.',
+  'Eat a bit more one day and the rest of the week eases gently, inside your healthy range. Days you don’t log are left out.':
+      'Mangez un peu plus un jour et le reste de la semaine s’ajuste en douceur, dans votre plage saine. Les jours non enregistrés sont ignorés.',
   'Flexible weekly target': 'Objectif hebdomadaire flexible',
-  'Today’s plan adjusts a little across the week': 'Le plan du jour s’ajuste un peu au fil de la semaine',
+  'Today’s plan adjusts a little across the week':
+      'Le plan du jour s’ajuste un peu au fil de la semaine',
   'Weekend flex': 'Souplesse du week-end',
-  'A little more on Saturday and Sunday': 'Un peu plus le samedi et le dimanche',
+  'A little more on Saturday and Sunday':
+      'Un peu plus le samedi et le dimanche',
   'Gentle nudges': 'Petits rappels doux',
-  'A kind suggestion after a bigger day': 'Une suggestion bienveillante après une grosse journée',
+  'A kind suggestion after a bigger day':
+      'Une suggestion bienveillante après une grosse journée',
   'Week starts on': 'La semaine commence le',
   'Monday': 'lundi',
   'Sunday': 'dimanche',
   'Units': 'Unités',
   'Weight': 'Poids',
   'Notifications and privacy': 'Notifications et confidentialité',
-  'What to tell you, quiet hours, pause': 'Quoi vous dire, heures calmes, pause',
+  'What to tell you, quiet hours, pause':
+      'Quoi vous dire, heures calmes, pause',
   'Blocked people': 'Personnes bloquées',
   'Help': 'Aide',
   'Replay the tutorial': 'Revoir le tutoriel',
@@ -98,14 +117,16 @@ const Map<String, String> french = {
   'Delete account': 'Supprimer le compte',
   'Couldn\'t change that': 'Impossible de modifier',
   'Where do you mostly eat?': 'Où mangez-vous le plus souvent ?',
-  'It only helps the camera name dishes. It never limits what you can log.': 'Cela aide seulement l’appareil photo à nommer les plats. Cela ne limite jamais ce que vous pouvez enregistrer.',
+  'It only helps the camera name dishes. It never limits what you can log.':
+      'Cela aide seulement l’appareil photo à nommer les plats. Cela ne limite jamais ce que vous pouvez enregistrer.',
   'Don’t use a region': 'Ne pas utiliser de région',
   'Language': 'Langue',
   'Automatic': 'Automatique',
   'Follows your phone’s language': 'Suit la langue de votre téléphone',
   'Choose a language': 'Choisissez une langue',
   'Language and region of the app': 'Langue de l’app',
-  'Some screens are still in English while we finish translating them.': 'Certains écrans sont encore en anglais, le temps de finir leur traduction.',
+  'Some screens are still in English while we finish translating them.':
+      'Certains écrans sont encore en anglais, le temps de finir leur traduction.',
   'North America': 'Amérique du Nord',
   'Latin America and the Caribbean': 'Amérique latine et Caraïbes',
   'Europe': 'Europe',
@@ -127,25 +148,982 @@ const Map<String, String> french = {
   'Easy on the eyes': 'Reposant pour les yeux',
   'Log in': 'Se connecter',
   'Welcome back': 'Bon retour',
-  'Sign in to keep your streak alive.': 'Connectez-vous pour garder votre série.',
+  'Sign in to keep your streak alive.':
+      'Connectez-vous pour garder votre série.',
   'Email': 'E-mail',
   'Password': 'Mot de passe',
   'Forgot password?': 'Mot de passe oublié ?',
   'Don\'t have an account? Sign up': 'Pas de compte ? Inscrivez-vous',
-  'Couldn\'t log you in. Check your connection and try again.': 'Connexion impossible. Vérifiez votre connexion et réessayez.',
+  'Couldn\'t log you in. Check your connection and try again.':
+      'Connexion impossible. Vérifiez votre connexion et réessayez.',
   'Sign up': 'S’inscrire',
   'Create your account': 'Créez votre compte',
-  'Start tracking in under a minute.': 'Commencez le suivi en moins d’une minute.',
+  'Start tracking in under a minute.':
+      'Commencez le suivi en moins d’une minute.',
   'Already have an account? Log in': 'Déjà un compte ? Connectez-vous',
   'Almost there': 'Presque terminé',
-  'Check your email to confirm your account, then log in.': 'Consultez votre e-mail pour confirmer votre compte, puis connectez-vous.',
-  'Couldn\'t sign you up. Check your connection and try again.': 'Inscription impossible. Vérifiez votre connexion et réessayez.',
+  'Check your email to confirm your account, then log in.':
+      'Consultez votre e-mail pour confirmer votre compte, puis connectez-vous.',
+  'Couldn\'t sign you up. Check your connection and try again.':
+      'Inscription impossible. Vérifiez votre connexion et réessayez.',
   'Reset password': 'Réinitialiser le mot de passe',
   'Forgot your password?': 'Mot de passe oublié ?',
-  'Enter your email and we\'ll send you a link to choose a new one.': 'Saisissez votre e-mail et nous vous enverrons un lien pour en choisir un nouveau.',
+  'Enter your email and we\'ll send you a link to choose a new one.':
+      'Saisissez votre e-mail et nous vous enverrons un lien pour en choisir un nouveau.',
   'Send reset link': 'Envoyer le lien',
   'Check your email': 'Consultez vos e-mails',
-  'If {email} has an account, a reset link is on its way. It can take a minute, so check spam too.': 'Si {email} a un compte, un lien est en route. Cela peut prendre une minute, pensez à vérifier les spams.',
+  'If {email} has an account, a reset link is on its way. It can take a minute, so check spam too.':
+      'Si {email} a un compte, un lien est en route. Cela peut prendre une minute, pensez à vérifier les spams.',
   'Back to log in': 'Retour à la connexion',
   'Send it again': 'Renvoyer',
+  'Enter the email you signed up with.':
+      'Saisissez l’e-mail avec lequel vous vous êtes inscrit.',
+  'That doesn\'t look like an email address.':
+      'Cela ne ressemble pas à une adresse e-mail.',
+  'Use at least {minPasswordLength} characters.':
+      'Utilisez au moins {minPasswordLength} caractères.',
+  'The two passwords don\'t match.':
+      'Les deux mots de passe ne correspondent pas.',
+  'Too many tries. Wait a minute and try again.':
+      'Trop de tentatives. Attendez une minute et réessayez.',
+  'Choose a password you haven\'t used before.':
+      'Choisissez un mot de passe que vous n’avez jamais utilisé.',
+  'That password is too weak.': 'Ce mot de passe est trop faible.',
+  'That link has expired. Ask for a new one.':
+      'Ce lien a expiré. Demandez-en un nouveau.',
+  'Something went wrong. Check your connection and try again.':
+      'Une erreur s’est produite. Vérifiez votre connexion et réessayez.',
+  'Couldn\'t reach the server. Check your connection and try again.':
+      'Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.',
+  'Couldn\'t save that right now. Please try again.':
+      'Enregistrement impossible pour le moment. Réessayez.',
+  'You\'ve been signed out. Please log in again.':
+      'Vous avez été déconnecté. Veuillez vous reconnecter.',
+  'The server is taking too long. It may be waking up, so try again.':
+      'Le serveur met trop de temps. Il se réveille peut-être, réessayez.',
+  'Couldn\'t save your photo. Please try again.':
+      'Impossible d’enregistrer votre photo. Réessayez.',
+  'Couldn\'t remove your photo. Please try again.':
+      'Impossible de supprimer votre photo. Réessayez.',
+  'Search is taking too long. The server may be waking up, so try again.':
+      'La recherche prend trop de temps. Le serveur se réveille peut-être, réessayez.',
+  'Food search is unavailable right now. Please try again in a moment.':
+      'La recherche d’aliments est indisponible pour le moment. Réessayez dans un instant.',
+  'Your session has expired. Please log in again.':
+      'Votre session a expiré. Veuillez vous reconnecter.',
+  'You\'re searching very fast. Wait a moment and try again.':
+      'Vous cherchez très vite. Patientez un instant et réessayez.',
+  'Couldn\'t send your bite. Please try again.':
+      'Impossible d’envoyer votre bouchée. Réessayez.',
+  'Couldn\'t load your bites.': 'Impossible de charger vos bouchées.',
+  'Couldn\'t load the bites you sent.':
+      'Impossible de charger les bouchées envoyées.',
+  'Couldn\'t mark that bite as seen.':
+      'Impossible de marquer cette bouchée comme vue.',
+  'Couldn\'t send that reaction.': 'Impossible d’envoyer cette réaction.',
+  'Couldn\'t send your report.': 'Impossible d’envoyer votre signalement.',
+  'Couldn\'t delete that bite.': 'Impossible de supprimer cette bouchée.',
+  'Couldn\'t add that to your story. Please try again.':
+      'Impossible de l’ajouter à votre story. Réessayez.',
+  'Couldn\'t load stories.': 'Impossible de charger les stories.',
+  'Couldn\'t mark that story as seen.':
+      'Impossible de marquer cette story comme vue.',
+  'Couldn\'t delete that story.': 'Impossible de supprimer cette story.',
+  'Couldn\'t delete your account. Please try again.':
+      'Impossible de supprimer votre compte. Réessayez.',
+  'Couldn\'t load your notification settings.':
+      'Impossible de charger vos réglages de notifications.',
+  'Couldn\'t save that. Please try again.':
+      'Enregistrement impossible. Réessayez.',
+  'Couldn\'t load your friends. Please try again.':
+      'Impossible de charger vos amis. Réessayez.',
+  'Couldn\'t send that request. Please try again.':
+      'Impossible d’envoyer cette demande. Réessayez.',
+  'Couldn\'t accept that request.': 'Impossible d’accepter cette demande.',
+  'Couldn\'t decline that request.': 'Impossible de refuser cette demande.',
+  'Couldn\'t remove them. Please try again.':
+      'Impossible de le retirer. Réessayez.',
+  'Couldn\'t block them. Please try again.':
+      'Impossible de le bloquer. Réessayez.',
+  'Couldn\'t load your blocked list.':
+      'Impossible de charger votre liste de blocages.',
+  'Couldn\'t unblock them. Please try again.':
+      'Impossible de le débloquer. Réessayez.',
+  'That isn\'t allowed for your plan.':
+      'Ce n’est pas autorisé pour votre formule.',
+  'Couldn\'t load your messages.': 'Impossible de charger vos messages.',
+  'Couldn\'t load this conversation.':
+      'Impossible de charger cette conversation.',
+  'Couldn\'t send that message.': 'Impossible d’envoyer ce message.',
+  'Couldn\'t mark those as read.': 'Impossible de les marquer comme lus.',
+  'Couldn\'t delete that message.': 'Impossible de supprimer ce message.',
+  'The server is taking too long to respond. It may be waking up, so try again in a moment.':
+      'Le serveur met trop de temps à répondre. Il se réveille peut-être, réessayez dans un instant.',
+  'That photo is too large. Try again with a smaller photo.':
+      'Cette photo est trop volumineuse. Réessayez avec une photo plus petite.',
+  'We couldn\'t read that photo. Try taking it again.':
+      'Nous n’avons pas pu lire cette photo. Essayez de la reprendre.',
+  'Meal analysis is busy right now. Please try again in a moment.':
+      'L’analyse des repas est occupée. Réessayez dans un instant.',
+  'Got an unexpected response from the server. Please try again.':
+      'Réponse inattendue du serveur. Réessayez.',
+  'You\'ve scanned a lot of photos. Try again in a little while.':
+      'Vous avez scanné beaucoup de photos. Réessayez dans un moment.',
+  'Photo analysis failed (error {status}). Please try again.':
+      'L’analyse de la photo a échoué (erreur {status}). Réessayez.',
+  'That recipe isn\'t complete yet.':
+      'Cette recette n’est pas encore complète.',
+  'Recipes aren\'t available right now. Please try again later.':
+      'Les recettes ne sont pas disponibles pour le moment. Réessayez plus tard.',
+  'You can only send recipes to your friends.':
+      'Vous ne pouvez envoyer des recettes qu’à vos amis.',
+  'That recipe isn\'t available any more.':
+      'Cette recette n’est plus disponible.',
+  'That photo is too large.': 'Cette photo est trop volumineuse.',
+  'That photo can\'t be used. Try a different one.':
+      'Cette photo ne peut pas être utilisée. Essayez-en une autre.',
+  'Couldn\'t read the saved recipe.':
+      'Impossible de lire la recette enregistrée.',
+  'Insights are taking too long. The server may be waking up, so pull to refresh in a moment.':
+      'Les analyses prennent trop de temps. Le serveur se réveille peut-être, tirez pour actualiser dans un instant.',
+  'Insights aren\'t available right now. Please try again in a moment.':
+      'Les analyses ne sont pas disponibles pour le moment. Réessayez dans un instant.',
+  'That username is taken.': 'Ce nom d’utilisateur est déjà pris.',
+  'Couldn\'t check that name. Please try again.':
+      'Impossible de vérifier ce nom. Réessayez.',
+  'That username can\'t be used.':
+      'Ce nom d’utilisateur ne peut pas être utilisé.',
+  'Couldn\'t save your username. Please try again.':
+      'Impossible d’enregistrer votre nom d’utilisateur. Réessayez.',
+  'Couldn\'t load your weight history.':
+      'Impossible de charger votre historique de poids.',
+  'Couldn\'t save your weigh-in. Please try again.':
+      'Impossible d’enregistrer votre pesée. Réessayez.',
+  'Couldn\'t delete that weigh-in. Please try again.':
+      'Impossible de supprimer cette pesée. Réessayez.',
+  'Unknown food': 'Aliment inconnu',
+  'Usernames need at least {usernameMinLength} characters.':
+      'Les noms d’utilisateur doivent comporter au moins {usernameMinLength} caractères.',
+  'Usernames can be at most {usernameMaxLength} characters.':
+      'Les noms d’utilisateur peuvent comporter au plus {usernameMaxLength} caractères.',
+  'Use only letters, numbers and underscores.':
+      'Utilisez uniquement des lettres, des chiffres et des tirets bas.',
+  'Underscores can\'t be doubled or go at the end.':
+      'Les tirets bas ne peuvent pas être doublés ni placés à la fin.',
+  'That name isn\'t available.': 'Ce nom n’est pas disponible.',
+  'Off': 'Désactivé',
+  'Enter a weight between {v1} and {v2}.':
+      'Saisissez un poids entre {v1} et {v2}.',
+  'Enter a height between {v1} and {v2} cm.':
+      'Saisissez une taille entre {v1} et {v2} cm.',
+  'Enter a height between 3 ft 4 in and 8 ft 2 in.':
+      'Saisissez une taille entre 3 ft 4 in et 8 ft 2 in.',
+  'A typical value for this dish.': 'Une valeur typique pour ce plat.',
+  'Yesterday {time}': 'Hier {time}',
+  'Mon': 'lun.',
+  'Tue': 'mar.',
+  'Wed': 'mer.',
+  'Thu': 'jeu.',
+  'Fri': 'ven.',
+  'Sat': 'sam.',
+  'Sun': 'dim.',
+  'Unknown': 'Inconnu',
+  'Underweight': 'Insuffisance pondérale',
+  'Normal weight': 'Poids normal',
+  'Overweight': 'Surpoids',
+  'Obese': 'Obésité',
+  'I\'m on a {streakDays}-day streak and level {level} on NuStreak 🔥':
+      'J’ai une série de {streakDays} jours et je suis niveau {level} sur NuStreak 🔥',
+  'I\'m level {level} on NuStreak 🔥': 'Je suis niveau {level} sur NuStreak 🔥',
+  'Female': 'Femme',
+  'Male': 'Homme',
+  'Mostly sitting': 'Surtout assis',
+  'Lightly active': 'Peu actif',
+  'Moderately active': 'Modérément actif',
+  'Very active': 'Très actif',
+  'Athlete level': 'Niveau athlète',
+  'Desk job or studying, and little or no exercise.':
+      'Travail de bureau ou études, et peu ou pas d’exercice.',
+  'On your feet a fair bit, or exercise 1 to 3 days a week.':
+      'Assez souvent debout, ou exercice 1 à 3 jours par semaine.',
+  'Exercise or sport 3 to 5 days a week.':
+      'Exercice ou sport 3 à 5 jours par semaine.',
+  'Hard exercise 6 or 7 days a week, or a physical job.':
+      'Exercice intense 6 ou 7 jours par semaine, ou un travail physique.',
+  'Intense training every day, or a very physical job.':
+      'Entraînement intense tous les jours, ou un travail très physique.',
+  'Lose weight': 'Perdre du poids',
+  'Stay the same': 'Rester pareil',
+  'Gain weight': 'Prendre du poids',
+  'A small, steady daily cut. No crash diets.':
+      'Une petite réduction quotidienne et régulière. Pas de régimes drastiques.',
+  'Keep your weight steady and build good habits.':
+      'Gardez un poids stable et prenez de bonnes habitudes.',
+  'A small daily boost to build up gradually.':
+      'Un petit coup de pouce quotidien pour progresser graduellement.',
+  'You can pin up to {maxHighlights} recipes. Unpin one first.':
+      'Vous pouvez épingler jusqu’à {maxHighlights} recettes. Désépinglez-en une d’abord.',
+  'We couldn\'t save your profile. Please try again.':
+      'Nous n’avons pas pu enregistrer votre profil. Réessayez.',
+  'Something went wrong while scanning your meal. Please try again.':
+      'Une erreur s’est produite lors de l’analyse de votre repas. Réessayez.',
+  'No data for this week yet': 'Pas encore de données pour cette semaine',
+  'Snap your meal': 'Photographiez votre repas',
+  'We\'ll spot the foods and estimate portions for you to check.':
+      'Nous repérerons les aliments et estimerons les portions que vous pourrez vérifier.',
+  'Find a food by name and enter how much you had.':
+      'Cherchez un aliment par son nom et indiquez la quantité.',
+  'Open camera': 'Ouvrir l’appareil photo',
+  'Search': 'Rechercher',
+  'Cover photo': 'Photo de couverture',
+  'Slide {position}': 'Diapositive {position}',
+  'Only you and the friends who can open this recipe will see it.':
+      'Seuls vous et les amis qui peuvent ouvrir cette recette la verront.',
+  'Couldn\'t remove it': 'Impossible de le supprimer',
+  'Couldn\'t save that photo': 'Impossible d’enregistrer cette photo',
+  'Couldn\'t open the camera': 'Impossible d’ouvrir l’appareil photo',
+  'Couldn\'t open your photos': 'Impossible d’ouvrir vos photos',
+  'Allow access in Settings, then try again.':
+      'Autorisez l’accès dans les Réglages, puis réessayez.',
+  'Photos': 'Photos',
+  'A cover, then up to {maxRecipeSlides} slides: the ingredients, the steps, the finished dish.':
+      'Une couverture, puis jusqu’à {maxRecipeSlides} diapositives : les ingrédients, les étapes, le plat terminé.',
+  'Cover': 'Couverture',
+  'Profile photo': 'Photo de profil',
+  'Your friends, and people you send a friend request to, can see it.':
+      'Vos amis, et les personnes à qui vous envoyez une demande d’ami, peuvent la voir.',
+  'Take a photo': 'Prendre une photo',
+  'Choose from library': 'Choisir dans la photothèque',
+  'Remove photo': 'Supprimer la photo',
+  'That photo can\'t be used': 'Cette photo ne peut pas être utilisée',
+  'Try a different one.': 'Essayez-en une autre.',
+  'Couldn\'t save your photo': 'Impossible d’enregistrer votre photo',
+  'Couldn\'t remove your photo': 'Impossible de supprimer votre photo',
+  'Change profile photo': 'Changer la photo de profil',
+  'Add a profile photo': 'Ajouter une photo de profil',
+  'Step {v1} of {count}': 'Étape {v1} sur {count}',
+  'Skip': 'Passer',
+  'Got it': 'Compris',
+  'Next': 'Suivant',
+  'You and @{v1} are now friends!': 'Vous et @{v1} êtes maintenant amis !',
+  'You\'re already friends with @{v1}.': 'Vous êtes déjà ami avec @{v1}.',
+  'You already asked @{v1}. Waiting for them.':
+      'Vous avez déjà fait la demande à @{v1}. En attente de sa réponse.',
+  'Request sent to @{v1}.': 'Demande envoyée à @{v1}.',
+  'Finding @{name}…': 'Recherche de @{name}…',
+  'That\'s your own link. Share it with friends so they can add you.':
+      'C’est votre propre lien. Partagez-le avec vos amis pour qu’ils vous ajoutent.',
+  'We couldn\'t find @{name}. The link may be out of date, or they may have changed their username.':
+      'Nous n’avons pas trouvé @{name}. Le lien est peut-être périmé, ou la personne a changé de nom d’utilisateur.',
+  'You\'re already friends.': 'Vous êtes déjà amis.',
+  'You already asked them. Waiting for their answer.':
+      'Vous avez déjà fait la demande. En attente de la réponse.',
+  'They asked to be your friend.': 'Cette personne vous a demandé en ami.',
+  'Add them to swap food bites and build a streak.':
+      'Ajoutez-le pour échanger des bouchées et bâtir une série.',
+  'Sending…': 'Envoi…',
+  'Accept': 'Accepter',
+  'Add friend': 'Ajouter un ami',
+  'Done': 'Terminé',
+  'Close': 'Fermer',
+  'Not now': 'Pas maintenant',
+  'Save {title} as a recipe': 'Enregistrer {title} comme recette',
+  'Search for a food for {title}': 'Rechercher un aliment pour {title}',
+  'Take a photo of your {title}': 'Prenez une photo de votre {title}',
+  'Fibre, sugar, sodium, iron and calcium show up here as you log food.':
+      'Les fibres, le sucre, le sodium, le fer et le calcium apparaissent ici au fil de vos repas.',
+  'The foods logged so far don\'t have nutrient data.':
+      'Les aliments enregistrés jusqu’ici n’ont pas de données nutritionnelles.',
+  'Based on {v1} of {v2} foods today; the rest have no nutrient data. Daily amounts are general guidance for adults, not medical advice.':
+      'Basé sur {v1} aliments sur {v2} aujourd’hui ; les autres n’ont pas de données nutritionnelles. Les apports quotidiens sont une indication générale pour adultes, pas un avis médical.',
+  'Daily amounts are general guidance for adults, not medical advice.':
+      'Les apports quotidiens sont une indication générale pour adultes, pas un avis médical.',
+  'No data': 'Pas de données',
+  'View nutrients': 'Voir les nutriments',
+  'Fibre, sugar, sodium, iron and calcium':
+      'Fibres, sucre, sodium, fer et calcium',
+  'Log out?': 'Se déconnecter ?',
+  'Your food log and streaks are saved to your account and will be here when you log back in.':
+      'Votre journal alimentaire et vos séries sont enregistrés sur votre compte et seront là à votre retour.',
+  'Stay': 'Rester',
+  'Protein': 'Protéines',
+  'Carbs': 'Glucides',
+  'Fat': 'Lipides',
+  'Hello, you!': 'Bonjour !',
+  'Welcome to NuStreak': 'Bienvenue sur NuStreak',
+  'Let\'s build your plan in a minute.':
+      'Construisons votre plan en une minute.',
+  'Previous day': 'Jour précédent',
+  'Next day': 'Jour suivant',
+  'Delete your account?': 'Supprimer votre compte ?',
+  'This permanently deletes your profile, food log, weight history, friends, bites and streaks.':
+      'Cela supprime définitivement votre profil, journal alimentaire, historique de poids, amis, bouchées et séries.',
+  'It can\'t be undone.': 'Cette action est irréversible.',
+  'Keep it': 'La garder',
+  'Deleting your account…': 'Suppression de votre compte…',
+  'Couldn\'t delete your account': 'Impossible de supprimer votre compte',
+  'Anything to add?': 'Quelque chose à ajouter ?',
+  'Say or type what the photo can’t show, like “half of this, cooked in butter”. We’ll scan it again with your note.':
+      'Dites ou écrivez ce que la photo ne montre pas, par exemple « la moitié de ceci, cuit au beurre ». Nous la réanalyserons avec votre note.',
+  'Half of this, with a diet soda…': 'La moitié de ceci, avec un soda light…',
+  'Listening…': 'Écoute…',
+  'Scan again with this note': 'Réanalyser avec cette note',
+  'Saving…': 'Enregistrement…',
+  'Saved': 'Enregistré',
+  'Unsaved changes': 'Modifications non enregistrées',
+  'Reset': 'Réinitialiser',
+  'Save': 'Enregistrer',
+  'Same': 'Pareil',
+  'Edit entry': 'Modifier l’entrée',
+  'Name': 'Nom',
+  'What was it?': 'Qu’était-ce ?',
+  'Meal': 'Repas',
+  'How much': 'Quelle quantité',
+  'Amount': 'Quantité',
+  'Enter an amount between 1 and {v1} g':
+      'Saisissez une quantité entre 1 et {v1} g',
+  'Wrong food? Pick another': 'Mauvais aliment ? Choisissez-en un autre',
+  'Breakfast': 'Petit-déjeuner',
+  'Lunch': 'Déjeuner',
+  'Dinner': 'Dîner',
+  'Snack': 'En-cas',
+  'Today\'s plan: {v1} kcal': 'Plan du jour : {v1} kcal',
+  'See the week': 'Voir la semaine',
+  'Your week': 'Votre semaine',
+  'Plans stay inside your healthy range, and days you didn’t log are left out. Not medical advice.':
+      'Les plans restent dans votre plage saine et les jours non enregistrés sont ignorés. Pas un avis médical.',
+  'Not logged': 'Non enregistré',
+  'Yes, spread it': 'Oui, répartir',
+  'Habit patterns show up after about two weeks of logging (around {n} more logged days).':
+      'Les habitudes apparaissent après environ deux semaines de suivi (encore environ {n} jours enregistrés).',
+  'Habit patterns show up after about two weeks of logging.':
+      'Les habitudes apparaissent après environ deux semaines de suivi.',
+  'Take a photo of your plate to log a whole meal in seconds.':
+      'Photographiez votre assiette pour enregistrer un repas entier en quelques secondes.',
+  'Use the arrows next to the date to look back at earlier days.':
+      'Utilisez les flèches à côté de la date pour revoir les jours précédents.',
+  'Insights turns your week into a few simple, personal tips.':
+      'Analyses transforme votre semaine en quelques conseils simples et personnels.',
+  'Logging as you eat keeps the ring accurate all day.':
+      'Enregistrer au fil des repas garde l’anneau précis toute la journée.',
+  'Waking up the server': 'Réveil du serveur',
+  'Warming things up': 'On chauffe les moteurs',
+  'Connecting to the server': 'Connexion au serveur',
+  'Our server naps when it\'s quiet. The first load can take up to a minute, and after that everything\'s quick.':
+      'Notre serveur fait la sieste quand c’est calme. Le premier chargement peut prendre jusqu’à une minute, ensuite tout est rapide.',
+  'Couldn\'t reach the server': 'Impossible de joindre le serveur',
+  'It may still be starting up, or your connection dropped.':
+      'Il démarre peut-être encore, ou votre connexion a été coupée.',
+  'Check your connection, then try again.':
+      'Vérifiez votre connexion, puis réessayez.',
+  'Try again': 'Réessayer',
+  'Sign out': 'Se déconnecter',
+  'Looking at your meal…': 'Analyse de votre repas…',
+  'Check your {v1}': 'Vérifiez votre {v1}',
+  'No food found': 'Aucun aliment trouvé',
+  'Try getting closer or improving the light.':
+      'Rapprochez-vous ou améliorez l’éclairage.',
+  'Couldn\'t scan this photo': 'Impossible d’analyser cette photo',
+  'Please try again.': 'Veuillez réessayer.',
+  'Can\'t open this recipe': 'Impossible d’ouvrir cette recette',
+  'It may have been unshared or deleted, or you\'re offline.':
+      'Elle a peut-être été retirée ou supprimée, ou vous êtes hors ligne.',
+  'Couldn\'t change Highlights': 'Impossible de modifier les Favoris',
+  'It’s in your Saved collection.':
+      'Elle est dans votre collection Enregistrées.',
+  'Couldn\'t save it': 'Impossible de l’enregistrer',
+  'Collections': 'Collections',
+  'New collection…': 'Nouvelle collection…',
+  'Couldn\'t update that': 'Impossible de mettre à jour',
+  'Name the collection': 'Nommez la collection',
+  'Create': 'Créer',
+  'No friends yet': 'Pas encore d’amis',
+  'Add a friend from the Friends tab, then you can send them recipes.':
+      'Ajoutez un ami depuis l’onglet Amis, puis vous pourrez lui envoyer des recettes.',
+  'Send to a friend': 'Envoyer à un ami',
+  'They can open it, save it and log it. You can take access back later.':
+      'Il pourra l’ouvrir, l’enregistrer et la consigner. Vous pourrez reprendre l’accès plus tard.',
+  'Sent': 'Envoyé',
+  'Your recipe is in your chat with {v1}.':
+      'Votre recette est dans votre discussion avec {v1}.',
+  'Couldn\'t send it': 'Impossible de l’envoyer',
+  'Report this recipe?': 'Signaler cette recette ?',
+  'We\'ll take a look. You can also block the person from your Friends tab.':
+      'Nous allons y jeter un œil. Vous pouvez aussi bloquer la personne depuis l’onglet Amis.',
+  'Report': 'Signaler',
+  'Thanks for telling us': 'Merci de nous en informer',
+  'We\'ll take a look.': 'Nous allons y jeter un œil.',
+  'Couldn\'t send that': 'Impossible d’envoyer cela',
+  'Couldn\'t delete it': 'Impossible de la supprimer',
+  'Shared with you': 'Partagé avec vous',
+  'From {v1}': 'De {v1}',
+  'Estimated: some numbers were typed in rather than looked up.':
+      'Estimé : certaines valeurs ont été saisies à la main plutôt que recherchées.',
+  'Servings': 'Portions',
+  'Unpin': 'Désépingler',
+  'Pin': 'Épingler',
+  'Friends can open this': 'Les amis peuvent l’ouvrir',
+  'Friends can open and log this. Nobody else can.':
+      'Les amis peuvent l’ouvrir et la consigner. Personne d’autre.',
+  'Only you, and friends you send it to.':
+      'Seulement vous et les amis à qui vous l’envoyez.',
+  'Report this recipe': 'Signaler cette recette',
+  'Delete recipe': 'Supprimer la recette',
+  'Take it back from @{v1}?': 'Reprendre l’accès à @{v1} ?',
+  'They\'ll no longer be able to open it. The message stays in chat.':
+      'Cette personne ne pourra plus l’ouvrir. Le message reste dans la discussion.',
+  'Take back': 'Reprendre',
+  'Couldn\'t take it back': 'Impossible de reprendre l’accès',
+  'Shared with': 'Partagé avec',
+  'You haven’t sent it to anyone. All your friends can open it, because it is set to friends.':
+      'Vous ne l’avez envoyée à personne. Tous vos amis peuvent l’ouvrir, car elle est réglée sur amis.',
+  'You haven’t sent it to anyone.': 'Vous ne l’avez envoyée à personne.',
+  'The card is not on screen.': 'La carte n’est pas à l’écran.',
+  'Could not encode the card.': 'Impossible d’encoder la carte.',
+  'Card saved': 'Carte enregistrée',
+  'Your progress card was downloaded as an image, ready to post anywhere.':
+      'Votre carte de progression a été téléchargée sous forme d’image, prête à être publiée partout.',
+  'Couldn\'t share': 'Impossible de partager',
+  'Something went wrong preparing your card. Please try again.':
+      'Une erreur s’est produite lors de la préparation de votre carte. Réessayez.',
+  'Share progress': 'Partager la progression',
+  'Your streak, level and badges. No calorie numbers.':
+      'Votre série, niveau et badges. Aucun chiffre de calories.',
+  'Share': 'Partager',
+  'Include weight change': 'Inclure l’évolution du poids',
+  'Shows only how much your trend changed, never your weight.':
+      'Montre seulement l’évolution de votre tendance, jamais votre poids.',
+  'Small habits, every day.': 'Petites habitudes, chaque jour.',
+  'Level {v1}': 'Niveau {v1}',
+  'Start a streak': 'Lancez une série',
+  'No streak yet. Open progress.':
+      'Pas encore de série. Ouvrir la progression.',
+  'Level {v1}, {v2} of {v3} XP. Open progress.':
+      'Niveau {v1}, {v2} sur {v3} XP. Ouvrir la progression.',
+  'Your progress': 'Votre progression',
+  'Badges': 'Badges',
+  'No streak yet': 'Pas encore de série',
+  'Log a meal to light your first flame.':
+      'Enregistrez un repas pour allumer votre première flamme.',
+  'Log something today to grow your streak. If you can\'t, a freeze will save it.':
+      'Enregistrez quelque chose aujourd’hui pour prolonger votre série. Sinon, un gel la sauvera.',
+  'Log something today to keep your streak alive.':
+      'Enregistrez quelque chose aujourd’hui pour garder votre série en vie.',
+  'Streak freezes cover a missed day. You earn one every 7 days.':
+      'Les gels de série couvrent un jour manqué. Vous en gagnez un tous les 7 jours.',
+  'Unlocked {v1}.': 'Débloqué le {v1}.',
+  'Unlocked.': 'Débloqué.',
+  'Progress: {v1} of {v2}.': 'Progression : {v1} sur {v2}.',
+  'Not unlocked yet.': 'Pas encore débloqué.',
+  'Log a meal': 'Enregistrer un repas',
+  'Log it with a photo': 'Enregistrez-le avec une photo',
+  'Log all four meals': 'Enregistrer les quatre repas',
+  'Hit your protein target': 'Atteindre votre objectif de protéines',
+  'Land within 10% of your calories': 'Rester à 10 % de vos calories',
+  'Streak bonus, per day': 'Bonus de série, par jour',
+  'Level {level}': 'Niveau {level}',
+  'Every meal you log earns XP. Keep it going to reach level {v1}.':
+      'Chaque repas enregistré rapporte de l’XP. Continuez pour atteindre le niveau {v1}.',
+  'Nice!': 'Super !',
+  'Take this bite back?': 'Reprendre cette bouchée ?',
+  'Your friends won\'t be able to see it any more. Today still counts toward your streaks.':
+      'Vos amis ne pourront plus la voir. Aujourd’hui compte toujours pour vos séries.',
+  'Keep': 'Garder',
+  'Bites you sent': 'Bouchées envoyées',
+  'From the last 24 hours. After that they disappear for everyone.':
+      'Des dernières 24 heures. Ensuite elles disparaissent pour tout le monde.',
+  'You haven\'t sent a bite in the last 24 hours.':
+      'Vous n’avez envoyé aucune bouchée ces dernières 24 heures.',
+  'Seen by {name}': 'Vu par {name}',
+  'Sent to {name} · not opened yet': 'Envoyé à {name} · pas encore ouvert',
+  'Sent to {total} friends · not opened yet':
+      'Envoyé à {total} amis · pas encore ouvert',
+  'Seen by {seen} of {total}': 'Vu par {seen} sur {total}',
+  'Take this bite back': 'Reprendre cette bouchée',
+  'Your story': 'Votre story',
+  'Your plan is ready': 'Votre plan est prêt',
+  'It\'s a starting estimate. Log your meals for a week or two and we\'ll help you fine-tune it.':
+      'C’est une estimation de départ. Enregistrez vos repas pendant une semaine ou deux et nous vous aiderons à l’affiner.',
+  'Let\'s go': 'C’est parti',
+  'Weight progress': 'Évolution du poids',
+  'Log your first weigh-in to start tracking your progress over time.':
+      'Enregistrez votre première pesée pour suivre votre progression dans le temps.',
+  'Log weight': 'Enregistrer le poids',
+  'Your starting point · log again to see your trend':
+      'Votre point de départ · enregistrez à nouveau pour voir votre tendance',
+  'Start': 'Début',
+  'Now': 'Maintenant',
+  'Lowest': 'Minimum',
+  'It\'s been {v1} days. Time for a weigh-in?':
+      'Cela fait {v1} jours. C’est l’heure d’une pesée ?',
+  'History': 'Historique',
+  'Share weight progress': 'Partager l’évolution du poids',
+  'Weigh-in date': 'Date de la pesée',
+  'Goal updated': 'Objectif mis à jour',
+  'Weigh in at the same time of day for the clearest trend. Morning, after the bathroom, works best.':
+      'Pesez-vous à la même heure pour une tendance plus claire. Le matin, après être passé aux toilettes, c’est idéal.',
+  'Weigh-ins': 'Pesées',
+  'No weigh-ins yet': 'Pas encore de pesées',
+  'Delete weigh-in?': 'Supprimer la pesée ?',
+  'Couldn\'t delete': 'Impossible de supprimer',
+  'Your week at a glance': 'Votre semaine en un coup d’œil',
+  'Refresh insights': 'Actualiser les analyses',
+  'Could not load insights': 'Impossible de charger les analyses',
+  'This week': 'Cette semaine',
+  'Tips': 'Conseils',
+  'Body': 'Corps',
+  'Finish setting up': 'Terminez la configuration',
+  'Answer a few questions to get your daily calorie and macro targets.':
+      'Répondez à quelques questions pour obtenir vos objectifs quotidiens de calories et de macros.',
+  'Your plan': 'Votre plan',
+  'Update my details': 'Mettre à jour mes informations',
+  'What’s new': 'Nouveautés',
+  'Appearance, units, privacy, account':
+      'Apparence, unités, confidentialité, compte',
+  'Your profile': 'Votre profil',
+  'Best {v1}': 'Record {v1}',
+  'Height': 'Taille',
+  'At rest': 'Au repos',
+  'Per day': 'Par jour',
+  'English': 'Anglais',
+  'When were you born?': 'Quand êtes-vous né ?',
+  'Please choose your date of birth.': 'Choisissez votre date de naissance.',
+  'Adults only': 'Réservé aux adultes',
+  'Calorie plans are designed for adults. You need to be 18 or older to use them.':
+      'Les plans caloriques sont conçus pour les adultes. Vous devez avoir 18 ans ou plus pour les utiliser.',
+  'One more thing': 'Encore une chose',
+  'Please choose Female or Male. It only affects the calorie maths.':
+      'Choisissez Femme ou Homme. Cela n’affecte que le calcul des calories.',
+  'How active are you?': 'Quel est votre niveau d’activité ?',
+  'Pick the one that sounds most like your usual week.':
+      'Choisissez celle qui ressemble le plus à votre semaine habituelle.',
+  'What is your goal?': 'Quel est votre objectif ?',
+  'Pick the one that fits best. You can change it any time.':
+      'Choisissez celui qui convient le mieux. Vous pouvez le modifier à tout moment.',
+  'Your body already uses close to the least we would suggest eating without medical advice, so your plan keeps you steady at {target} calories. Moving a bit more is the safest way to make progress, and a doctor or dietitian can help with a bigger plan.':
+      'Votre corps utilise déjà presque le minimum que nous suggérerions de manger sans avis médical ; votre plan vous maintient donc à {target} calories. Bouger un peu plus est le moyen le plus sûr de progresser, et un médecin ou un diététicien peut vous aider pour un plan plus ambitieux.',
+  'Could not save': 'Impossible d’enregistrer',
+  'Date of birth': 'Date de naissance',
+  'Let\'s get to know you': 'Faisons connaissance',
+  'This helps us work out how much energy your body uses each day.':
+      'Cela nous aide à calculer l’énergie que votre corps utilise chaque jour.',
+  'Tap to choose': 'Touchez pour choisir',
+  'You need to be 18 or older.': 'Vous devez avoir 18 ans ou plus.',
+  'Are you female or male?': 'Êtes-vous une femme ou un homme ?',
+  'Bodies burn energy a little differently, so we need this for the maths. Nothing else.':
+      'Les corps brûlent l’énergie un peu différemment, nous en avons donc besoin pour le calcul. Rien d’autre.',
+  'Your body': 'Votre corps',
+  'Just two numbers. A rough guess is fine, you can fix them later.':
+      'Juste deux chiffres. Une estimation approximative suffit, vous pourrez les corriger plus tard.',
+  'How much do you weigh?': 'Combien pesez-vous ?',
+  'How tall are you?': 'Combien mesurez-vous ?',
+  'Think about a normal week, including your job. Choose the one that sounds most like you.':
+      'Pensez à une semaine normale, travail compris. Choisissez celle qui vous ressemble le plus.',
+  'Not sure? Pick the lower one. You can change it any time.':
+      'Pas sûr ? Choisissez la plus basse. Vous pouvez la modifier à tout moment.',
+  'What\'s your goal?': 'Quel est votre objectif ?',
+  'We\'ll set a gentle daily plan to match.':
+      'Nous établirons un plan quotidien doux en conséquence.',
+  'Your plan never goes below the minimum that health guidelines suggest.':
+      'Votre plan ne descend jamais sous le minimum recommandé par les directives de santé.',
+  'Back': 'Retour',
+  'Build my plan': 'Créer mon plan',
+  'Step {v1} of {_stepCount}': 'Étape {v1} sur {_stepCount}',
+  'Your daily budget': 'Votre budget quotidien',
+  'The ring shows how many calories you have left today. It fills up as you log meals.':
+      'L’anneau indique combien de calories il vous reste aujourd’hui. Il se remplit au fil de vos repas.',
+  'Take a picture of your plate. We\'ll spot the foods and estimate portions for you to check before saving. Each meal has its own camera button too.':
+      'Prenez votre assiette en photo. Nous repérerons les aliments et estimerons les portions à vérifier avant d’enregistrer. Chaque repas a aussi son propre bouton d’appareil photo.',
+  'Or search by name': 'Ou cherchez par nom',
+  'No photo? Search for any food, then enter how much you had.':
+      'Pas de photo ? Cherchez un aliment, puis indiquez la quantité.',
+  'Your weekly coach': 'Votre coach hebdomadaire',
+  'Insights shows your trends, your weight and personal tips based on what you\'ve logged.':
+      'Analyses affiche vos tendances, votre poids et des conseils personnels selon ce que vous avez enregistré.',
+  'Eat with friends': 'Mangez entre amis',
+  'Add friends, send each other food bites and keep a streak going together.':
+      'Ajoutez des amis, envoyez-vous des bouchées et gardez une série ensemble.',
+  'Your plan and settings': 'Votre plan et réglages',
+  'Profile has your targets and progress. The gear opens Settings: appearance, notifications, your account and this tutorial again.':
+      'Profil contient vos objectifs et votre progression. L’engrenage ouvre les Réglages : apparence, notifications, votre compte et ce tutoriel.',
+  'Type my own (like a spice paste)':
+      'Saisir le mien (comme une pâte d’épices)',
+  'Photograph the finished dish': 'Photographier le plat terminé',
+  'Use a photo of the dish': 'Utiliser une photo du plat',
+  'Couldn\'t open the camera. Allow access in Settings, then try again.':
+      'Impossible d’ouvrir l’appareil photo. Autorisez l’accès dans les Réglages, puis réessayez.',
+  'Couldn\'t open the photos. Allow access in Settings, then try again.':
+      'Impossible d’ouvrir les photos. Autorisez l’accès dans les Réglages, puis réessayez.',
+  'We couldn\'t tell what\'s in that photo. Try a clearer one, or add the ingredients yourself.':
+      'Nous n’avons pas pu déterminer ce que contient cette photo. Essayez-en une plus nette ou ajoutez les ingrédients vous-même.',
+  'Couldn\'t look at that photo. Check your connection and try again.':
+      'Impossible d’analyser cette photo. Vérifiez votre connexion et réessayez.',
+  'How much?': 'Combien ?',
+  'Add': 'Ajouter',
+  'Your own ingredient': 'Votre propre ingrédient',
+  'Grams used': 'Grammes utilisés',
+  'Calories per 100 g': 'Calories pour 100 g',
+  'Edit recipe': 'Modifier la recette',
+  'Save as recipe': 'Enregistrer comme recette',
+  'New recipe': 'Nouvelle recette',
+  'Servings it makes': 'Portions obtenues',
+  'Looking at your photo…': 'Analyse de votre photo…',
+  'Add an ingredient': 'Ajouter un ingrédient',
+  'Read from your photo. It becomes the recipe’s cover. Check the amounts: they are estimates.':
+      'Lu depuis votre photo. Elle devient la couverture de la recette. Vérifiez les quantités : ce sont des estimations.',
+  'About {preview} kcal per serving. The exact numbers are worked out when you save.':
+      'Environ {preview} kcal par portion. Les chiffres exacts sont calculés à l’enregistrement.',
+  'Requested': 'Demandé',
+  'That doesn\'t look like a username. {problem}':
+      'Cela ne ressemble pas à un nom d’utilisateur. {problem}',
+  'Allow camera access in Settings to send bites.':
+      'Autorisez l’accès à l’appareil photo dans les Réglages pour envoyer des bouchées.',
+  'Something went wrong': 'Une erreur s’est produite',
+  'Their recipes': 'Ses recettes',
+  'Remove friend': 'Retirer l’ami',
+  'Decline request': 'Refuser la demande',
+  'Report profile photo': 'Signaler la photo de profil',
+  'Block': 'Bloquer',
+  'We\'ll take a look. You can also block @{v1} from the same menu.':
+      'Nous allons y jeter un œil. Vous pouvez aussi bloquer @{v1} depuis le même menu.',
+  'Remove @{v1}?': 'Retirer @{v1} ?',
+  'You\'ll stop being friends. You can add each other again later.':
+      'Vous ne serez plus amis. Vous pourrez vous rajouter plus tard.',
+  'Remove': 'Retirer',
+  'Block @{v1}?': 'Bloquer @{v1} ?',
+  'They won\'t be able to find you or send you anything, and you won\'t see them. They aren\'t told. You can unblock them any time.':
+      'Cette personne ne pourra plus vous trouver ni vous envoyer quoi que ce soit, et vous ne la verrez plus. Elle n’est pas prévenue. Vous pouvez la débloquer à tout moment.',
+  'Add me on NuStreak: {url}': 'Ajoutez-moi sur NuStreak : {url}',
+  'Share meals, keep streaks together':
+      'Partagez vos repas, gardez des séries ensemble',
+  'Bites from friends': 'Bouchées d’amis',
+  'Couldn\'t load your friends': 'Impossible de charger vos amis',
+  'Pull down to try again.': 'Tirez vers le bas pour réessayer.',
+  'Add a friend': 'Ajouter un ami',
+  'Their username': 'Son nom d’utilisateur',
+  'Your profile link': 'Votre lien de profil',
+  'Copied': 'Copié',
+  'Copy link': 'Copier le lien',
+  'Requests': 'Demandes',
+  'Waiting for a reply': 'En attente de réponse',
+  'Your friends': 'Vos amis',
+  'Add a friend with their username, or share yours. Then send each other food bites to build a streak.':
+      'Ajoutez un ami avec son nom d’utilisateur, ou partagez le vôtre. Puis envoyez-vous des bouchées pour bâtir une série.',
+  'Bite': 'Bouchée',
+  'Messages, {unread} unread': 'Messages, {unread} non lus',
+  'Messages': 'Messages',
+  'Message, {unread} unread': 'Message, {unread} non lus',
+  'Message': 'Message',
+  'More options': 'Plus d’options',
+  'Blocked people can\'t find you or add you, and you won\'t see them.':
+      'Les personnes bloquées ne peuvent pas vous trouver ni vous ajouter, et vous ne les verrez pas.',
+  'You haven\'t blocked anyone.': 'Vous n’avez bloqué personne.',
+  'Unblock': 'Débloquer',
+  'Share your meal': 'Partagez votre repas',
+  'Send a photo of what you are eating to friends, or add it to your story. Swap one every day to build a streak together.':
+      'Envoyez à vos amis une photo de ce que vous mangez, ou ajoutez-la à votre story. Échangez-en une chaque jour pour bâtir une série ensemble.',
+  'Dismiss tip': 'Ignorer le conseil',
+  'About this estimate': 'À propos de cette estimation',
+  'We couldn’t find an exact match for {name}, so this is a typical value for the dish.':
+      'Nous n’avons pas trouvé de correspondance exacte pour {name} ; il s’agit donc d’une valeur typique pour ce plat.',
+  'Check the portion and any oil, and change the amount if it looks off. You can also tap Change to pick a food from the list.':
+      'Vérifiez la portion et l’huile éventuelle, et modifiez la quantité si elle semble fausse. Vous pouvez aussi toucher Modifier pour choisir un aliment dans la liste.',
+  'Review detected foods': 'Vérifier les aliments détectés',
+  'These are estimates. Check each food and its amount. Tap Change if the match looks wrong, or remove it.':
+      'Ce sont des estimations. Vérifiez chaque aliment et sa quantité. Touchez Modifier si la correspondance semble fausse, ou supprimez-le.',
+  'Anything the camera can’t see?':
+      'Quelque chose que l’appareil photo ne voit pas ?',
+  'No items left to add': 'Plus aucun élément à ajouter',
+  'Go back and scan the photo again.':
+      'Revenez en arrière et réanalysez la photo.',
+  'Matched: {v1}': 'Correspondance : {v1}',
+  'From your note: {v1}': 'D’après votre note : {v1}',
+  'Change': 'Modifier',
+  'No match · Find': 'Aucune correspondance · Chercher',
+  'About {_totalCalories} kcal in total':
+      'Environ {_totalCalories} kcal au total',
+  'Add 1 item': 'Ajouter 1 élément',
+  'Add {n} items': 'Ajouter {n} éléments',
+  'No camera': 'Pas d’appareil photo',
+  'Fit your plate in the circle': 'Placez votre assiette dans le cercle',
+  'It\'s yours if you want it': 'Il est à vous si vous le voulez',
+  'Checking…': 'Vérification…',
+  'Change your username': 'Changez votre nom d’utilisateur',
+  'Pick your username': 'Choisissez votre nom d’utilisateur',
+  'You\'re @{name} now. Friends keep you on their list and see the new name.':
+      'Vous êtes maintenant @{name}. Vos amis vous gardent dans leur liste et voient le nouveau nom.',
+  'You can change it once every 30 days.':
+      'Vous pouvez le changer une fois tous les 30 jours.',
+  'This is how friends will find you and send you food bites.':
+      'C’est ainsi que vos amis vous trouveront et vous enverront des bouchées.',
+  'Continue': 'Continuer',
+  'Type the barcode number': 'Saisissez le numéro du code-barres',
+  'The digits under the bars': 'Les chiffres sous les barres',
+  'Look up': 'Rechercher',
+  'That doesn\'t look like a barcode': 'Cela ne ressemble pas à un code-barres',
+  'Barcodes are 8 to 14 digits long.':
+      'Les codes-barres comptent de 8 à 14 chiffres.',
+  'Scan a barcode': 'Scanner un code-barres',
+  'The camera isn\'t available. You can type the number instead.':
+      'L’appareil photo n’est pas disponible. Vous pouvez saisir le numéro.',
+  'Fit the barcode inside the frame': 'Placez le code-barres dans le cadre',
+  'Type the number instead': 'Saisir le numéro',
+  'Delete this photo': 'Supprimer cette photo',
+  'Report this story': 'Signaler cette story',
+  'We\'ll take a look. You can also block @{v1} from the Friends tab.':
+      'Nous allons y jeter un œil. Vous pouvez aussi bloquer @{v1} depuis l’onglet Amis.',
+  'This photo couldn\'t be loaded.': 'Impossible de charger cette photo.',
+  'No views yet': 'Pas encore de vues',
+  'Seen by {v1}': 'Vu par {v1}',
+  'Add to story': 'Ajouter à la story',
+  'Seen by': 'Vu par',
+  'Nobody has looked yet. Your friends can see this for 24 hours.':
+      'Personne n’a encore regardé. Vos amis peuvent la voir pendant 24 heures.',
+  'Nothing here yet. Add recipes from a recipe’s Collections button.':
+      'Rien ici pour l’instant. Ajoutez des recettes depuis le bouton Collections d’une recette.',
+  'Delete this collection': 'Supprimer cette collection',
+  'Couldn\'t load your recipes': 'Impossible de charger vos recettes',
+  'Check your connection and try again.':
+      'Vérifiez votre connexion et réessayez.',
+  'Your recipes live here': 'Vos recettes sont ici',
+  'Save the dishes you cook often, then log them in one tap. You can also save a meal you’ve already logged from Today.':
+      'Enregistrez les plats que vous cuisinez souvent, puis consignez-les d’une touche. Vous pouvez aussi enregistrer un repas déjà consigné depuis Aujourd’hui.',
+  'Highlights': 'Favoris',
+  'All recipes': 'Toutes les recettes',
+  'That’s everything for now.': 'C’est tout pour l’instant.',
+  'Looking up the product…': 'Recherche du produit…',
+  'We couldn\'t find that product': 'Nous n’avons pas trouvé ce produit',
+  'Couldn\'t look that up': 'Impossible de rechercher cela',
+  'Try searching for it by name instead.':
+      'Essayez plutôt de le chercher par son nom.',
+  'Search foods…': 'Rechercher des aliments…',
+  'Search failed': 'La recherche a échoué',
+  'Find a food': 'Trouvez un aliment',
+  'Search thousands of foods to add them to this meal.':
+      'Cherchez parmi des milliers d’aliments pour les ajouter à ce repas.',
+  'Quantity (grams)': 'Quantité (grammes)',
+  'Could not load recipe.': 'Impossible de charger la recette.',
+  'Recipe not found': 'Recette introuvable',
+  'This recipe may no longer be available.':
+      'Cette recette n’est peut-être plus disponible.',
+  'Ingredients': 'Ingrédients',
+  'Instructions': 'Instructions',
+  'Search failed, try again.': 'La recherche a échoué, réessayez.',
+  'Browse': 'Parcourir',
+  'Mine': 'Les miennes',
+  'Your own dishes, one tap to log':
+      'Vos propres plats, une touche pour consigner',
+  'Ideas for your next meal': 'Des idées pour votre prochain repas',
+  'Search recipes…': 'Rechercher des recettes…',
+  'No recipes found': 'Aucune recette trouvée',
+  'Could not load recipes': 'Impossible de charger les recettes',
+  'Try a different search term.': 'Essayez un autre terme de recherche.',
+  'Pull to try again once you are back online.':
+      'Tirez pour réessayer une fois de nouveau en ligne.',
+  'Tap to cook': 'Touchez pour cuisiner',
+  'Couldn\'t load your messages': 'Impossible de charger vos messages',
+  'No messages yet': 'Pas encore de messages',
+  'Tap the message button next to a friend to start a conversation.':
+      'Touchez le bouton message à côté d’un ami pour démarrer une conversation.',
+  'You: {v1}': 'Vous : {v1}',
+  'At most {v1} a day, quiet at night, and never about your weight or calories.':
+      'Au plus {v1} par jour, silencieux la nuit, et jamais à propos de votre poids ou de vos calories.',
+  'Notifications arrive once the app is on your phone. Your choices are saved now and will apply then.':
+      'Les notifications arrivent une fois l’app sur votre téléphone. Vos choix sont enregistrés maintenant et s’appliqueront alors.',
+  'Friend bites': 'Bouchées d’amis',
+  'When a friend sends you a bite': 'Quand un ami vous envoie une bouchée',
+  'Reactions': 'Réactions',
+  'When someone reacts to your bite': 'Quand quelqu’un réagit à votre bouchée',
+  'Logging and streak reminders': 'Rappels d’enregistrement et de série',
+  'If you haven\'t logged today, or your streak is about to end':
+      'Si vous n’avez rien enregistré aujourd’hui, ou si votre série est sur le point de se terminer',
+  'Badges and levels': 'Badges et niveaux',
+  'When you earn something new': 'Quand vous gagnez quelque chose de nouveau',
+  'A daily meal reminder': 'Un rappel de repas quotidien',
+  'Every day at {v1}': 'Tous les jours à {v1}',
+  'Reminder time': 'Heure du rappel',
+  'Quiet from': 'Silence à partir de',
+  'Until': 'Jusqu’à',
+  'No quiet hours set.': 'Aucune plage de silence définie.',
+  'Nothing arrives between {v1} and {v2}.': 'Rien n’arrive entre {v1} et {v2}.',
+  'Resume notifications': 'Reprendre les notifications',
+  'Pause everything for a week': 'Tout mettre en pause pendant une semaine',
+  'Paused until {v1}.': 'En pause jusqu’au {v1}.',
+  'Report this bite': 'Signaler cette bouchée',
+  'This bite couldn\'t be loaded.': 'Impossible de charger cette bouchée.',
+  'Choose a new password': 'Choisissez un nouveau mot de passe',
+  'Pick something you haven\'t used before. At least {minPasswordLength} characters.':
+      'Choisissez quelque chose que vous n’avez jamais utilisé. Au moins {minPasswordLength} caractères.',
+  'New password': 'Nouveau mot de passe',
+  'Type it again': 'Saisissez-le à nouveau',
+  'Save password': 'Enregistrer le mot de passe',
+  'Copy': 'Copier',
+  'Delete for everyone': 'Supprimer pour tous',
+  'Report message': 'Signaler le message',
+  'Report this message?': 'Signaler ce message ?',
+  'Our team will read it. You can also block @{v1} from your friends list.':
+      'Notre équipe le lira. Vous pouvez aussi bloquer @{v1} depuis votre liste d’amis.',
+  'Thanks. We\'ll take a look.': 'Merci. Nous allons y jeter un œil.',
+  'Couldn\'t open this conversation': 'Impossible d’ouvrir cette conversation',
+  'Say hi to @{v1}': 'Dites bonjour à @{v1}',
+  'Messages stay between the two of you.':
+      'Les messages restent entre vous deux.',
+  'Loading…': 'Chargement…',
+  'Earlier messages': 'Messages précédents',
+  'Seen': 'Vu',
+  'Message @{username}': 'Message à @{username}',
+  'Send message': 'Envoyer le message',
+  'Recipe': 'Recette',
+  'Added to your story.': 'Ajouté à votre story.',
+  'Sent to {who} and added to your story.':
+      'Envoyé à {who} et ajouté à votre story.',
+  'Sent to {who}.': 'Envoyé à {who}.',
+  'You can send to {maxRecipients} friends at a time.':
+      'Vous pouvez envoyer à {maxRecipients} amis à la fois.',
+  'It\'s on your story, but the bite didn\'t send. {v1}':
+      'C’est dans votre story, mais la bouchée n’a pas été envoyée. {v1}',
+  'Add to your story': 'Ajouter à votre story',
+  'Share to story and {friends}': 'Partager en story et {friends}',
+  'Pick who gets it': 'Choisissez qui le reçoit',
+  'Send to {friends}': 'Envoyer à {friends}',
+  'Send a bite': 'Envoyer une bouchée',
+  'Add a caption…': 'Ajouter une légende…',
+  'Share to': 'Partager avec',
+  'Send as a bite': 'Envoyer comme bouchée',
+  'Add a friend first, then you can send them bites.':
+      'Ajoutez d’abord un ami, puis vous pourrez lui envoyer des bouchées.',
+  'All your friends can see it for 24 hours':
+      'Tous vos amis peuvent la voir pendant 24 heures',
+  'Spark': 'Étincelle',
+  'Ember': 'Braise',
+  'Flame': 'Flamme',
+  'Blaze': 'Brasier',
+  'Inferno': 'Brasier ardent',
+  'Fibre': 'Fibres',
+  'Sugar': 'Sucre',
+  'Sodium': 'Sodium',
+  'Iron': 'Fer',
+  'Calcium': 'Calcium',
+  'All': 'Tout',
+  '{days} day streak, {tier}. Open progress.':
+      'Série de {days} jours, {tier}. Ouvrir la progression.',
+  '{days} day streak, {tier}, log today to keep it. Open progress.':
+      'Série de {days} jours, {tier} ; enregistrez aujourd’hui pour la garder. Ouvrir la progression.',
+  '{tier} · best {n} days': '{tier} · record {n} jours',
+  '{tier} · best 1 day': '{tier} · record 1 jour',
+  '{n} more days to {tier}': 'Encore {n} jours pour {tier}',
+  '1 more day to {tier}': 'Encore 1 jour pour {tier}',
+  '{tier} · best {n}': '{tier} · record {n}',
+  '{tier} · personal best': '{tier} · record personnel',
+  'What’s new in November': 'Nouveautés de novembre',
+  'Your own recipes': 'Vos propres recettes',
+  'Recipes → Mine. Save a dish you cook, or save a meal you logged with the book icon on Today, then log it in one tap. Pin favourites, sort them into collections and send one to a friend.':
+      'Recettes → Les miennes. Enregistrez un plat que vous cuisinez, ou un repas consigné avec l’icône du livre dans Aujourd’hui, puis consignez-le d’une touche. Épinglez vos favoris, classez-les en collections et envoyez-en un à un ami.',
+  'Faster photo logging': 'Enregistrement par photo plus rapide',
+  'Take a photo and carry on: the scan finishes in the background. Tap the mic on a scan to add a note like “half of this, cooked in butter”.':
+      'Prenez une photo et continuez : l’analyse se termine en arrière-plan. Touchez le micro sur une analyse pour ajouter une note comme « la moitié de ceci, cuit au beurre ».',
+  'Barcodes and quick add-ons': 'Codes-barres et ajouts rapides',
+  'Scan a packaged food from the food search. On a photo, one tap adds the oil, butter or dressing that a photo can’t show.':
+      'Scannez un aliment emballé depuis la recherche d’aliments. Sur une photo, une touche ajoute l’huile, le beurre ou l’assaisonnement qu’une photo ne peut pas montrer.',
+  'A flexible weekly target': 'Un objectif hebdomadaire flexible',
+  'Settings → Weekly budget. A bigger day eases the rest of the week a little, inside your healthy range. It’s off until you turn it on, and gentle nudges are optional.':
+      'Réglages → Budget hebdomadaire. Un jour plus copieux allège un peu le reste de la semaine, dans votre plage saine. C’est désactivé tant que vous ne l’activez pas, et les rappels doux sont facultatifs.',
+  'Your week, on Insights': 'Votre semaine, dans Analyses',
+  'Days logged, days at your protein goal and, after about two weeks of logging, a habit or two worth knowing about.':
+      'Jours enregistrés, jours à votre objectif de protéines et, après environ deux semaines de suivi, une ou deux habitudes à connaître.',
+  'Open on the camera': 'Ouvrir sur l’appareil photo',
+  'Settings → Today screen, if you’d like the app to start on the camera.':
+      'Réglages → Écran du jour, si vous voulez que l’app démarre sur l’appareil photo.',
+  'Usernames must start with a letter.':
+      'Les noms d’utilisateur doivent commencer par une lettre.',
+  '{h}:00': '{h} h',
+  '{start} to {end}': '{start} à {end}',
+  'since {date}': 'depuis le {date}',
+  '{consumed} / {target} eaten': '{consumed} / {target} consommées',
+  'of {target} {unit} limit': 'sur une limite de {target} {unit}',
+  '{n}{unit} left today': 'Il reste {n}{unit} aujourd’hui',
+  '{n}{unit} over': '{n}{unit} en trop',
+  '1 day': '1 jour',
+  '{n} days': '{n} jours',
+  '{mode} appearance': 'Apparence {mode}',
+  '{kcal} kcal · {p}g protein · {c}g carbs · {f}g fat':
+      '{kcal} kcal · {p} g de protéines · {c} g de glucides · {f} g de lipides',
+  '{kcal} kcal · {p} g protein · {c} g carbs · {f} g fat':
+      '{kcal} kcal · {p} g de protéines · {c} g de glucides · {f} g de lipides',
+  '{n} planned': '{n} prévues',
+  '0 of {n}': '0 sur {n}',
+  '{a} of {b}': '{a} sur {b}',
+  '{n} of 7': '{n} sur 7',
+  'days logged': 'jours enregistrés',
+  'day at your protein goal': 'jour à votre objectif de protéines',
+  'days at your protein goal': 'jours à votre objectif de protéines',
+  '{s}s · usually under a minute': '{s} s · généralement moins d’une minute',
+  '{meal} · you can keep using the app':
+      '{meal} · vous pouvez continuer à utiliser l’app',
+  '1 food found · tap to review': '1 aliment trouvé · touchez pour vérifier',
+  '{n} foods found · tap to review':
+      '{n} aliments trouvés · touchez pour vérifier',
+  'Meal prep': 'Meal prep',
+  'Log this': 'Enregistrer ceci',
+  'Save to my recipes': 'Enregistrer dans mes recettes',
+  'Couldn\'t load this. Check your connection and try again.':
+      'Impossible de charger. Vérifiez votre connexion et réessayez.',
+  '@{name}’s recipes': 'Recettes de @{name}',
+  '@{name} hasn’t pinned any recipes for friends yet.':
+      '@{name} n’a pas encore épinglé de recettes pour ses amis.',
+  '{n} kcal per serving · estimated': '{n} kcal par portion · estimé',
+  '{n} kcal per serving': '{n} kcal par portion',
+  'day streak': 'jours de série',
+  'and just getting started': 'et ce n’est que le début',
+  '{n}-day streak': 'Série de {n} jours',
+  '{xp} XP total': '{xp} XP au total',
+  '+{xp} today': '+{xp} aujourd’hui',
+  '{a} / {b} XP to level {l}': '{a} / {b} XP pour le niveau {l}',
+  '{title}, unlocked': '{title}, débloqué',
+  '{title}, locked': '{title}, verrouillé',
+  '{n} day streak': 'Série de {n} jours',
+  '{n} day streak, not kept yet today':
+      'Série de {n} jours, pas encore maintenue aujourd’hui',
+  'day streak with @{name}': 'jours de série avec @{name}',
+  'calories a day': 'calories par jour',
+  'since {date} · {n} weigh-ins': 'depuis le {date} · {n} pesées',
+  '{weight} on {date}': '{weight} le {date}',
+  '{age} years old': '{age} ans',
+  '{xp} XP': '{xp} XP',
+  'calories burned': 'calories brûlées',
+  'Recipe name': 'Nom de la recette',
+  '1 logged food, {kcal} kcal in total. Saved as an estimate, since the ingredients aren’t listed.':
+      '1 aliment enregistré, {kcal} kcal au total. Enregistré comme estimation, car les ingrédients ne sont pas listés.',
+  '{n} logged foods, {kcal} kcal in total. Saved as an estimate, since the ingredients aren’t listed.':
+      '{n} aliments enregistrés, {kcal} kcal au total. Enregistré comme estimation, car les ingrédients ne sont pas listés.',
+  '{g} g · estimated': '{g} g · estimé',
+  '{g} g · typed by you': '{g} g · saisi par vous',
+  'Save changes': 'Enregistrer les modifications',
+  'Save recipe': 'Enregistrer la recette',
+  '{n} of {limit} friends': '{n} sur {limit} amis',
+  'wants to be your friend': 'veut être votre ami',
+  'request sent': 'demande envoyée',
+  'sent you a bite today. Send one back!':
+      'vous a envoyé une bouchée aujourd’hui. Envoyez-en une en retour !',
+  'waiting on them to keep the streak': 'attend qu’il garde la série',
+  'waiting on their bite': 'en attente de sa bouchée',
+  'streak is safe today': 'la série est sauve aujourd’hui',
+  'send a bite to keep your streak':
+      'envoyez une bouchée pour garder votre série',
+  'friends since {date}': 'amis depuis le {date}',
+  '{label} (estimate)': '{label} (estimation)',
+  '1 item without nutrition data won\'t be saved. Tap Find to choose the right food.':
+      '1 élément sans données nutritionnelles ne sera pas enregistré. Touchez Chercher pour choisir le bon aliment.',
+  '{n} items without nutrition data won\'t be saved. Tap Find to choose the right food.':
+      '{n} éléments sans données nutritionnelles ne seront pas enregistrés. Touchez Chercher pour choisir le bon aliment.',
+  '3–20 letters, numbers or underscores':
+      '3 à 20 lettres, chiffres ou tirets bas',
+  '{title} (from a friend)': '{title} (d’un ami)',
+  '{n} recipes': '{n} recettes',
+  '{n} unread': '{n} non lus',
+  '{error}. Tap to try again.': '{error}. Touchez pour réessayer.',
+  'Not sent': 'Non envoyé',
+  '{n} kcal per serving · tap to open':
+      '{n} kcal par portion · touchez pour ouvrir',
+  '{n} friends': '{n} amis',
 };

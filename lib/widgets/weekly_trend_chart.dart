@@ -4,6 +4,7 @@ import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import '../l10n/app_strings.dart';
 
 /// Weekly calorie bars with a staggered spring grow, gradient fill and a
 /// glowing "today" bar plus a dashed target line.
@@ -36,7 +37,7 @@ class _WeeklyTrendChartState extends State<WeeklyTrendChart> with SingleTickerPr
       return SizedBox(
         height: 140,
         child: Center(
-          child: Text('No data for this week yet', style: AppType.caption()),
+          child: Text(tr('No data for this week yet'), style: AppType.caption()),
         ),
       );
     }

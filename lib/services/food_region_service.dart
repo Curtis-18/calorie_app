@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
+import '../l10n/app_strings.dart';
 
 /// `GET/POST /prefs/food`. A read never throws (the region is an extra); a
 /// save returns a message when it failed.
@@ -47,8 +48,8 @@ class FoodRegionService {
   Future<String?> save(String? region) async {
     final r = await _send(
         (c, h) => c.post(Uri.parse('${ApiConfig.baseUrl}/prefs/food'), headers: h, body: jsonEncode({'region': region})));
-    if (r == null) return "Couldn't reach the server. Check your connection and try again.";
+    if (r == null) return tr("Couldn't reach the server. Check your connection and try again.");
     if (r.statusCode == 200) return null;
-    return "Couldn't save that right now. Please try again.";
+    return tr("Couldn't save that right now. Please try again.");
   }
 }

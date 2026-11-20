@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -17,7 +18,7 @@ const biteHeight = 1350;
 /// The stamp is drawn into the photo itself, so it survives however the bite
 /// is stored or viewed and the server needs no changes.
 Future<Uint8List> prepareBite(Uint8List photo, BiteMeal? meal) async {
-  final pill = meal == null ? null : await _renderPill(meal.label);
+  final pill = meal == null ? null : await _renderPill(tr(meal.label));
   return compute(_compose, _Job(photo, pill));
 }
 

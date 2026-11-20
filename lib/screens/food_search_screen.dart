@@ -17,6 +17,7 @@ import '../widgets/glass.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 import 'barcode_scanner_screen.dart';
+import '../l10n/app_strings.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final MealType mealType;
@@ -94,7 +95,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     showCupertinoDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const AppLoadingDialog(label: 'Looking up the product…'),
+      builder: (_) => AppLoadingDialog(label: tr('Looking up the product…')),
     );
     try {
       found = await _service.lookupBarcode(code);
@@ -109,8 +110,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     }
     await showAppDialog(
       context: context,
-      title: problem == null ? "We couldn't find that product" : "Couldn't look that up",
-      message: problem ?? 'Try searching for it by name instead.',
+      title: problem == null ? tr("We couldn't find that product") : tr("Couldn't look that up"),
+      message: problem ?? tr('Try searching for it by name instead.'),
       confirmLabel: 'OK',
     );
   }
@@ -173,7 +174,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         middle: CupertinoSearchTextField(
           controller: _controller,
           autofocus: true,
-          placeholder: 'Search foods…',
+          placeholder: tr('Search foods…'),
           onChanged: _onQueryChanged,
           backgroundColor: TrackerColors.alpha(TrackerColors.textPrimary, 0.07),
           borderRadius: AppRadii.buttonAll,
@@ -194,15 +195,15 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             : _error != null
                 ? AppEmptyState(
                     icon: CupertinoIcons.wifi_exclamationmark,
-                    title: 'Search failed',
+                    title: tr('Search failed'),
                     message: _error,
                     accent: TrackerColors.error,
                   )
                 : _results.isEmpty
                     ? AppEmptyState(
                         icon: CupertinoIcons.search,
-                        title: 'Find a food',
-                        message: 'Search thousands of foods to add them to this meal.',
+                        title: tr('Find a food'),
+                        message: tr('Search thousands of foods to add them to this meal.'),
                         accent: TrackerColors.textSecondary,
                       )
                     : ListView.builder(
@@ -320,7 +321,7 @@ class _QuantityDialogState extends State<QuantityDialog> {
                     child: Text('g', style: TextStyle(color: TrackerColors.textTertiary, fontSize: 15)),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  placeholder: 'Quantity (grams)',
+                  placeholder: tr('Quantity (grams)'),
                   placeholderStyle: AppType.body(size: 15, color: TrackerColors.textTertiary),
                   style: AppType.body(size: 15),
                   cursorColor: TrackerColors.accentStart,
@@ -336,7 +337,7 @@ class _QuantityDialogState extends State<QuantityDialog> {
                 // before it lands in the day's total.
                 Text(
                   _grams == null
-                      ? 'Enter an amount between 1 and ${maxPortionGrams.round()} g'
+                      ? tr('Enter an amount between 1 and {v1} g', {'v1': maxPortionGrams.round()})
                       : '≈ ${caloriesFor(widget.food.caloriesPer100g, _grams!)} kcal',
                   textAlign: TextAlign.center,
                   style: AppType.caption(
@@ -349,7 +350,7 @@ class _QuantityDialogState extends State<QuantityDialog> {
                   children: [
                     Expanded(
                       child: AppButton.glass(
-                        label: 'Cancel',
+                        label: tr('Cancel'),
                         height: 46,
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -357,7 +358,7 @@ class _QuantityDialogState extends State<QuantityDialog> {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: AppButton(
-                        label: 'Add',
+                        label: tr('Add'),
                         height: 46,
                         onPressed: _grams == null ? null : () => Navigator.pop(context, _grams),
                       ),

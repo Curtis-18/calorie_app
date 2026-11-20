@@ -9,6 +9,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_field.dart';
+import '../l10n/app_strings.dart';
 
 /// Which notifications you want, when they may arrive, and a pause button.
 ///
@@ -27,7 +28,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     if (prefs == null) {
       body = state.loading
           ? const Padding(padding: EdgeInsets.only(top: 80), child: CupertinoActivityIndicator())
-          : _LoadFailed(message: state.error ?? "Couldn't load your notification settings.", onRetry: notifier.load);
+          : _LoadFailed(message: state.error ?? tr("Couldn't load your notification settings."), onRetry: notifier.load);
     } else {
       body = _Settings(prefs: prefs, saveError: state.saveError, notifier: notifier);
     }
@@ -36,7 +37,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
         border: AppDecor.hairlineTop,
-        middle: const Text('Notifications'),
+        middle: Text(tr('Notifications')),
       ),
       child: AppBackdrop(
         child: SafeArea(
@@ -63,7 +64,7 @@ class _LoadFailed extends StatelessWidget {
         child: Column(children: [
           Text(message, style: AppType.callout(), textAlign: TextAlign.center),
           const SizedBox(height: AppSpacing.lg),
-          AppButton(label: 'Try again', expand: false, onPressed: onRetry),
+          AppButton(label: tr('Try again'), expand: false, onPressed: onRetry),
         ]),
       );
 }
@@ -84,15 +85,15 @@ class _Settings extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'At most ${prefs.dailyCap} a day, quiet at night, and never about your weight or calories.',
+          tr('At most {v1} a day, quiet at night, and never about your weight or calories.', {'v1': prefs.dailyCap}),
           style: AppType.callout(),
         ),
         if (!NotificationPrefs.pushLive) ...[
           const SizedBox(height: AppSpacing.lg),
-          const _Notice(
+          _Notice(
             key: ValueKey('push_not_live'),
             icon: CupertinoIcons.info,
-            text: "Notifications arrive once the app is on your phone. Your choices are saved now and will apply then.",
+            text: tr("Notifications arrive once the app is on your phone. Your choices are saved now and will apply then."),
           ),
         ],
         if (saveError != null) ...[
@@ -108,8 +109,8 @@ class _Settings extends StatelessWidget {
             _SwitchRow(
               keyName: 'friend_snaps',
               emoji: '📸',
-              title: 'Friend bites',
-              subtitle: 'When a friend sends you a bite',
+              title: tr('Friend bites'),
+              subtitle: tr('When a friend sends you a bite'),
               value: prefs.friendSnaps,
               onChanged: (v) => _set(prefs.copyWith(friendSnaps: v), {'friend_snaps': v}),
             ),
@@ -117,8 +118,8 @@ class _Settings extends StatelessWidget {
             _SwitchRow(
               keyName: 'reactions',
               emoji: '🔥',
-              title: 'Reactions',
-              subtitle: 'When someone reacts to your bite',
+              title: tr('Reactions'),
+              subtitle: tr('When someone reacts to your bite'),
               value: prefs.reactions,
               onChanged: (v) => _set(prefs.copyWith(reactions: v), {'reactions': v}),
             ),
@@ -126,8 +127,8 @@ class _Settings extends StatelessWidget {
             _SwitchRow(
               keyName: 'streak_reminders',
               emoji: '⏳',
-              title: 'Logging and streak reminders',
-              subtitle: "If you haven't logged today, or your streak is about to end",
+              title: tr('Logging and streak reminders'),
+              subtitle: tr("If you haven't logged today, or your streak is about to end"),
               value: prefs.streakReminders,
               onChanged: (v) => _set(prefs.copyWith(streakReminders: v), {'streak_reminders': v}),
             ),
@@ -135,8 +136,8 @@ class _Settings extends StatelessWidget {
             _SwitchRow(
               keyName: 'milestones',
               emoji: '🏅',
-              title: 'Badges and levels',
-              subtitle: 'When you earn something new',
+              title: tr('Badges and levels'),
+              subtitle: tr('When you earn something new'),
               value: prefs.milestones,
               onChanged: (v) => _set(prefs.copyWith(milestones: v), {'milestones': v}),
             ),
@@ -151,8 +152,8 @@ class _Settings extends StatelessWidget {
             _SwitchRow(
               keyName: 'meal_nudge',
               emoji: '🍽️',
-              title: 'A daily meal reminder',
-              subtitle: prefs.mealNudgeHour == null ? 'Off' : 'Every day at ${hourLabel(prefs.mealNudgeHour!)}',
+              title: tr('A daily meal reminder'),
+              subtitle: prefs.mealNudgeHour == null ? tr('Off') : tr('Every day at {v1}', {'v1': hourLabel(prefs.mealNudgeHour!)}),
               value: prefs.mealNudgeHour != null,
               onChanged: (v) {
                 final hour = v ? 13 : null;
@@ -163,10 +164,10 @@ class _Settings extends StatelessWidget {
               const AppDivider(),
               _ValueRow(
                 keyName: 'meal_nudge_time',
-                title: 'Reminder time',
+                title: tr('Reminder time'),
                 value: hourLabel(prefs.mealNudgeHour!),
                 onTap: () async {
-                  final hour = await _pickHour(context, 'Reminder time', prefs.mealNudgeHour!);
+                  final hour = await _pickHour(context, tr('Reminder time'), prefs.mealNudgeHour!);
                   if (hour != null) _set(prefs.copyWith(mealNudgeHour: hour), {'meal_nudge_hour': hour});
                 },
               ),
@@ -181,20 +182,20 @@ class _Settings extends StatelessWidget {
           child: Column(children: [
             _ValueRow(
               keyName: 'quiet_start',
-              title: 'Quiet from',
+              title: tr('Quiet from'),
               value: hourLabel(prefs.quietStart),
               onTap: () async {
-                final hour = await _pickHour(context, 'Quiet from', prefs.quietStart);
+                final hour = await _pickHour(context, tr('Quiet from'), prefs.quietStart);
                 if (hour != null) _set(prefs.copyWith(quietStart: hour), {'quiet_start': hour});
               },
             ),
             const AppDivider(),
             _ValueRow(
               keyName: 'quiet_end',
-              title: 'Until',
+              title: tr('Until'),
               value: hourLabel(prefs.quietEnd),
               onTap: () async {
-                final hour = await _pickHour(context, 'Until', prefs.quietEnd);
+                final hour = await _pickHour(context, tr('Until'), prefs.quietEnd);
                 if (hour != null) _set(prefs.copyWith(quietEnd: hour), {'quiet_end': hour});
               },
             ),
@@ -203,33 +204,33 @@ class _Settings extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           prefs.quietStart == prefs.quietEnd
-              ? 'No quiet hours set.'
-              : 'Nothing arrives between ${hourLabel(prefs.quietStart)} and ${hourLabel(prefs.quietEnd)}.',
-          key: const ValueKey('quiet_summary'),
+              ? tr('No quiet hours set.')
+              : tr('Nothing arrives between {v1} and {v2}.', {'v1': hourLabel(prefs.quietStart), 'v2': hourLabel(prefs.quietEnd)}),
+          key: ValueKey('quiet_summary'),
           style: AppType.caption(color: TrackerColors.textTertiary),
         ),
-        const SizedBox(height: AppSpacing.xl),
+        SizedBox(height: AppSpacing.xl),
         if (paused)
           AppButton(
-            key: const ValueKey('resume'),
-            label: 'Resume notifications',
+            key: ValueKey('resume'),
+            label: tr('Resume notifications'),
             onPressed: () => _set(prefs.copyWith(pausedUntil: null), {'pause_days': 0}),
           )
         else
           AppButton.glass(
-            key: const ValueKey('pause'),
-            label: 'Pause everything for a week',
+            key: ValueKey('pause'),
+            label: tr('Pause everything for a week'),
             icon: CupertinoIcons.pause_circle,
             onPressed: () => _set(
-              prefs.copyWith(pausedUntil: DateTime.now().add(const Duration(days: 7))),
+              prefs.copyWith(pausedUntil: DateTime.now().add(Duration(days: 7))),
               {'pause_days': 7},
             ),
           ),
         if (paused) ...[
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
-            'Paused until ${_dayLabel(prefs.pausedUntil!)}.',
-            key: const ValueKey('paused_note'),
+            tr('Paused until {v1}.', {'v1': _dayLabel(prefs.pausedUntil!)}),
+            key: ValueKey('paused_note'),
             style: AppType.caption(color: TrackerColors.textTertiary),
             textAlign: TextAlign.center,
           ),
@@ -240,7 +241,7 @@ class _Settings extends StatelessWidget {
 }
 
 String _dayLabel(DateTime d) {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final months = [tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'), tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')];
   return '${months[d.month - 1]} ${d.day}';
 }
 
@@ -263,12 +264,12 @@ Future<int?> _pickHour(BuildContext context, String title, int initial) {
             child: Row(children: [
               CupertinoButton(
                 onPressed: () => Navigator.of(sheet).pop(),
-                child: Text('Cancel', style: AppType.button(color: TrackerColors.textSecondary, size: 15)),
+                child: Text(tr('Cancel'), style: AppType.button(color: TrackerColors.textSecondary, size: 15)),
               ),
               Expanded(child: Text(title, textAlign: TextAlign.center, style: AppType.headline())),
               CupertinoButton(
                 onPressed: () => Navigator.of(sheet).pop(selected),
-                child: Text('Done', style: AppType.button(color: TrackerColors.accentStartText, size: 15)),
+                child: Text(tr('Done'), style: AppType.button(color: TrackerColors.accentStartText, size: 15)),
               ),
             ]),
           ),

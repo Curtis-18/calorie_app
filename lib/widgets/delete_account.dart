@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/auth_gate.dart';
 import '../services/account_service.dart';
 import 'app_dialog.dart';
+import '../l10n/app_strings.dart';
 
 /// Ask, then delete the signed-in person's account for good and return to the
 /// sign-in screen. Nothing is deleted unless they confirm, and if the server
@@ -18,11 +19,10 @@ Future<bool> confirmAndDeleteAccount(
 }) async {
   final sure = await showAppDialog(
     context: context,
-    title: 'Delete your account?',
-    message: 'This permanently deletes your profile, food log, weight history, friends, bites and streaks. '
-        "It can't be undone.",
-    confirmLabel: 'Delete',
-    cancelLabel: 'Keep it',
+    title: tr('Delete your account?'),
+    message: '${tr('This permanently deletes your profile, food log, weight history, friends, bites and streaks.')} ${tr("It can't be undone.")}',
+    confirmLabel: tr('Delete'),
+    cancelLabel: tr('Keep it'),
     destructive: true,
   );
   if (sure != true || !context.mounted) return false;
@@ -32,7 +32,7 @@ Future<bool> confirmAndDeleteAccount(
     context: context,
     barrierDismissible: false,
     barrierColor: const Color(0x99000000),
-    builder: (_) => const AppLoadingDialog(label: 'Deleting your account…'),
+    builder: (_) => AppLoadingDialog(label: tr('Deleting your account…')),
   );
 
   try {
@@ -40,7 +40,7 @@ Future<bool> confirmAndDeleteAccount(
   } on AccountException catch (e) {
     navigator.pop(); // the progress dialog
     if (context.mounted) {
-      await showAppDialog(context: context, title: "Couldn't delete your account", message: e.message);
+      await showAppDialog(context: context, title: tr("Couldn't delete your account"), message: e.message);
     }
     return false;
   }

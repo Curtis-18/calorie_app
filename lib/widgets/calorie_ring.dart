@@ -5,6 +5,7 @@ import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import '../l10n/app_strings.dart';
 
 /// Circular calorie meter: coral -> amber sweep with a 20px glow, spring
 /// animated fill, and a large centred remaining-calorie counter.
@@ -114,7 +115,7 @@ class _RingCenter extends StatelessWidget {
             border: Border.all(color: TrackerColors.border, width: 1),
           ),
           child: Text(
-            '$consumed / $target eaten',
+            tr('{consumed} / {target} eaten', {'consumed': consumed, 'target': target}),
             style: AppType.caption(size: 11).copyWith(fontWeight: FontWeight.w600),
           ),
         ),

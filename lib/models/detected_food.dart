@@ -1,5 +1,6 @@
 import 'food_item.dart';
 import 'nutrients.dart';
+import '../l10n/app_strings.dart';
 
 class DetectedFood {
   String name;
@@ -65,7 +66,7 @@ class DetectedFood {
       food.matched = true;
       food.estimated = true;
       final basis = (json['estimate_basis'] as String?)?.trim();
-      food.estimateBasis = (basis == null || basis.isEmpty) ? 'A typical value for this dish.' : basis;
+      food.estimateBasis = (basis == null || basis.isEmpty) ? tr('A typical value for this dish.') : basis;
     }
     return food;
   }

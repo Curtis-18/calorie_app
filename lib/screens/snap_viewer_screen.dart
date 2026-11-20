@@ -9,6 +9,7 @@ import '../theme/app_motion.dart';
 import '../theme/app_typography.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/pressable.dart';
+import '../l10n/app_strings.dart';
 
 /// Full-screen viewer for today's snaps from friends. Tap to move on, swipe
 /// down to close, react with an emoji, or report from the corner menu.
@@ -66,7 +67,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
     try {
       await ref.read(snapInboxProvider.notifier).react(_snap, emoji);
     } on SnapsException catch (e) {
-      if (mounted) await showAppDialog(context: context, title: 'Something went wrong', message: e.message);
+      if (mounted) await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
     }
   }
 
@@ -80,10 +81,10 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
           CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, 'report'),
-            child: const Text('Report this bite'),
+            child: Text(tr('Report this bite')),
           ),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(tr('Cancel'))),
       ),
     );
     if (choice != 'report' || !mounted) return;
@@ -92,11 +93,11 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
       if (!mounted) return;
       await showAppDialog(
         context: context,
-        title: 'Thanks for telling us',
-        message: "We'll take a look. You can also block @${snap.senderUsername} from the Friends tab.",
+        title: tr('Thanks for telling us'),
+        message: tr("We'll take a look. You can also block @{v1} from the Friends tab.", {'v1': snap.senderUsername}),
       );
     } on SnapsException catch (e) {
-      if (mounted) await showAppDialog(context: context, title: 'Something went wrong', message: e.message);
+      if (mounted) await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
     }
   }
 
@@ -123,16 +124,16 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
               child: KeyedSubtree(
                 key: ValueKey(snap.id),
                 child: snap.imageUrl == null
-                    ? const Center(
-                        child: Text("This bite couldn't be loaded.", style: TextStyle(color: Color(0xFFFFFFFF))),
+                    ? Center(
+                        child: Text(tr("This bite couldn't be loaded."), style: TextStyle(color: Color(0xFFFFFFFF))),
                       )
                     : Image.network(
                         snap.imageUrl!,
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, progress) =>
                             progress == null ? child : const Center(child: CupertinoActivityIndicator(radius: 14)),
-                        errorBuilder: (_, _, _) => const Center(
-                          child: Text("This bite couldn't be loaded.", style: TextStyle(color: Color(0xFFFFFFFF))),
+                        errorBuilder: (_, _, _) => Center(
+                          child: Text(tr("This bite couldn't be loaded."), style: TextStyle(color: Color(0xFFFFFFFF))),
                         ),
                       ),
               ),
