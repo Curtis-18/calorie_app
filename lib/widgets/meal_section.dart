@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../models/food_entry.dart';
@@ -71,14 +72,14 @@ class MealSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title.toUpperCase(),
+                        context.tr(title).toUpperCase(),
                         style: AppType.sectionLabel(color: TrackerColors.textPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         entries.isEmpty
-                            ? 'Nothing logged'
-                            : '$mealTotal kcal · ${entries.length} item${entries.length == 1 ? '' : 's'}',
+                            ? context.tr('Nothing logged')
+                            : '$mealTotal kcal · ${entries.length == 1 ? context.tr('1 item') : context.tr('{n} items', {'n': entries.length})}',
                         style: AppType.caption(color: TrackerColors.textTertiary, size: 11),
                       ),
                     ],
@@ -168,7 +169,7 @@ class MealSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
               child: Text(
-                onPhoto == null ? 'Nothing was logged for this meal.' : 'Take a photo of your meal, or search by name.',
+                onPhoto == null ? context.tr('Nothing was logged for this meal.') : context.tr('Take a photo of your meal, or search by name.'),
                 style: AppType.caption(color: TrackerColors.textTertiary, size: 12),
               ),
             )
@@ -201,7 +202,7 @@ class MealSection extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
-                                'Delete',
+                                context.tr('Delete'),
                                 style: TextStyle(
                                   color: TrackerColors.error,
                                   fontSize: 13,
@@ -262,7 +263,7 @@ class _FoodRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 if (entry.isEstimate) ...[
                   Text(
-                    'Estimated',
+                    context.tr('Estimated'),
                     key: ValueKey('estimated_entry_${entry.id}'),
                     style: AppType.caption(size: 11, color: TrackerColors.warning),
                   ),

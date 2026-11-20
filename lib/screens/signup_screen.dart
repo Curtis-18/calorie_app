@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_shapes.dart';
@@ -41,8 +42,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       } else {
         await showAppDialog(
           context: context,
-          title: 'Almost there',
-          message: 'Check your email to confirm your account, then log in.',
+          title: context.tr('Almost there'),
+          message: context.tr('Check your email to confirm your account, then log in.'),
           confirmLabel: 'OK',
         );
       }
@@ -51,7 +52,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } catch (_) {
       // No connection, DNS failure, a timeout: these are not AuthExceptions,
       // so the spinner used to stop with no message at all.
-      if (mounted) setState(() => _errorMessage = "Couldn't sign you up. Check your connection and try again.");
+      if (mounted) setState(() => _errorMessage = context.tr("Couldn't sign you up. Check your connection and try again."));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,7 +71,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
         border: AppDecor.hairlineTop,
-        middle: const Text('Sign up'),
+        middle: Text(context.tr('Sign up')),
       ),
       child: AppBackdrop(
         child: Center(
@@ -83,20 +84,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Create your account', style: AppType.title()),
+                  Text(context.tr('Create your account'), style: AppType.title()),
                   const SizedBox(height: 6),
-                  Text('Start tracking in under a minute.', style: AppType.callout()),
+                  Text(context.tr('Start tracking in under a minute.'), style: AppType.callout()),
                   const SizedBox(height: AppSpacing.xl),
                   AppField(
                     controller: _emailController,
-                    placeholder: 'Email',
+                    placeholder: context.tr('Email'),
                     icon: CupertinoIcons.mail,
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppField(
                     controller: _passwordController,
-                    placeholder: 'Password',
+                    placeholder: context.tr('Password'),
                     icon: CupertinoIcons.lock,
                     obscure: true,
                   ),
@@ -120,13 +121,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ],
                   const SizedBox(height: AppSpacing.xl),
                   AppButton(
-                    label: 'Sign up',
+                    label: context.tr('Sign up'),
                     loading: _isLoading,
                     onPressed: _isLoading ? null : _signUp,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
-                    label: 'Already have an account? Log in',
+                    label: context.tr('Already have an account? Log in'),
                     style: AppButtonStyle.quiet,
                     height: 44,
                     onPressed: () {

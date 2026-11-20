@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/cupertino.dart';
 import '../services/password_recovery.dart';
 import '../theme/app_shapes.dart';
@@ -60,7 +61,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
         border: AppDecor.hairlineTop,
-        middle: const Text('Reset password'),
+        middle: Text(context.tr('Reset password')),
       ),
       child: AppBackdrop(
         child: Center(
@@ -81,13 +82,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Forgot your password?', style: AppType.title()),
+          Text(context.tr('Forgot your password?'), style: AppType.title()),
           const SizedBox(height: 6),
-          Text('Enter your email and we\'ll send you a link to choose a new one.', style: AppType.callout()),
+          Text(context.tr('Enter your email and we\'ll send you a link to choose a new one.'), style: AppType.callout()),
           const SizedBox(height: AppSpacing.xl),
           AppField(
             controller: _email,
-            placeholder: 'Email',
+            placeholder: context.tr('Email'),
             icon: CupertinoIcons.mail,
             keyboardType: TextInputType.emailAddress,
             autofocus: true,
@@ -97,7 +98,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             _ErrorBox(message: _error!),
           ],
           const SizedBox(height: AppSpacing.xl),
-          AppButton(label: 'Send reset link', loading: _sending, onPressed: _sending ? null : _send),
+          AppButton(label: context.tr('Send reset link'), loading: _sending, onPressed: _sending ? null : _send),
         ],
       );
 
@@ -114,18 +115,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Check your email', style: AppType.title(), textAlign: TextAlign.center),
+          Text(context.tr('Check your email'), style: AppType.title(), textAlign: TextAlign.center),
           const SizedBox(height: 6),
           Text(
-            'If ${_email.text.trim()} has an account, a reset link is on its way. It can take a minute, so check spam too.',
+            context.tr('If {email} has an account, a reset link is on its way. It can take a minute, so check spam too.', {'email': _email.text.trim()}),
             style: AppType.callout(),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xl),
-          AppButton(label: 'Back to log in', onPressed: () => Navigator.of(context).pop()),
+          AppButton(label: context.tr('Back to log in'), onPressed: () => Navigator.of(context).pop()),
           const SizedBox(height: AppSpacing.sm),
           AppButton(
-            label: 'Send it again',
+            label: context.tr('Send it again'),
             style: AppButtonStyle.quiet,
             height: 44,
             onPressed: () => setState(() => _sent = false),

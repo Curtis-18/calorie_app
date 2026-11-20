@@ -1,3 +1,6 @@
+import '../l10n/app_language.dart';
+import '../l10n/app_strings.dart';
+import '../providers/language_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -82,7 +85,49 @@ class SettingsView extends ConsumerWidget {
   Future<void> _saveBudget(BuildContext context, WidgetRef ref, Map<String, Object?> changes) async {
     final error = await ref.read(budgetProvider.notifier).update(changes);
     if (error == null || !context.mounted) return;
-    await showAppDialog(context: context, title: "Couldn't change that", message: error, confirmLabel: 'OK');
+    await showAppDialog(context: context, title: context.tr("Couldn't change that"), message: error, confirmLabel: 'OK');
+  }
+
+  /// Choose the app's language, or "Automatic" to follow the phone. The choice
+  /// is remembered on this device and applies at once.
+  Future<void> _pickLanguage(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(languageProvider);
+    // A record so "Automatic" (null) can be told from dismissing the sheet.
+    final picked = await showCupertinoModalPopup<({String? code})>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text(context.tr('Choose a language')),
+        message: Text(context.tr('Some screens are still in English while we finish translating them.')),
+        actions: [
+          CupertinoActionSheetAction(
+            key: const ValueKey('language_auto'),
+            isDefaultAction: current == null,
+            onPressed: () => Navigator.pop(context, (code: null)),
+            child: Text(context.tr('Automatic')),
+          ),
+          for (final l in supportedLanguages)
+            CupertinoActionSheetAction(
+              key: ValueKey('language_${l.code}'),
+              isDefaultAction: l.code == current,
+              onPressed: () => Navigator.pop(context, (code: l.code)),
+              child: Text(l.nativeName),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(context.tr('Cancel'))),
+      ),
+    );
+    if (picked == null || picked.code == current) return;
+    await ref.read(languageProvider.notifier).set(picked.code);
+  }
+
+  String _languageValue(BuildContext context, String? saved, String active) {
+    final name = languageName(active) ?? 'English';
+    return saved == null ? '${context.tr('Automatic')} · $name' : name;
+  }
+
+  String _regionValue(BuildContext context, String? key) {
+    final label = foodRegionLabel(key);
+    return label == null ? context.tr('Not set') : context.tr(label);
   }
 
   Future<void> _pickRegion(BuildContext context, WidgetRef ref, String? current) async {
@@ -90,42 +135,42 @@ class SettingsView extends ConsumerWidget {
     final picked = await showCupertinoModalPopup<({String? key})>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: const Text('Where do you mostly eat?'),
-        message: const Text('It only helps the camera name dishes. It never limits what you can log.'),
+        title: Text(context.tr('Where do you mostly eat?')),
+        message: Text(context.tr('It only helps the camera name dishes. It never limits what you can log.')),
         actions: [
           for (final r in foodRegions)
             CupertinoActionSheetAction(
               key: ValueKey('region_${r.key}'),
               isDefaultAction: r.key == current,
               onPressed: () => Navigator.pop(context, (key: r.key)),
-              child: Text(r.label),
+              child: Text(context.tr(r.label)),
             ),
           CupertinoActionSheetAction(
             key: const ValueKey('region_none'),
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, (key: null)),
-            child: const Text('Don’t use a region'),
+            child: Text(context.tr('Don’t use a region')),
           ),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(context.tr('Cancel'))),
       ),
     );
     if (picked == null || picked.key == current || !context.mounted) return;
     final error = await ref.read(foodRegionProvider.notifier).set(picked.key);
     if (error == null || !context.mounted) return;
-    await showAppDialog(context: context, title: "Couldn't change that", message: error, confirmLabel: 'OK');
+    await showAppDialog(context: context, title: context.tr("Couldn't change that"), message: error, confirmLabel: 'OK');
   }
 
   Future<void> _pickWeekStart(BuildContext context, WidgetRef ref, BudgetPrefs prefs) async {
     final picked = await showCupertinoModalPopup<int>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: const Text('Week starts on'),
+        title: Text(context.tr('Week starts on')),
         actions: [
-          CupertinoActionSheetAction(onPressed: () => Navigator.pop(context, 0), child: const Text('Monday')),
-          CupertinoActionSheetAction(onPressed: () => Navigator.pop(context, 6), child: const Text('Sunday')),
+          CupertinoActionSheetAction(onPressed: () => Navigator.pop(context, 0), child: Text(context.tr('Monday'))),
+          CupertinoActionSheetAction(onPressed: () => Navigator.pop(context, 6), child: Text(context.tr('Sunday'))),
         ],
-        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: Text(context.tr('Cancel'))),
       ),
     );
     if (picked == null || picked == prefs.weekStartDay || !context.mounted) return;
@@ -149,7 +194,7 @@ class SettingsView extends ConsumerWidget {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
         border: AppDecor.hairlineTop,
-        middle: const Text('Settings'),
+        middle: Text(context.tr('Settings')),
       ),
       child: AppBackdrop(
         child: SafeArea(
@@ -163,13 +208,13 @@ class SettingsView extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SettingsGroup(
-                      label: 'Account',
+                      label: context.tr('Account'),
                       children: [
                         if (username != null)
                           SettingsRow(
                             key: const ValueKey('change_username'),
                             icon: CupertinoIcons.at,
-                            title: 'Username',
+                            title: context.tr('Username'),
                             value: '@$username',
                             onTap: () => _push(
                               context,
@@ -185,10 +230,10 @@ class SettingsView extends ConsumerWidget {
                         SettingsRow(
                           key: const ValueKey('edit_profile'),
                           icon: CupertinoIcons.slider_horizontal_3,
-                          title: p == null ? 'Set up profile' : 'Profile and goals',
+                          title: p == null ? context.tr('Set up profile') : context.tr('Profile and goals'),
                           subtitle: p == null
-                              ? 'Answer a few questions to get your targets'
-                              : 'Weight, height, activity and goal',
+                              ? context.tr('Answer a few questions to get your targets')
+                              : context.tr('Weight, height, activity and goal'),
                           onTap: () => _push(context, (_) => OnboardingScreen(existingProfile: p)),
                         ),
                       ],
@@ -197,15 +242,30 @@ class SettingsView extends ConsumerWidget {
                     const AppearancePicker(),
                     const SizedBox(height: AppSpacing.xxl),
                     SettingsGroup(
-                      label: 'Today screen',
-                      footer: 'Calories and meals always show. These cards are optional.',
+                      label: context.tr('Language'),
+                      footer: ref.watch(languageProvider) == null ? context.tr('Follows your phone’s language') : null,
+                      children: [
+                        SettingsRow(
+                          key: const ValueKey('language'),
+                          icon: CupertinoIcons.textformat,
+                          color: TrackerColors.accentEnd,
+                          title: context.tr('Language'),
+                          value: _languageValue(context, ref.watch(languageProvider), ref.watch(activeLanguageProvider)),
+                          onTap: () => _pickLanguage(context, ref),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    SettingsGroup(
+                      label: context.tr('Today screen'),
+                      footer: context.tr('Calories and meals always show. These cards are optional.'),
                       children: [
                         SettingsSwitchRow(
                           key: const ValueKey('toggle_macros'),
                           icon: CupertinoIcons.chart_pie,
                           color: TrackerColors.macroProtein,
-                          title: 'Macros',
-                          subtitle: 'Protein, carbs and fat',
+                          title: context.tr('Macros'),
+                          subtitle: context.tr('Protein, carbs and fat'),
                           value: display.showMacros,
                           onChanged: displayNotifier.setShowMacros,
                         ),
@@ -213,8 +273,8 @@ class SettingsView extends ConsumerWidget {
                           key: const ValueKey('toggle_nutrients'),
                           icon: CupertinoIcons.leaf_arrow_circlepath,
                           color: TrackerColors.success,
-                          title: 'Nutrients',
-                          subtitle: 'A "View nutrients" row under macros',
+                          title: context.tr('Nutrients'),
+                          subtitle: context.tr('A "View nutrients" row under macros'),
                           value: display.showNutrients,
                           onChanged: displayNotifier.setShowNutrients,
                         ),
@@ -222,8 +282,8 @@ class SettingsView extends ConsumerWidget {
                           key: const ValueKey('toggle_launch_camera'),
                           icon: CupertinoIcons.camera_fill,
                           color: TrackerColors.accentStart,
-                          title: 'Open the camera at launch',
-                          subtitle: 'Start a meal photo as soon as the app opens',
+                          title: context.tr('Open the camera at launch'),
+                          subtitle: context.tr('Start a meal photo as soon as the app opens'),
                           value: display.launchToCamera,
                           onChanged: displayNotifier.setLaunchToCamera,
                         ),
@@ -231,31 +291,30 @@ class SettingsView extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     SettingsGroup(
-                      label: 'Food',
-                      footer: 'Helps the camera name regional dishes. You can always correct what it finds.',
+                      label: context.tr('Food'),
+                      footer: context.tr('Helps the camera name regional dishes. You can always correct what it finds.'),
                       children: [
                         SettingsRow(
                           key: const ValueKey('food_region'),
                           icon: CupertinoIcons.globe,
                           color: TrackerColors.accentEnd,
-                          title: 'Where you mostly eat',
-                          value: foodRegionLabel(ref.watch(foodRegionProvider)) ?? 'Not set',
+                          title: context.tr('Where you mostly eat'),
+                          value: _regionValue(context, ref.watch(foodRegionProvider)),
                           onTap: () => _pickRegion(context, ref, ref.read(foodRegionProvider)),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     SettingsGroup(
-                      label: 'Weekly budget',
-                      footer: 'Eat a bit more one day and the rest of the week eases gently, inside your healthy range. '
-                          'Days you don’t log are left out.',
+                      label: context.tr('Weekly budget'),
+                      footer: context.tr('Eat a bit more one day and the rest of the week eases gently, inside your healthy range. Days you don’t log are left out.'),
                       children: [
                         SettingsSwitchRow(
                           key: const ValueKey('toggle_weekly_budget'),
                           icon: CupertinoIcons.calendar,
                           color: TrackerColors.accentEnd,
-                          title: 'Flexible weekly target',
-                          subtitle: 'Today’s plan adjusts a little across the week',
+                          title: context.tr('Flexible weekly target'),
+                          subtitle: context.tr('Today’s plan adjusts a little across the week'),
                           value: budgetPrefs.weekly,
                           onChanged: (on) => _saveBudget(context, ref, {'mode': on ? 'weekly' : 'daily'}),
                         ),
@@ -263,8 +322,8 @@ class SettingsView extends ConsumerWidget {
                           key: const ValueKey('toggle_weekend_flex'),
                           icon: CupertinoIcons.sun_max,
                           color: TrackerColors.accentEnd,
-                          title: 'Weekend flex',
-                          subtitle: 'A little more on Saturday and Sunday',
+                          title: context.tr('Weekend flex'),
+                          subtitle: context.tr('A little more on Saturday and Sunday'),
                           value: budgetPrefs.weekendFlex,
                           onChanged: (on) => _saveBudget(context, ref, {
                             'weights': on ? weekendFlexWeights(budgetPrefs.weekStartDay) : <double>[],
@@ -275,8 +334,8 @@ class SettingsView extends ConsumerWidget {
                           key: const ValueKey('toggle_budget_nudges'),
                           icon: CupertinoIcons.chat_bubble_text,
                           color: TrackerColors.accentEnd,
-                          title: 'Gentle nudges',
-                          subtitle: 'A kind suggestion after a bigger day',
+                          title: context.tr('Gentle nudges'),
+                          subtitle: context.tr('A kind suggestion after a bigger day'),
                           value: budgetPrefs.nudges,
                           onChanged: (on) => _saveBudget(context, ref, {'nudges': on}),
                         ),
@@ -284,20 +343,20 @@ class SettingsView extends ConsumerWidget {
                           key: const ValueKey('week_start'),
                           icon: CupertinoIcons.calendar_today,
                           color: TrackerColors.accentEnd,
-                          title: 'Week starts on',
-                          value: budgetPrefs.weekStartDay == 6 ? 'Sunday' : 'Monday',
+                          title: context.tr('Week starts on'),
+                          value: budgetPrefs.weekStartDay == 6 ? context.tr('Sunday') : context.tr('Monday'),
                           onTap: () => _pickWeekStart(context, ref, budgetPrefs),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     SettingsGroup(
-                      label: 'Units',
+                      label: context.tr('Units'),
                       children: [
                         SettingsRow(
                           icon: CupertinoIcons.gauge,
                           color: TrackerColors.macroCarbs,
-                          title: 'Weight',
+                          title: context.tr('Weight'),
                           trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
                             key: const ValueKey('weight_unit'),
                             groupValue: unit,
@@ -319,34 +378,34 @@ class SettingsView extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     SettingsGroup(
-                      label: 'Notifications and privacy',
+                      label: context.tr('Notifications and privacy'),
                       children: [
                         SettingsRow(
                           key: const ValueKey('open_notifications'),
                           icon: CupertinoIcons.bell,
                           color: TrackerColors.macroFat,
-                          title: 'Notifications',
-                          subtitle: 'What to tell you, quiet hours, pause',
+                          title: context.tr('Notifications'),
+                          subtitle: context.tr('What to tell you, quiet hours, pause'),
                           onTap: () => _push(context, (_) => const NotificationSettingsScreen()),
                         ),
                         SettingsRow(
                           key: const ValueKey('blocked_people'),
                           icon: CupertinoIcons.hand_raised,
                           color: TrackerColors.warning,
-                          title: 'Blocked people',
+                          title: context.tr('Blocked people'),
                           onTap: onBlockedPeople,
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     SettingsGroup(
-                      label: 'Help',
+                      label: context.tr('Help'),
                       children: [
                         SettingsRow(
                           key: const ValueKey('replay_tour'),
                           icon: CupertinoIcons.play_circle,
-                          title: 'Replay the tutorial',
-                          subtitle: 'A quick walk through the app',
+                          title: context.tr('Replay the tutorial'),
+                          subtitle: context.tr('A quick walk through the app'),
                           onTap: () => _replayTour(context, ref),
                         ),
                       ],
@@ -358,7 +417,7 @@ class SettingsView extends ConsumerWidget {
                           key: const ValueKey('log_out'),
                           icon: CupertinoIcons.square_arrow_right,
                           color: TrackerColors.textSecondary,
-                          title: 'Log out',
+                          title: context.tr('Log out'),
                           onTap: () => (onLogOut ?? confirmAndLogOut)(context),
                         ),
                       ],
@@ -371,7 +430,7 @@ class SettingsView extends ConsumerWidget {
                         key: const ValueKey('delete_account'),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         onPressed: () => (onDeleteAccount ?? confirmAndDeleteAccount)(context),
-                        child: Text('Delete account', style: AppType.caption(color: TrackerColors.error, size: 13)),
+                        child: Text(context.tr('Delete account'), style: AppType.caption(color: TrackerColors.error, size: 13)),
                       ),
                     ),
                   ],

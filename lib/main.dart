@@ -1,8 +1,11 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show DefaultMaterialLocalizations;
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
+import 'l10n/app_language.dart';
+import 'l10n/app_strings.dart';
+import 'providers/language_provider.dart';
 import 'providers/appearance_provider.dart';
 import 'screens/auth_gate.dart';
 import 'screens/main_shell.dart';
@@ -27,8 +30,15 @@ import 'widgets/theme_host.dart';
 /// alone got away with it, which is why only step 2 broke, and why no test
 /// caught it: the framework asserts are debug-only, and the app is deployed
 /// as a release build.
+///
+/// The Global* delegates also translate what the framework itself shows
+/// (dialog buttons, date pickers, text-field menus), and [AppStrings] is the
+/// app's own text (`context.tr`).
 const appLocalizationsDelegates = <LocalizationsDelegate<dynamic>>[
-  DefaultMaterialLocalizations.delegate,
+  AppStrings.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
 ];
 
 Future<void> main() async {
@@ -54,26 +64,57 @@ Future<void> main() async {
   final appearance = await AppearanceNotifier.load();
   TrackerColors.apply(appearance.resolve(WidgetsBinding.instance.platformDispatcher.platformBrightness));
 
+  final language = await LanguageNotifier.load();
+
   runApp(ProviderScope(
-    overrides: [appearanceProvider.overrideWith((ref) => AppearanceNotifier(appearance))],
+    overrides: [
+      appearanceProvider.overrideWith((ref) => AppearanceNotifier(appearance)),
+      languageProvider.overrideWith((ref) => LanguageNotifier(language)),
+    ],
     child: MyApp(configError: configError),
   ));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key, this.configError});
 
   final String? configError;
 
   @override
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// The device's language list changed (in the phone's settings): follow it
+  /// while the choice here is "automatic".
+  @override
+  void didChangeLocales(List<Locale>? locales) => ref.invalidate(activeLanguageProvider);
+
+  @override
   Widget build(BuildContext context) {
+    final configError = widget.configError;
+    final language = ref.watch(activeLanguageProvider);
     return ThemeHost(
       builder: (context, theme) => CupertinoApp(
         title: 'NuStreak',
         theme: theme,
+        locale: Locale(language),
+        supportedLocales: [for (final l in supportedLanguages) Locale(l.code)],
         localizationsDelegates: appLocalizationsDelegates,
         home: SplashGate(
-          child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError!),
+          child: configError == null ? const AuthGate() : ConfigErrorScreen(message: configError),
         ),
         routes: {
           '/onboarding': (context) => const OnboardingScreen(),

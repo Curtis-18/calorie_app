@@ -8,6 +8,7 @@ import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
+import '../l10n/app_strings.dart';
 import 'pressable.dart';
 
 /// Light / Dark / Auto, as three big tiles. Applies instantly, so the sheet it
@@ -22,7 +23,7 @@ class AppearancePicker extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('APPEARANCE', style: AppType.sectionLabel()),
+        Text(context.tr('APPEARANCE'), style: AppType.sectionLabel()),
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
@@ -42,7 +43,7 @@ class AppearancePicker extends ConsumerWidget {
         AnimatedSwitcher(
           duration: AppMotion.quick,
           child: Text(
-            current.blurb,
+            context.tr(current.blurb),
             key: ValueKey(current),
             style: AppType.caption(color: TrackerColors.textTertiary),
           ),
@@ -104,7 +105,7 @@ class _ModeTile extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                mode.label,
+                context.tr(mode.label),
                 style: AppType.caption(
                   color: selected ? TrackerColors.textPrimary : TrackerColors.textSecondary,
                   size: 12.5,

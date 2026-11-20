@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../models/progress.dart';
@@ -41,17 +42,17 @@ class DashboardHeader extends StatelessWidget {
   final VoidCallback? onNextDay;
   final bool canGoNext;
 
-  String get _greeting {
+  String _greeting(BuildContext context) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return context.tr('Good morning');
+    if (hour < 18) return context.tr('Good afternoon');
+    return context.tr('Good evening');
   }
 
   @override
   Widget build(BuildContext context) {
     return PageHeader(
-      eyebrow: _greeting,
+      eyebrow: _greeting(context),
       title: dateLabel,
       titleAccessory: DayArrows(onPrevious: onPreviousDay, onNext: onNextDay, canGoNext: canGoNext),
       actions: [
@@ -82,7 +83,7 @@ class _NewBell extends StatelessWidget {
       padding: const EdgeInsets.only(right: 8),
       child: Semantics(
         button: true,
-        label: unread ? 'Notifications, something new' : 'Notifications',
+        label: unread ? context.tr('Notifications, something new') : context.tr('Notifications'),
         child: Pressable(
           key: const ValueKey('whats_new_bell'),
           onTap: () {

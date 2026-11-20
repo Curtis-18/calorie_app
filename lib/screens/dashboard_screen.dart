@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -291,8 +292,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (!queue.hasRoom) {
       await showAppDialog(
         context: context,
-        title: 'Finish your other photos first',
-        message: 'You have ${ScanQueueNotifier.maxPending} meals waiting to be checked. Review or dismiss one, then take the next.',
+        title: context.tr('Finish your other photos first'),
+        message: context.tr('You have {n} meals waiting to be checked. Review or dismiss one, then take the next.', {'n': ScanQueueNotifier.maxPending}),
         confirmLabel: 'OK',
       );
       return;
@@ -318,7 +319,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Future<void> _budgetAction(BuildContext context, Future<String?> action) async {
     final error = await action;
     if (error == null || !context.mounted) return;
-    await showAppDialog(context: context, title: "Couldn't do that", message: error, confirmLabel: 'OK');
+    await showAppDialog(context: context, title: context.tr("Couldn't do that"), message: error, confirmLabel: 'OK');
   }
 
   Future<void> _addNote(BuildContext context, PendingScan scan) async {
@@ -376,8 +377,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (!context.mounted) return;
       await showAppDialog(
         context: context,
-        title: "Couldn't save your meal",
-        message: 'Something went wrong while saving your meal. Please try again.',
+        title: context.tr("Couldn't save your meal"),
+        message: context.tr('Something went wrong while saving your meal. Please try again.'),
         confirmLabel: 'OK',
       );
     }
@@ -398,8 +399,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (!context.mounted) return;
       await showAppDialog(
         context: context,
-        title: "Couldn't save that food",
-        message: 'It was not added to your log. Check your connection and try again.',
+        title: context.tr("Couldn't save that food"),
+        message: context.tr('It was not added to your log. Check your connection and try again.'),
       );
     }
   }
@@ -411,8 +412,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (!context.mounted) return;
       await showAppDialog(
         context: context,
-        title: "Couldn't delete that food",
-        message: 'It is still in your log. Check your connection and try again.',
+        title: context.tr("Couldn't delete that food"),
+        message: context.tr('It is still in your log. Check your connection and try again.'),
       );
     }
   }
@@ -428,8 +429,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (!context.mounted) return;
       await showAppDialog(
         context: context,
-        title: "Couldn't save that change",
-        message: 'Your entry is unchanged. Check your connection and try again.',
+        title: context.tr("Couldn't save that change"),
+        message: context.tr('Your entry is unchanged. Check your connection and try again.'),
       );
     }
   }
@@ -437,15 +438,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String get _dateLabel {
     final now = DateTime.now();
     final day = _viewDay;
-    if (LogCacheReader.isSameDay(day, now)) return 'Today';
+    if (LogCacheReader.isSameDay(day, now)) return context.tr('Today');
     if (LogCacheReader.isSameDay(day, now.subtract(const Duration(days: 1)))) {
-      return 'Yesterday';
+      return context.tr('Yesterday');
     }
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
-    return '${months[day.month - 1]} ${day.day}';
+    return '${context.tr(months[day.month - 1])} ${day.day}';
   }
 
   @override
@@ -549,12 +550,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ],
                             const SizedBox(height: 24),
                             SectionHeader(
-                              label: _isToday ? "Today's meals" : 'Meals',
+                              label: _isToday ? context.tr("Today's meals") : context.tr('Meals'),
                               trailing: _isToday
                                   ? Text(
                                       entries.isEmpty
-                                          ? 'Nothing yet'
-                                          : '${entries.length} item${entries.length == 1 ? '' : 's'}',
+                                          ? context.tr('Nothing yet')
+                                          : (entries.length == 1 ? context.tr('1 item') : context.tr('{n} items', {'n': entries.length})),
                                       style: AppType.caption(
                                         color: TrackerColors.textTertiary,
                                         size: 11,
@@ -606,8 +607,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             Center(
                               child: Text(
                                 _isToday
-                                    ? 'Tap a food to edit it, swipe left to delete it'
-                                    : 'Past days are read-only. Go back to Today to log.',
+                                    ? context.tr('Tap a food to edit it, swipe left to delete it')
+                                    : context.tr('Past days are read-only. Go back to Today to log.'),
                                 style: AppType.caption(
                                   color: TrackerColors.textTertiary,
                                   size: 11,
@@ -634,7 +635,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   // Secondary: search by name.
                   Semantics(
                     button: true,
-                    label: 'Search for a food',
+                    label: context.tr('Search for a food'),
                     child: KeyedSubtree(
                       key: _searchButtonKey,
                       child: AppFab(
@@ -650,7 +651,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   // Primary: photograph the meal. This is what the app is for.
                   Semantics(
                     button: true,
-                    label: 'Take a photo of your meal',
+                    label: context.tr('Take a photo of your meal'),
                     child: KeyedSubtree(
                       key: _cameraButtonKey,
                       child: AppFab(
@@ -791,7 +792,7 @@ class _RingCard extends StatelessWidget {
                             Icon(CupertinoIcons.flame_fill, size: 13, color: TrackerColors.accentEndText),
                             const SizedBox(width: 6),
                             Text(
-                              'Perfect day',
+                              context.tr('Perfect day'),
                               style: AppType.caption(color: TrackerColors.accentEndText, size: 12)
                                   .copyWith(fontWeight: FontWeight.w800),
                             ),
@@ -808,7 +809,7 @@ class _RingCard extends StatelessWidget {
                 children: [
                   Icon(CupertinoIcons.clock, size: 13, color: TrackerColors.textTertiary),
                   const SizedBox(width: 6),
-                  Text('Cached day', style: AppType.caption(size: 11)),
+                  Text(context.tr('Cached day'), style: AppType.caption(size: 11)),
                 ],
               ),
             ],

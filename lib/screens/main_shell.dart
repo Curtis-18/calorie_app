@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -136,7 +137,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 active: i == index,
                 badge: i == ShellTab.friends.index && waiting > 0,
               ),
-              label: _tabs[i].label,
+              label: context.tr(_tabs[i].label),
             ),
         ],
       ),

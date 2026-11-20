@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_shapes.dart';
@@ -41,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (_) {
       // No connection, DNS failure, a timeout: these are not AuthExceptions,
       // so the spinner used to stop with no message at all.
-      if (mounted) setState(() => _errorMessage = "Couldn't log you in. Check your connection and try again.");
+      if (mounted) setState(() => _errorMessage = context.tr("Couldn't log you in. Check your connection and try again."));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -60,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: TrackerColors.navFill,
         border: AppDecor.hairlineTop,
-        middle: const Text('Log in'),
+        middle: Text(context.tr('Log in')),
       ),
       child: AppBackdrop(
         child: Center(
@@ -73,20 +74,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Welcome back', style: AppType.title()),
+                  Text(context.tr('Welcome back'), style: AppType.title()),
                   const SizedBox(height: 6),
-                  Text('Sign in to keep your streak alive.', style: AppType.callout()),
+                  Text(context.tr('Sign in to keep your streak alive.'), style: AppType.callout()),
                   const SizedBox(height: AppSpacing.xl),
                   AppField(
                     controller: _emailController,
-                    placeholder: 'Email',
+                    placeholder: context.tr('Email'),
                     icon: CupertinoIcons.mail,
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppField(
                     controller: _passwordController,
-                    placeholder: 'Password',
+                    placeholder: context.tr('Password'),
                     icon: CupertinoIcons.lock,
                     obscure: true,
                   ),
@@ -110,13 +111,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                   const SizedBox(height: AppSpacing.xl),
                   AppButton(
-                    label: 'Log in',
+                    label: context.tr('Log in'),
                     loading: _isLoading,
                     onPressed: _isLoading ? null : _logIn,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
-                    label: 'Forgot password?',
+                    label: context.tr('Forgot password?'),
                     style: AppButtonStyle.quiet,
                     height: 44,
                     onPressed: () {
@@ -129,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
-                    label: "Don't have an account? Sign up",
+                    label: context.tr("Don't have an account? Sign up"),
                     style: AppButtonStyle.quiet,
                     height: 44,
                     onPressed: () {
