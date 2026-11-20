@@ -102,7 +102,7 @@ void main() {
     testWidgets('the amount dialog credits Open Food Facts', (tester) async {
       await showDialogFor(tester, item('Open Food Facts'));
       expect(find.byKey(const ValueKey('off_credit')), findsOneWidget);
-      expect(find.text('Source: Open Food Facts'), findsOneWidget);
+      expect(find.text('© Open Food Facts contributors'), findsOneWidget);
     });
 
     testWidgets('and says nothing extra for a USDA product', (tester) async {

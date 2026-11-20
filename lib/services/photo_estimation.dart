@@ -72,7 +72,7 @@ class PhotoEstimationService {
     return session?.accessToken;
   }
 
-  Future<List<DetectedFood>> analyzePhoto(List<int> imageBytes, {String? note}) async {
+  Future<List<DetectedFood>> analyzePhoto(List<int> imageBytes, {String? note, String? region}) async {
     String? token;
     try {
       token = await (_tokenProvider ?? _getFreshToken)();
@@ -95,6 +95,8 @@ class PhotoEstimationService {
               'image': base64Encode(imageBytes),
               'date': _deviceDate(),
               if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+              // Where the person mostly eats: context for naming dishes only.
+              if (region != null && region.isNotEmpty) 'region': region,
             }),
           )
           .timeout(timeout);

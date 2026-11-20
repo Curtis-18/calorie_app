@@ -99,7 +99,7 @@ void main() {
       expect(patches.single.url.path, '/logs/entry-1');
       expect(jsonDecode(patches.single.body), {
         'name': 'Rice (300g)', 'calories': 390, 'protein_g': 8.0, 'carbs_g': 84.0, 'fat_g': 0.8,
-        'meal_type': 'dinner', 'nutrients': {'fiber_g': 1.2, 'iron_mg': 3.6},
+        'meal_type': 'dinner', 'nutrients': {'fiber_g': 1.2, 'iron_mg': 3.6}, 'estimate_basis': null,
       });
       final shown = n.state.firstWhere((e) => e.id == 'entry-1');
       expect((shown.calories, shown.mealType, shown.name), (390, MealType.dinner, 'Rice (300g)'));

@@ -97,6 +97,8 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
         fatG: picked.fatG,
         nutrients: picked.nutrients,
         clearNutrients: picked.nutrients == null,
+        // A food picked from the database is a real match, not an estimate.
+        clearEstimate: true,
       );
       _baseGrams = gramsInName(picked.name);
       _factor = 1;

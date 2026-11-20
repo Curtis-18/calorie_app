@@ -260,6 +260,14 @@ class _FoodRow extends StatelessWidget {
                   style: AppType.body(size: 14),
                 ),
                 const SizedBox(height: 3),
+                if (entry.isEstimate) ...[
+                  Text(
+                    'Estimated',
+                    key: ValueKey('estimated_entry_${entry.id}'),
+                    style: AppType.caption(size: 11, color: TrackerColors.warning),
+                  ),
+                  const SizedBox(height: 3),
+                ],
                 Row(
                   children: [
                     _MacroTag(value: entry.proteinG, color: TrackerColors.macroProtein),

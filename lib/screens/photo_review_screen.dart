@@ -12,6 +12,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
+import '../widgets/app_dialog.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/pressable.dart';
 import 'food_search_screen.dart';
@@ -104,6 +105,10 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
         preparation: f.preparation,
         kind: f.kind,
         adjustmentId: f.adjustmentId,
+        added: f.added,
+        noteApplied: f.noteApplied,
+        estimated: f.estimated,
+        estimateBasis: f.estimateBasis,
       );
 
   int get _totalCalories => _matched.fold(0, (sum, i) => sum + i.estimatedCalories);
@@ -137,6 +142,19 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
     setState(() => item.applyMatch(picked));
   }
 
+  /// What "Estimated" means, in plain words: no database entry, a typical
+  /// value, so the portion and any oil are worth a look.
+  void _explainEstimate(DetectedFood item) {
+    showAppDialog(
+      context: context,
+      title: 'About this estimate',
+      message: 'We couldn’t find an exact match for ${item.name}, so this is a typical value for the dish. '
+          '${item.estimateBasis ?? ''}\n\nCheck the portion and any oil, and change the amount if it looks off. '
+          'You can also tap Change to pick a food from the list.',
+      confirmLabel: 'OK',
+    );
+  }
+
   void _removeItem(int index) {
     HapticFeedback.lightImpact();
     setState(() => _items.removeAt(index));
@@ -161,6 +179,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
               source: FoodSource.photo,
               timestamp: DateTime.now(),
               nutrients: item.estimatedNutrients,
+              estimateBasis: item.estimated ? item.estimateBasis : null,
             ))
         .toList();
 
@@ -261,7 +280,21 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
                                           name: item.name,
                                           onChanged: (value) => _updateName(index, value),
                                         ),
-                                        if (item.matched && item.matchedDescription != null)
+                                        if (item.estimated)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 2),
+                                            child: Pressable(
+                                              key: ValueKey('estimated_${identityHashCode(item)}'),
+                                              onTap: () => _explainEstimate(item),
+                                              child: Text(
+                                                'Estimated · ${item.estimateBasis ?? ''}  ⓘ',
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: AppType.caption(size: 11, color: TrackerColors.warning),
+                                              ),
+                                            ),
+                                          ),
+                                        if (item.matched && !item.estimated && item.matchedDescription != null)
                                           Padding(
                                             padding: const EdgeInsets.only(top: 2),
                                             child: Text(

@@ -5,7 +5,9 @@ import '../models/user_profile.dart';
 import '../models/week_budget.dart';
 import '../models/weight.dart';
 import '../providers/budget_provider.dart';
+import '../models/food_region.dart';
 import '../providers/display_prefs_provider.dart';
+import '../providers/food_region_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/shell_provider.dart';
 import '../providers/user_provider.dart';
@@ -79,6 +81,37 @@ class SettingsView extends ConsumerWidget {
 
   Future<void> _saveBudget(BuildContext context, WidgetRef ref, Map<String, Object?> changes) async {
     final error = await ref.read(budgetProvider.notifier).update(changes);
+    if (error == null || !context.mounted) return;
+    await showAppDialog(context: context, title: "Couldn't change that", message: error, confirmLabel: 'OK');
+  }
+
+  Future<void> _pickRegion(BuildContext context, WidgetRef ref, String? current) async {
+    // A record so "None" (clear) can be told from dismissing the sheet.
+    final picked = await showCupertinoModalPopup<({String? key})>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: const Text('Where do you mostly eat?'),
+        message: const Text('It only helps the camera name dishes. It never limits what you can log.'),
+        actions: [
+          for (final r in foodRegions)
+            CupertinoActionSheetAction(
+              key: ValueKey('region_${r.key}'),
+              isDefaultAction: r.key == current,
+              onPressed: () => Navigator.pop(context, (key: r.key)),
+              child: Text(r.label),
+            ),
+          CupertinoActionSheetAction(
+            key: const ValueKey('region_none'),
+            isDestructiveAction: true,
+            onPressed: () => Navigator.pop(context, (key: null)),
+            child: const Text('Don’t use a region'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+      ),
+    );
+    if (picked == null || picked.key == current || !context.mounted) return;
+    final error = await ref.read(foodRegionProvider.notifier).set(picked.key);
     if (error == null || !context.mounted) return;
     await showAppDialog(context: context, title: "Couldn't change that", message: error, confirmLabel: 'OK');
   }
@@ -193,6 +226,21 @@ class SettingsView extends ConsumerWidget {
                           subtitle: 'Start a meal photo as soon as the app opens',
                           value: display.launchToCamera,
                           onChanged: displayNotifier.setLaunchToCamera,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    SettingsGroup(
+                      label: 'Food',
+                      footer: 'Helps the camera name regional dishes. You can always correct what it finds.',
+                      children: [
+                        SettingsRow(
+                          key: const ValueKey('food_region'),
+                          icon: CupertinoIcons.globe,
+                          color: TrackerColors.accentEnd,
+                          title: 'Where you mostly eat',
+                          value: foodRegionLabel(ref.watch(foodRegionProvider)) ?? 'Not set',
+                          onTap: () => _pickRegion(context, ref, ref.read(foodRegionProvider)),
                         ),
                       ],
                     ),

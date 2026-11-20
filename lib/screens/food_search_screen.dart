@@ -304,7 +304,7 @@ class _QuantityDialogState extends State<QuantityDialog> {
                 if (widget.food.isOpenFoodFacts) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Source: Open Food Facts',
+                    '© Open Food Facts contributors',
                     key: const ValueKey('off_credit'),
                     textAlign: TextAlign.center,
                     style: AppType.body(size: 12, color: TrackerColors.textTertiary),

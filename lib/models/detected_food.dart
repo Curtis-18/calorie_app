@@ -18,6 +18,13 @@ class DetectedFood {
   final String? preparation;
   final String? kind;
 
+  /// True when there was no database match and the numbers are a typical
+  /// value for the dish (the server's `ai_estimate`). Such an item is
+  /// treated as [matched] so it can be edited and saved; [estimateBasis] says
+  /// what the numbers assume. Picking a real match clears both.
+  bool estimated;
+  String? estimateBasis;
+
   /// Set on a food added by a one-tap extra (oil, butter...), so toggling the
   /// chip off can take it away again.
   final String? adjustmentId;
@@ -43,11 +50,27 @@ class DetectedFood {
     this.adjustmentId,
     this.added = const [],
     this.noteApplied,
+    this.estimated = false,
+    this.estimateBasis,
   });
 
   /// One item from `POST /estimate-photo`. Macros are present when the
   /// backend matched the food in USDA (`matched: true`).
-  factory DetectedFood.fromApiJson(Map<String, dynamic> json) => DetectedFood(
+  factory DetectedFood.fromApiJson(Map<String, dynamic> json) {
+    final food = _fromApiJson(json);
+    // An estimate has numbers but no database match (`matched: false` keeps
+    // older apps from trying to save it). This app can: it shows the row as
+    // "Estimated" and saves it with its basis.
+    if (json['source'] == 'ai_estimate' && food.caloriesPer100g != null && !food.matched) {
+      food.matched = true;
+      food.estimated = true;
+      final basis = (json['estimate_basis'] as String?)?.trim();
+      food.estimateBasis = (basis == null || basis.isEmpty) ? 'A typical value for this dish.' : basis;
+    }
+    return food;
+  }
+
+  static DetectedFood _fromApiJson(Map<String, dynamic> json) => DetectedFood(
         name: json['name'] as String,
         estimatedGrams: (json['estimated_grams'] as num).toDouble(),
         caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble(),
@@ -74,6 +97,8 @@ class DetectedFood {
     matchedDescription = food.description;
     matchedFdcId = food.fdcId;
     matched = food.caloriesPer100g != null;
+    estimated = false;
+    estimateBasis = null;
   }
 
   int get estimatedCalories => ((caloriesPer100g ?? 0) / 100 * estimatedGrams).round();

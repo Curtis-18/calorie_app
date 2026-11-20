@@ -17,6 +17,13 @@ class FoodEntry {
   /// Fibre, sugar, sodium, iron and calcium as eaten; null when unknown.
   final Nutrients? nutrients;
 
+  /// Set when the numbers are a typical value for a dish the food database
+  /// had no match for: the one-line basis ("typical jollof rice cooked with
+  /// oil"). Null for an ordinary entry.
+  final String? estimateBasis;
+
+  bool get isEstimate => estimateBasis != null;
+
   FoodEntry({
     required this.id,
     required this.name,
@@ -28,10 +35,12 @@ class FoodEntry {
     required this.source,
     required this.timestamp,
     this.nutrients,
+    this.estimateBasis,
   });
 
   /// A corrected copy. The id, source and time never change; pass
-  /// [clearNutrients] when the new food has no nutrient data.
+  /// [clearNutrients] when the new food has no nutrient data, and
+  /// [clearEstimate] when the new food is a real match.
   FoodEntry copyWith({
     String? name,
     int? calories,
@@ -41,6 +50,7 @@ class FoodEntry {
     MealType? mealType,
     Nutrients? nutrients,
     bool clearNutrients = false,
+    bool clearEstimate = false,
   }) =>
       FoodEntry(
         id: id,
@@ -53,6 +63,7 @@ class FoodEntry {
         source: source,
         timestamp: timestamp,
         nutrients: clearNutrients ? null : (nutrients ?? this.nutrients),
+        estimateBasis: clearEstimate ? null : estimateBasis,
       );
 
   /// This entry at [factor] times the portion.
@@ -75,6 +86,7 @@ class FoodEntry {
         'source': source.name,
         'timestamp': timestamp.toIso8601String(),
         if (nutrients != null) 'nutrients': nutrients!.toJson(),
+        if (estimateBasis != null) 'estimateBasis': estimateBasis,
       };
 
   factory FoodEntry.fromJson(Map<String, dynamic> json) => FoodEntry(
@@ -88,6 +100,7 @@ class FoodEntry {
         source: FoodSource.values.byName(json['source']),
         timestamp: DateTime.parse(json['timestamp']),
         nutrients: Nutrients.fromJson(json['nutrients']),
+        estimateBasis: json['estimateBasis'] as String?,
       );
 
   factory FoodEntry.fromApiJson(Map<String, dynamic> json) => FoodEntry(
@@ -101,6 +114,7 @@ class FoodEntry {
         source: FoodSource.values.byName(json['source']),
         timestamp: DateTime.parse(json['timestamp']),
         nutrients: Nutrients.fromJson(json['nutrients']),
+        estimateBasis: json['estimate_basis'] as String?,
       );
 }
 

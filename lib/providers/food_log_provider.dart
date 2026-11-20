@@ -223,6 +223,7 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       'timestamp': entry.timestamp.toIso8601String(),
       'log_date': logDate,
       if (entry.nutrients != null) 'nutrients': entry.nutrients!.toJson(),
+      if (entry.estimateBasis != null) 'estimate_basis': entry.estimateBasis,
     });
 
     await _sendWithRetry(
@@ -296,6 +297,8 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       'meal_type': updated.mealType.name,
       // Always sent: null tells the server the new food has no nutrient data.
       'nutrients': updated.nutrients?.toJson(),
+      // Likewise: null removes the "estimated" mark (swapped for a real match).
+      'estimate_basis': updated.estimateBasis,
     });
     try {
       await _sendWithRetry(

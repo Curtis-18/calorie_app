@@ -11,6 +11,7 @@ import '../models/pending_scan.dart';
 import '../services/photo_estimation.dart';
 import '../services/snaps_service.dart' show newSnapId;
 import '../services/user_cache.dart';
+import 'food_region_provider.dart';
 
 /// Meal photos being scanned in the background.
 ///
@@ -29,7 +30,9 @@ class ScanQueueNotifier extends StateNotifier<List<PendingScan>> {
     Future<SharedPreferences> Function()? prefs,
     this.retryDelays = defaultRetryDelays,
     DateTime Function()? now,
-  })  : _analyze = analyze ?? ((bytes, note) => PhotoEstimationService().analyzePhoto(bytes, note: note)),
+    String? Function()? region,
+  })  : _analyze = analyze ??
+            ((bytes, note) => PhotoEstimationService().analyzePhoto(bytes, note: note, region: region?.call())),
         _currentUserId = currentUserId ?? UserCache.currentUserId,
         _prefs = prefs ?? SharedPreferences.getInstance,
         _now = now ?? DateTime.now,
@@ -207,4 +210,5 @@ class ScanQueueNotifier extends StateNotifier<List<PendingScan>> {
 }
 
 final scanQueueProvider =
-    StateNotifierProvider<ScanQueueNotifier, List<PendingScan>>((ref) => ScanQueueNotifier());
+    StateNotifierProvider<ScanQueueNotifier, List<PendingScan>>(
+        (ref) => ScanQueueNotifier(region: () => ref.read(foodRegionProvider)));
