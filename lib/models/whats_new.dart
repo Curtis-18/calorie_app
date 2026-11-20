@@ -47,6 +47,11 @@ const whatsNewReleases = <WhatsNewRelease>[
         body: 'Add a cover photo and up to five slides to a recipe, let friends open it, and see a friend’s recipes from Friends → ⋯ → Their recipes. You can also edit a recipe’s ingredients, or start one from a photo of the finished dish.',
       ),
       WhatsNewItem(
+        icon: CupertinoIcons.bell,
+        title: 'Notifications in your browser',
+        body: 'On Today, open the bell, tap the gear and turn on Notifications in this browser to get friend bites and reminders even when NuStreak isn’t open. On iPhone, add NuStreak to your Home Screen first.',
+      ),
+      WhatsNewItem(
         icon: CupertinoIcons.chart_bar_alt_fill,
         title: 'Smarter habits and barcodes',
         body: 'After about two weeks of logging, your weekly report can notice things like sugar late in the evening or low-fibre days. Barcodes from outside the US now work too.',

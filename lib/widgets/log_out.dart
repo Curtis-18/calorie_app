@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../screens/auth_gate.dart';
+import '../services/web_push_service.dart';
 import 'app_dialog.dart';
 import '../l10n/app_strings.dart';
 
@@ -24,6 +25,10 @@ Future<bool> confirmAndLogOut(
   if (sure != true || !context.mounted) return false;
 
   final navigator = Navigator.of(context, rootNavigator: true);
+  // This account must stop getting notifications in this browser. Quick, and never blocks signing out.
+  try {
+    await WebPushService().forgetThisBrowser().timeout(const Duration(seconds: 3));
+  } catch (_) {}
   await (signOut ?? _signOut)();
   navigator.pushAndRemoveUntil(
     CupertinoPageRoute<void>(builder: signedOutScreen ?? (_) => const AuthGate()),

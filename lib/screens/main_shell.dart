@@ -1,5 +1,6 @@
 import '../l10n/app_strings.dart';
 import '../services/food_region_service.dart';
+import '../services/web_push_service.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -68,6 +69,8 @@ class _MainShellState extends ConsumerState<MainShell> {
       if (mounted) ref.read(shellTabProvider.notifier).state = ShellTab.today;
       // So push notifications are written in the language the app is showing.
       FoodRegionService().saveLanguage(AppStrings.active);
+      // A browser that allowed notifications is registered again for whoever is signed in.
+      WebPushService().refreshRegistration();
     });
   }
 

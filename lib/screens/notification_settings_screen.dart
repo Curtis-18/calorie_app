@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/notification_prefs.dart';
 import '../providers/notification_prefs_provider.dart';
+import '../providers/web_push_provider.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -69,7 +70,7 @@ class _LoadFailed extends StatelessWidget {
       );
 }
 
-class _Settings extends StatelessWidget {
+class _Settings extends ConsumerWidget {
   const _Settings({required this.prefs, required this.saveError, required this.notifier});
 
   final NotificationPrefs prefs;
@@ -79,8 +80,11 @@ class _Settings extends StatelessWidget {
   void _set(NotificationPrefs next, Map<String, Object?> changes) => notifier.change(next, changes);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final paused = prefs.isPausedAt(DateTime.now());
+    final web = ref.watch(webPushProvider);
+    // Browser notifications replace the "not live yet" note wherever they can work.
+    final browserCapable = web.status != WebPushStatus.unsupported && web.status != WebPushStatus.unavailable;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -88,7 +92,10 @@ class _Settings extends StatelessWidget {
           tr('At most {v1} a day, quiet at night, and never about your weight or calories.', {'v1': prefs.dailyCap}),
           style: AppType.callout(),
         ),
-        if (!NotificationPrefs.pushLive) ...[
+        if (browserCapable && web.status != WebPushStatus.checking) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _BrowserPushCard(state: web, notifier: ref.read(webPushProvider.notifier)),
+        ] else if (!NotificationPrefs.pushLive && web.status != WebPushStatus.checking) ...[
           const SizedBox(height: AppSpacing.lg),
           _Notice(
             key: ValueKey('push_not_live'),
@@ -285,6 +292,75 @@ Future<int?> _pickHour(BuildContext context, String title, int initial) {
       ),
     ),
   );
+}
+
+/// Notifications in this browser: the one place push works today.
+class _BrowserPushCard extends StatelessWidget {
+  const _BrowserPushCard({required this.state, required this.notifier});
+
+  final WebPushState state;
+  final WebPushNotifier notifier;
+
+  @override
+  Widget build(BuildContext context) {
+    final on = state.status == WebPushStatus.on;
+    final canToggle = (state.status == WebPushStatus.on || state.status == WebPushStatus.off) && !state.busy;
+    return Column(
+      key: const ValueKey('browser_push'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (state.status == WebPushStatus.installFirst)
+          _Notice(
+            key: const ValueKey('push_install_first'),
+            icon: CupertinoIcons.square_arrow_up,
+            text: tr('On iPhone, add NuStreak to your Home Screen first (Share, then Add to Home Screen), then open it from there to turn notifications on.'),
+          )
+        else if (state.status == WebPushStatus.blocked)
+          _Notice(
+            key: const ValueKey('push_blocked'),
+            icon: CupertinoIcons.bell_slash,
+            text: tr("Notifications are blocked for this site. Allow them in your browser's site settings, then come back."),
+          )
+        else
+          AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Column(children: [
+              _SwitchRow(
+                keyName: 'browser_push',
+                emoji: '🔔',
+                title: tr('Notifications in this browser'),
+                subtitle: tr("Friend bites and reminders, even when NuStreak isn't open."),
+                value: on,
+                onChanged: (v) {
+                  if (!canToggle) return;
+                  v ? notifier.enable() : notifier.disable();
+                },
+              ),
+              if (on) ...[
+                const AppDivider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: CupertinoButton(
+                      key: const ValueKey('push_test'),
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      onPressed: state.busy ? null : notifier.sendTest,
+                      child: Text(tr('Send a test notification'), style: AppType.callout(color: TrackerColors.accentEnd)),
+                    ),
+                  ),
+                ),
+              ],
+            ]),
+          ),
+        if (state.message != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(state.message!, key: const ValueKey('push_message'), style: AppType.caption(color: TrackerColors.textSecondary, size: 12.5)),
+        ],
+      ],
+    );
+  }
 }
 
 class _SwitchRow extends StatelessWidget {
