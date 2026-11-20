@@ -9,6 +9,7 @@ import '../config/api_config.dart';
 import '../services/targets_handoff.dart';
 import '../services/user_cache.dart';
 import '../l10n/app_strings.dart';
+import '../services/language_client.dart';
 
 /// The signed-in user's profile and targets.
 ///
@@ -42,7 +43,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   static String? _supabaseToken() => Supabase.instance.client.auth.currentSession?.accessToken;
 
   http.Client get _http => _client ?? _sharedClient;
-  static final _sharedClient = http.Client();
+  static final _sharedClient = languageClient();
 
   /// Bumped on every user change so a slow load for a previous user can't
   /// land after someone else has signed in.

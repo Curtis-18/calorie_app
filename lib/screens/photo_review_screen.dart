@@ -94,6 +94,8 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
 
   DetectedFood _copyOf(DetectedFood f) => DetectedFood(
         name: f.name,
+        englishName: f.englishName,
+        originalName: f.originalName,
         estimatedGrams: f.estimatedGrams,
         caloriesPer100g: f.caloriesPer100g,
         proteinPer100g: f.proteinPer100g,
@@ -136,7 +138,7 @@ class _PhotoReviewScreenState extends State<PhotoReviewScreen> {
     final picked = await Navigator.push<FoodItem>(
       context,
       CupertinoPageRoute(
-        builder: (_) => FoodSearchScreen(mealType: widget.mealType, initialQuery: item.name, pickOnly: true),
+        builder: (_) => FoodSearchScreen(mealType: widget.mealType, initialQuery: item.lookupName, pickOnly: true),
       ),
     );
     if (picked == null || !mounted) return;

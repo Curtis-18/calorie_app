@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import 'user_cache.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 class AccountException implements Exception {
   const AccountException(this.message);
@@ -36,7 +37,7 @@ class AccountService {
     final userId = _currentUserId();
     if (token == null) throw AccountException(tr("You've been signed out. Please log in again."));
 
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     final http.Response response;
     try {
       response = await client

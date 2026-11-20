@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/food_entry.dart';
 import 'user_cache.dart';
+import 'language_client.dart';
 
 /// Reads one day's food log from the server, for browsing past days.
 ///
@@ -34,7 +35,7 @@ class DayLogService {
     final token = (_tokenProvider ?? _supabaseToken)();
     if (userId == null || token == null) return null;
 
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       final response = await client.get(
         Uri.parse('${ApiConfig.baseUrl}/logs/today?date=${dayString(day)}'),

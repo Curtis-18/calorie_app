@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../models/progress.dart';
+import 'language_client.dart';
 
 class ProgressService {
   ProgressService({this._client, this._tokenProvider, this._now});
@@ -24,7 +25,7 @@ class ProgressService {
     // Same device-local date as the food logs, so the streak agrees with
     // the day the user is on.
     final today = (_now ?? DateTime.now)().toIso8601String().substring(0, 10);
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       final response = await client
           .get(

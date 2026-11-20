@@ -3,7 +3,15 @@ import 'nutrients.dart';
 import '../l10n/app_strings.dart';
 
 class DetectedFood {
+  /// What the person reads and edits. In another language than English this is
+  /// the server's `display_name` (the food's name in their language).
   String name;
+
+  /// The server's English name, which the food database is searched with, and
+  /// the [name] as first shown. While the person has not renamed the food,
+  /// [lookupName] is the English one.
+  final String? englishName;
+  final String originalName;
   double estimatedGrams;
   double? caloriesPer100g;
   double? proteinPer100g;
@@ -37,6 +45,8 @@ class DetectedFood {
 
   DetectedFood({
     required this.name,
+    this.englishName,
+    String? originalName,
     required this.estimatedGrams,
     this.caloriesPer100g,
     this.proteinPer100g,
@@ -53,7 +63,10 @@ class DetectedFood {
     this.noteApplied,
     this.estimated = false,
     this.estimateBasis,
-  });
+  }) : originalName = originalName ?? name;
+
+  /// The name to search the food database with.
+  String get lookupName => (englishName != null && name == originalName) ? englishName! : name;
 
   /// One item from `POST /estimate-photo`. Macros are present when the
   /// backend matched the food in USDA (`matched: true`).
@@ -72,7 +85,8 @@ class DetectedFood {
   }
 
   static DetectedFood _fromApiJson(Map<String, dynamic> json) => DetectedFood(
-        name: json['name'] as String,
+        name: ((json['display_name'] as String?)?.trim().isNotEmpty ?? false) ? (json['display_name'] as String).trim() : json['name'] as String,
+        englishName: json['name'] as String,
         estimatedGrams: (json['estimated_grams'] as num).toDouble(),
         caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble(),
         proteinPer100g: (json['protein_g_per_100g'] as num?)?.toDouble(),

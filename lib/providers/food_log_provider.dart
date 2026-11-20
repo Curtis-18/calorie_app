@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/food_entry.dart';
 import '../services/user_cache.dart';
+import '../services/language_client.dart';
 
 /// Today's food log for the signed-in user, cached per user on the device.
 ///
@@ -136,7 +137,7 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
   }
 
   http.Client get _http => _client ?? _sharedClient;
-  static final _sharedClient = http.Client();
+  static final _sharedClient = languageClient();
 
   String get _todayDateString => _now().toIso8601String().substring(0, 10);
 

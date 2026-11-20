@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/week_budget.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 /// The weekly budget endpoints. Reads never throw (the budget is an extra: the
 /// dashboard must work without it); a save returns a message when it failed.
@@ -22,7 +23,7 @@ class BudgetService {
   Future<http.Response?> _send(Future<http.Response> Function(http.Client c, Map<String, String> h) call) async {
     final token = _token();
     if (token == null) return null;
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 30));

@@ -10,6 +10,7 @@ import '../config/api_config.dart';
 import '../models/snaps.dart';
 import '../models/stories.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 class SnapsException implements Exception {
   const SnapsException(this.message);
@@ -44,7 +45,7 @@ class SnapsService {
   }) async {
     final token = (_tokenProvider ?? _supabaseToken)();
     if (token == null) throw SnapsException(tr("You've been signed out. Please log in again."));
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(timeout);

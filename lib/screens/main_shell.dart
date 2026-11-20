@@ -1,4 +1,5 @@
 import '../l10n/app_strings.dart';
+import '../services/food_region_service.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -65,6 +66,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     // A fresh shell (after signing in again) starts on Today.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(shellTabProvider.notifier).state = ShellTab.today;
+      // So push notifications are written in the language the app is showing.
+      FoodRegionService().saveLanguage(AppStrings.active);
     });
   }
 

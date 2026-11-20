@@ -8,6 +8,7 @@ import '../config/api_config.dart';
 import '../models/messages.dart';
 import 'snaps_service.dart' show newSnapId;
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 class MessagesException implements Exception {
   const MessagesException(this.message, {this.statusCode});
@@ -42,7 +43,7 @@ class MessagesService {
   }) async {
     final token = (_tokenProvider ?? _supabaseToken)();
     if (token == null) throw MessagesException(tr("You've been signed out. Please log in again."));
-    final client = _client ?? (_shared ??= http.Client());
+    final client = _client ?? (_shared ??= languageClient());
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(timeout);

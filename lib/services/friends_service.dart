@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/friends.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 class FriendsException implements Exception {
   const FriendsException(this.message);
@@ -35,7 +36,7 @@ class FriendsService {
   }) async {
     final token = (_tokenProvider ?? _supabaseToken)();
     if (token == null) throw FriendsException(tr("You've been signed out. Please log in again."));
-    final client = _client ?? (keepAlive ? (_searchClient ??= http.Client()) : http.Client());
+    final client = _client ?? (keepAlive ? (_searchClient ??= languageClient()) : languageClient());
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 45));

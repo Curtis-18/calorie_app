@@ -6,6 +6,7 @@ import '../models/detected_food.dart';
 import 'food_search_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 /// A photo-analysis failure with a message that is safe to show the user.
 ///
@@ -79,7 +80,7 @@ class PhotoEstimationService {
     }
     if (token == null) throw PhotoAnalysisException(signedOutMessage);
 
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     final http.Response response;
     try {
       response = await client

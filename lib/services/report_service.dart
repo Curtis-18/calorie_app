@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../models/weekly_report.dart';
+import 'language_client.dart';
 
 /// The weekly report. Never throws: it is an extra on the Insights tab, and
 /// with no answer the card is simply left out.
@@ -20,7 +21,7 @@ class ReportService {
     final token = (_tokenProvider ?? () => Supabase.instance.client.auth.currentSession?.accessToken)();
     if (token == null) return null;
     final today = (_now ?? DateTime.now)().toIso8601String().substring(0, 10);
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       final r = await client
           .get(

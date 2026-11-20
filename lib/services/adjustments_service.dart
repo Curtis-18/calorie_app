@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../models/adjustment.dart';
+import 'language_client.dart';
 
 /// The one-tap extras from `GET /adjustments`. Never throws: with no answer
 /// the review screen simply offers none of them.
@@ -27,7 +28,7 @@ class AdjustmentsService {
     try {
       final token = await (_tokenProvider ?? () async => Supabase.instance.client.auth.currentSession?.accessToken)();
       if (token == null) return const [];
-      final client = _client ?? http.Client();
+      final client = _client ?? languageClient();
       final http.Response response;
       try {
         response = await client

@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 /// Profile pictures are stored square at this size: sharp on any avatar the
 /// app draws, and small enough that a friends list loads quickly.
@@ -55,7 +56,7 @@ class AvatarService {
   Future<http.Response> _send(Future<http.Response> Function(http.Client, Map<String, String>) call) async {
     final token = (_tokenProvider ?? _supabaseToken)();
     if (token == null) throw AvatarException(tr("You've been signed out. Please log in again."));
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 60));

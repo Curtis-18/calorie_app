@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 /// `GET/POST /prefs/food`. A read never throws (the region is an extra); a
 /// save returns a message when it failed.
@@ -20,7 +21,7 @@ class FoodRegionService {
   Future<http.Response?> _send(Future<http.Response> Function(http.Client c, Map<String, String> h) call) async {
     final token = _token();
     if (token == null) return null;
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'})
           .timeout(const Duration(seconds: 20));
@@ -42,6 +43,14 @@ class FoodRegionService {
     } catch (_) {
       return (answered: false, region: null);
     }
+  }
+
+  /// Tell the server which language the app is showing, so push notifications
+  /// are written in it. Best effort: a failure changes nothing for the person.
+  Future<void> saveLanguage(String code) async {
+    try {
+      await _send((c, h) => c.post(Uri.parse('${ApiConfig.baseUrl}/prefs/language'), headers: h, body: jsonEncode({'language': code})));
+    } catch (_) {}
   }
 
   /// Save [region] (null clears it). Returns null on success, else a message.

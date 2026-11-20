@@ -8,6 +8,7 @@ import '../config/api_config.dart';
 import '../models/food_entry.dart';
 import '../models/house_recipe.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 class RecipeSaveResult {
   const RecipeSaveResult.ok(this.recipe) : error = null;
@@ -32,7 +33,7 @@ class HouseRecipeService {
   }) async {
     final token = _token();
     if (token == null) return null;
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     try {
       return await call(client, {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'}).timeout(timeout);
     } catch (_) {

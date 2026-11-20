@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import '../models/insights.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 /// An insights failure with a message that is safe to show the user.
 class InsightsException implements Exception {
@@ -53,7 +54,7 @@ class InsightsService {
       queryParameters: {'refresh': '$refresh', 'date': today},
     );
 
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     final http.Response response;
     try {
       response = await client

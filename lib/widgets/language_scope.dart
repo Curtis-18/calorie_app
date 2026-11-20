@@ -2,7 +2,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_strings.dart';
+import '../providers/budget_provider.dart';
+import '../providers/insights_provider.dart';
 import '../providers/language_provider.dart';
+import '../providers/progress_provider.dart';
+import '../providers/weekly_report_provider.dart';
+import '../services/food_region_service.dart';
 
 /// Keeps the app's language current: follows the phone while the choice is
 /// "automatic", and makes every screen build again when the language changes
@@ -46,7 +51,16 @@ class _LanguageScopeState extends ConsumerState<LanguageScope> with WidgetsBindi
     if (AppStrings.active != language) {
       AppStrings.active = language;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) (context as Element).visitChildren(_markAllDirty);
+        if (!mounted) return;
+        (context as Element).visitChildren(_markAllDirty);
+        // Words the server wrote (insights, badges, the weekly report, the
+        // week's plan) are still in the old language: fetch them again. And
+        // push notifications follow the language too.
+        ref.invalidate(insightsProvider);
+        ref.invalidate(progressProvider);
+        ref.invalidate(weeklyReportProvider);
+        ref.invalidate(budgetProvider);
+        FoodRegionService().saveLanguage(language);
       });
     }
     return widget.builder(context, Locale(language));

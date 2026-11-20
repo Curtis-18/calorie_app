@@ -6,6 +6,7 @@ import '../config/api_config.dart';
 import '../models/detected_food.dart';
 import '../models/food_item.dart';
 import '../l10n/app_strings.dart';
+import 'language_client.dart';
 
 /// A food search failure with a message that is safe to show the user.
 class FoodSearchException implements Exception {
@@ -61,7 +62,7 @@ class FoodSearchService {
       },
     );
 
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     final http.Response response;
     try {
       response = await client
@@ -101,7 +102,7 @@ class FoodSearchService {
     if (token == null) throw FoodSearchException(signedOutMessage);
 
     final uri = Uri.parse('${ApiConfig.baseUrl}/foods/barcode').replace(queryParameters: {'code': code});
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
     final http.Response response;
     try {
       response = await client.get(uri, headers: {'Authorization': 'Bearer $token'}).timeout(timeout);
@@ -191,10 +192,10 @@ class FoodSearchService {
     await Future.wait(
       items.map((item) async {
         try {
-          final results = await search(item.name);
+          final results = await search(item.lookupName);
           if (results.isEmpty) return;
 
-          final match = _bestMatch(results, item.name);
+          final match = _bestMatch(results, item.lookupName);
           item.applyMatch(match);
         } catch (_) {
           // leave unmatched, don't let one bad lookup kill the others

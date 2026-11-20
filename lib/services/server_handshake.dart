@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import 'targets_handoff.dart';
 import 'user_cache.dart';
+import 'language_client.dart';
 
 /// Where the post-login check stands.
 enum HandshakePhase {
@@ -99,7 +100,7 @@ class ServerHandshake {
 
     final stopwatch = Stopwatch()..start();
     var refreshedAfter401 = false;
-    final client = _client ?? http.Client();
+    final client = _client ?? languageClient();
 
     try {
       while (current() && stopwatch.elapsed < deadline) {
@@ -225,7 +226,7 @@ class ServerWarmup {
     final now = DateTime.now();
     if (_lastPing != null && now.difference(_lastPing!) < const Duration(minutes: 2)) return;
     _lastPing = now;
-    final c = client ?? http.Client();
+    final c = client ?? languageClient();
     unawaited(c
         .get(Uri.parse('${ApiConfig.baseUrl}/'))
         .timeout(const Duration(seconds: 90))
