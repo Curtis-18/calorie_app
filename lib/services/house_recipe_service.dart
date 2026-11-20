@@ -79,6 +79,8 @@ class HouseRecipeService {
     if (r.statusCode == 503) return "Recipes aren't available right now. Please try again later.";
     if (r.statusCode == 403) return 'You can only send recipes to your friends.';
     if (r.statusCode == 404) return "That recipe isn't available any more.";
+    if (r.statusCode == 413) return 'That photo is too large.';
+    if (r.statusCode == 415) return "That photo can't be used. Try a different one.";
     return "Couldn't save that right now. Please try again.";
   }
 
@@ -157,8 +159,11 @@ class HouseRecipeService {
   }
 
   /// Every write below returns null on success, otherwise a message to show.
-  Future<String?> _write(Future<http.Response> Function(http.Client c, Map<String, String> h) call) async {
-    final r = await _send(call);
+  Future<String?> _write(
+    Future<http.Response> Function(http.Client c, Map<String, String> h) call, {
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final r = await _send(call, timeout: timeout);
     if (r != null && r.statusCode >= 200 && r.statusCode < 300) return null;
     return _message(r);
   }
@@ -195,4 +200,69 @@ class HouseRecipeService {
 
   Future<String?> unshare(String recipeId, String friendId) =>
       _write((c, h) => c.delete(Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/share/$friendId'), headers: h));
+
+  // ---- who can see it, photos, a friend's recipes, editing -----------------
+
+  /// Null when it couldn't be loaded.
+  Future<List<RecipeSharee>?> sharedWith(String recipeId) async {
+    final r = await _send((c, h) => c.get(Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/shares'), headers: h));
+    if (r == null || r.statusCode != 200) return null;
+    try {
+      return [for (final j in jsonDecode(r.body) as List) ?RecipeSharee.fromJson(j)];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// "private" or "friends". Null on success, otherwise a message.
+  Future<String?> setVisibility(String recipeId, String visibility) => _write((c, h) =>
+      c.patch(Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId'), headers: h, body: jsonEncode({'visibility': visibility})));
+
+  /// The recipes a friend lets me open and has pinned. Null when it couldn't be loaded.
+  Future<List<RecipeBrief>?> friendHighlights(String friendId) async {
+    final r = await _send((c, h) => c.get(Uri.parse('${ApiConfig.baseUrl}/users/$friendId/highlights'), headers: h));
+    if (r == null || r.statusCode != 200) return null;
+    try {
+      return [for (final j in jsonDecode(r.body) as List) ?RecipeBrief.fromJson(j)];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Add or replace the cover (position 0) or a slide (1-5). [jpeg] is already
+  /// shrunk. Null on success, otherwise a message.
+  Future<String?> putPhoto(String recipeId, int position, List<int> jpeg, {String? caption}) => _write(
+        (c, h) => c.put(
+          Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/media/$position'),
+          headers: h,
+          body: jsonEncode({'image': base64Encode(jpeg), if (caption != null && caption.trim().isNotEmpty) 'caption': caption.trim()}),
+        ),
+        timeout: const Duration(seconds: 60),
+      );
+
+  Future<String?> deletePhoto(String recipeId, int position) =>
+      _write((c, h) => c.delete(Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/media/$position'), headers: h));
+
+  Future<String?> report(String recipeId, {String? reason}) => _write((c, h) => c.post(
+        Uri.parse('${ApiConfig.baseUrl}/recipes/$recipeId/report'),
+        headers: h,
+        body: jsonEncode({if (reason != null && reason.isNotEmpty) 'reason': reason}),
+      ));
+
+  /// Change the details and (optionally) replace the whole ingredient list;
+  /// the server prices it again. The photos stay.
+  Future<RecipeSaveResult> update(String id, {String? title, double? servings, List<DraftIngredient>? ingredients}) async {
+    final r = await _send((c, h) => c.patch(
+          Uri.parse('${ApiConfig.baseUrl}/recipes/$id'),
+          headers: h,
+          body: jsonEncode({
+            'title': ?title,
+            'servings': ?servings,
+            if (ingredients != null && ingredients.isNotEmpty) 'ingredients': [for (final i in ingredients) i.toJson()],
+          }),
+        ));
+    if (r == null || r.statusCode != 200) return RecipeSaveResult.failed(_message(r));
+    final recipe = HouseRecipe.fromJson(jsonDecode(r.body));
+    return recipe == null ? const RecipeSaveResult.failed("Couldn't read the saved recipe.") : RecipeSaveResult.ok(recipe);
+  }
 }

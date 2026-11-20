@@ -38,6 +38,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/glass.dart';
 import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
+import '../widgets/recipe_access.dart';
 import '../widgets/shimmer.dart';
 
 /// Friends tab: your username, add someone by theirs, answer requests, and
@@ -334,6 +335,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       builder: (context) => CupertinoActionSheet(
         title: Text('@${person.username}'),
         actions: [
+          if (isFriend)
+            CupertinoActionSheetAction(
+              key: const ValueKey('their_recipes'),
+              onPressed: () => Navigator.pop(context, 'recipes'),
+              child: const Text('Their recipes'),
+            ),
           CupertinoActionSheetAction(
             onPressed: () => Navigator.pop(context, 'remove'),
             child: Text(isFriend ? 'Remove friend' : 'Decline request'),
@@ -357,7 +364,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     );
     if (!mounted || choice == null) return;
 
-    if (choice == 'report_photo') {
+    if (choice == 'recipes') {
+      await showFriendRecipes(context, friendId: person.userId, username: person.username);
+    } else if (choice == 'report_photo') {
       await _run(() async {
         await notifier.service.reportPhoto(person.friendshipId!);
         if (!mounted) return;

@@ -9,7 +9,7 @@ import '../models/house_recipe.dart';
 import '../providers/food_log_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/house_recipes_provider.dart';
-import '../screens/new_recipe_screen.dart' show newRecipeId;
+import '../screens/new_recipe_screen.dart' show NewRecipeScreen, newRecipeId;
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -18,6 +18,9 @@ import 'app_dialog.dart';
 import 'glass.dart';
 import 'log_food_sheet.dart' show mealForHour, mealIcon;
 import 'pressable.dart';
+import 'recipe_access.dart';
+import 'recipe_gallery.dart';
+import 'recipe_photos_sheet.dart';
 
 /// One of the person's recipes: its numbers per serving, what is in it, and
 /// "Log this" with a servings stepper.
@@ -53,6 +56,8 @@ class HouseRecipeSheet extends ConsumerStatefulWidget {
 }
 
 class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
+  /// The recipe as last loaded; changes to photos, visibility and ingredients replace it.
+  late HouseRecipe _recipe = widget.recipe;
   late MealType _meal = mealForHour((widget.now ?? DateTime.now)().hour);
   double _portions = 1;
   bool _busy = false;
@@ -71,7 +76,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
   /// One tap: the entry is saved through the normal offline-safe path, then the
   /// server is quietly told which recipe it came from. Nothing waits on that.
   void _log() {
-    final r = widget.recipe;
+    final r = _recipe;
     final p = _portions;
     double tidy(double v) => (v * 10).roundToDouble() / 10;
     final entry = FoodEntry(
@@ -105,13 +110,13 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
       showAppDialog(context: context, title: title, message: message, confirmLabel: 'OK');
 
   Future<void> _pin() async {
-    final error = await ref.read(houseRecipesProvider.notifier).togglePin(widget.recipe);
+    final error = await ref.read(houseRecipesProvider.notifier).togglePin(_recipe);
     if (!mounted) return;
     if (error != null) await _tell("Couldn't change Highlights", error);
   }
 
   Future<void> _save() async {
-    final error = await ref.read(houseRecipesProvider.notifier).saveRecipe(widget.recipe.id);
+    final error = await ref.read(houseRecipesProvider.notifier).saveRecipe(_recipe.id);
     if (!mounted) return;
     await (error == null ? _tell('Saved', 'It’s in your Saved collection.') : _tell("Couldn't save it", error));
   }
@@ -128,7 +133,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
             CupertinoActionSheetAction(
               key: ValueKey('collection_${c.id}'),
               onPressed: () => Navigator.pop(context, c),
-              child: Text(c.contains(widget.recipe.id) ? '✓ ${c.name}' : c.name),
+              child: Text(c.contains(_recipe.id) ? '✓ ${c.name}' : c.name),
             ),
           CupertinoActionSheetAction(
             key: const ValueKey('new_collection'),
@@ -142,7 +147,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
     if (!mounted || picked == null) return;
     String? error;
     if (picked is RecipeCollection) {
-      error = await notifier.setInCollection(picked, widget.recipe.id, inside: !picked.contains(widget.recipe.id));
+      error = await notifier.setInCollection(picked, _recipe.id, inside: !picked.contains(_recipe.id));
     } else {
       final name = await _askName();
       if (name == null || !mounted) return;
@@ -150,7 +155,7 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
       error = await notifier.createCollection(id, name);
       if (error == null) {
         final created = ref.read(houseRecipesProvider).collections.where((c) => c.id == id);
-        if (created.isNotEmpty) error = await notifier.setInCollection(created.first, widget.recipe.id, inside: true);
+        if (created.isNotEmpty) error = await notifier.setInCollection(created.first, _recipe.id, inside: true);
       }
     }
     if (error != null && mounted) await _tell("Couldn't update that", error);
@@ -200,15 +205,62 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
     );
     if (friend == null || !mounted) return;
     setState(() => _busy = true);
-    final error = await ref.read(houseRecipesProvider.notifier).service.share(widget.recipe.id, friend.userId as String, newRecipeId());
+    final error = await ref.read(houseRecipesProvider.notifier).service.share(_recipe.id, friend.userId as String, newRecipeId());
     if (!mounted) return;
     setState(() => _busy = false);
     await (error == null ? _tell('Sent', 'Your recipe is in your chat with ${friend.username}.') : _tell("Couldn't send it", error));
   }
 
+  Future<void> _setVisibility(bool friends) async {
+    final next = friends ? 'friends' : 'private';
+    setState(() => _busy = true);
+    final error = await ref.read(houseRecipesProvider.notifier).service.setVisibility(_recipe.id, next);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (error != null) {
+      await _tell("Couldn't change that", error);
+      return;
+    }
+    await _reload();
+  }
+
+  /// Fetch the recipe again (with fresh photo links) and refresh the lists.
+  Future<void> _reload() async {
+    final notifier = ref.read(houseRecipesProvider.notifier);
+    final fresh = await notifier.service.get(_recipe.id);
+    if (!mounted) return;
+    if (fresh != null) setState(() => _recipe = fresh);
+    await notifier.load();
+  }
+
+  Future<void> _edit() async {
+    final changed = await Navigator.of(context).push<HouseRecipe>(
+      CupertinoPageRoute(builder: (_) => NewRecipeScreen(edit: _recipe)),
+    );
+    if (changed != null && mounted) {
+      setState(() => _recipe = changed);
+      await ref.read(houseRecipesProvider.notifier).load();
+    }
+  }
+
+  Future<void> _report() async {
+    final ok = await showAppDialog(
+      context: context,
+      title: 'Report this recipe?',
+      message: "We'll take a look. You can also block the person from your Friends tab.",
+      confirmLabel: 'Report',
+      cancelLabel: 'Cancel',
+      destructive: true,
+    );
+    if (ok != true || !mounted) return;
+    final error = await ref.read(houseRecipesProvider.notifier).service.report(_recipe.id);
+    if (!mounted) return;
+    await (error == null ? _tell('Thanks for telling us', "We'll take a look.") : _tell("Couldn't send that", error));
+  }
+
   Future<void> _delete() async {
     setState(() => _busy = true);
-    final error = await ref.read(houseRecipesProvider.notifier).remove(widget.recipe.id);
+    final error = await ref.read(houseRecipesProvider.notifier).remove(_recipe.id);
     if (!mounted) return;
     if (error == null) {
       Navigator.pop(context);
@@ -227,13 +279,17 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final r = widget.recipe;
+    final r = _recipe;
     final pinned = ref.watch(houseRecipesProvider).highlights.any((h) => h.id == r.id);
     return AppSheet(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (r.gallery.isNotEmpty) ...[
+            RecipeGallery(photos: r.gallery),
+            const SizedBox(height: 12),
+          ],
           Text(r.title, key: const ValueKey('recipe_title'), style: AppType.title()),
           if (!r.mine) ...[
             const SizedBox(height: 2),
@@ -332,6 +388,54 @@ class _HouseRecipeSheetState extends ConsumerState<HouseRecipeSheet> {
             )
           else
             AppButton.glass(key: const ValueKey('save_shared'), label: 'Save to my recipes', icon: CupertinoIcons.bookmark, onPressed: _busy ? null : _save),
+          if (r.mine) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _Chip(
+                    key: const ValueKey('recipe_photos'),
+                    icon: CupertinoIcons.photo,
+                    label: 'Photos',
+                    onTap: _busy ? null : () => showRecipePhotosSheet(context, _recipe, onChanged: (fresh) => setState(() => _recipe = fresh)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: _Chip(key: const ValueKey('edit_recipe'), icon: CupertinoIcons.pencil, label: 'Edit', onTap: _busy ? null : _edit)),
+                const SizedBox(width: 8),
+                Expanded(child: _Chip(key: const ValueKey('shared_with'), icon: CupertinoIcons.person_2, label: 'Shared with', onTap: _busy ? null : () => showSharedWithSheet(context, _recipe))),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Friends can open this', style: AppType.body(size: 14)),
+                      const SizedBox(height: 2),
+                      Text(
+                        r.sharedWithFriends
+                            ? 'Friends can open and log this. Nobody else can.'
+                            : 'Only you, and friends you send it to.',
+                        key: const ValueKey('visibility_note'),
+                        style: AppType.caption(size: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                CupertinoSwitch(key: const ValueKey('visibility_switch'), value: r.sharedWithFriends, onChanged: _busy ? null : _setVisibility),
+              ],
+            ),
+          ] else
+            Center(
+              child: CupertinoButton(
+                key: const ValueKey('report_recipe'),
+                onPressed: _busy ? null : _report,
+                child: Text('Report this recipe', style: AppType.caption(size: 13, color: TrackerColors.textTertiary)),
+              ),
+            ),
           if (r.mine)
             Center(
               child: CupertinoButton(

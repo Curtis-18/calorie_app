@@ -1,12 +1,19 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../models/detected_food.dart';
 import '../models/food_entry.dart';
 import '../models/food_item.dart';
 import '../models/house_recipe.dart';
+import '../providers/food_region_provider.dart';
 import '../providers/house_recipes_provider.dart';
+import '../providers/recipe_photo_picker.dart';
+import '../services/photo_estimation.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
@@ -31,10 +38,17 @@ String newRecipeId([Random? random]) {
 /// With [fromMeal] it saves foods already logged as one recipe instead, using
 /// their calories as a one-serving estimate (no ingredient list).
 class NewRecipeScreen extends ConsumerStatefulWidget {
-  const NewRecipeScreen({super.key, this.fromMeal, this.initialTitle, this.pickFood, this.makeId});
+  const NewRecipeScreen({super.key, this.fromMeal, this.initialTitle, this.pickFood, this.makeId, this.edit, this.analyzeDish});
 
   final List<FoodEntry>? fromMeal;
   final String? initialTitle;
+
+  /// Change one of my recipes instead of making a new one: the title, the
+  /// servings and the ingredients. Its photos stay.
+  final HouseRecipe? edit;
+
+  /// Replace the photo analysis (for tests).
+  final Future<List<DetectedFood>> Function(Uint8List photo, String? region)? analyzeDish;
 
   /// Replace the food search (for tests).
   final Future<FoodItem?> Function(BuildContext context)? pickFood;
@@ -45,13 +59,32 @@ class NewRecipeScreen extends ConsumerStatefulWidget {
 }
 
 class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
-  late final _title = TextEditingController(text: widget.initialTitle ?? '');
-  final _servings = TextEditingController(text: '1');
-  final _items = <DraftIngredient>[];
+  late final _title = TextEditingController(text: widget.edit?.title ?? widget.initialTitle ?? '');
+  late final _servings = TextEditingController(text: _servingsText(widget.edit?.servings ?? 1));
+  late final _items = <DraftIngredient>[...?widget.edit?.ingredients.map((i) => i.toDraft())];
   bool _saving = false;
+  bool _looking = false;
   String? _error;
 
+  /// The photo the ingredients were read from; it becomes the cover once saved.
+  Uint8List? _dishPhoto;
+
   bool get _fromMeal => widget.fromMeal != null;
+  bool get _editing => widget.edit != null;
+
+  static String _servingsText(double v) => v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
+  /// The ingredients differ from what the recipe had, so they need pricing again.
+  bool get _ingredientsChanged {
+    final before = widget.edit?.ingredients ?? const <HouseIngredient>[];
+    if (before.length != _items.length) return true;
+    for (var i = 0; i < before.length; i++) {
+      final a = before[i];
+      final b = _items[i];
+      if (a.name != b.name || a.grams != b.grams || a.fdcId != b.fdcId || a.caloriesPer100g != b.caloriesPer100g) return true;
+    }
+    return false;
+  }
 
   double? get _servingCount {
     final v = double.tryParse(_servings.text.trim().replaceAll(',', '.'));
@@ -59,7 +92,11 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
   }
 
   bool get _canSave =>
-      !_saving && _title.text.trim().isNotEmpty && _servingCount != null && (_fromMeal || _items.isNotEmpty);
+      !_saving &&
+      !_looking &&
+      _title.text.trim().isNotEmpty &&
+      _servingCount != null &&
+      (_fromMeal || _editing || _items.isNotEmpty);
 
   @override
   void dispose() {
@@ -83,11 +120,24 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
             onPressed: () => Navigator.pop(context, 'typed'),
             child: const Text('Type my own (like a spice paste)'),
           ),
+          if (!_editing) ...[
+            CupertinoActionSheetAction(
+              key: const ValueKey('add_photo_camera'),
+              onPressed: () => Navigator.pop(context, 'photo_camera'),
+              child: const Text('Photograph the finished dish'),
+            ),
+            CupertinoActionSheetAction(
+              key: const ValueKey('add_photo_library'),
+              onPressed: () => Navigator.pop(context, 'photo_library'),
+              child: const Text('Use a photo of the dish'),
+            ),
+          ],
         ],
         cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
       ),
     );
     if (!mounted || choice == null) return;
+    if (choice.startsWith('photo_')) return _fromPhoto(choice == 'photo_camera' ? ImageSource.camera : ImageSource.gallery);
     if (choice == 'search') {
       final food = await (widget.pickFood ??
           (c) => Navigator.push<FoodItem>(
@@ -111,6 +161,64 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
     } else {
       final typed = await _askTyped();
       if (typed != null) setState(() => _items.add(typed));
+    }
+  }
+
+  /// A photo of the finished dish becomes an editable ingredient list. The
+  /// numbers are still worked out on the server when the recipe is saved, and
+  /// anything the server could only estimate is marked as estimated.
+  Future<void> _fromPhoto(ImageSource source) async {
+    Uint8List? photo;
+    try {
+      photo = await ref.read(recipePhotoPickerProvider)(source);
+    } catch (_) {
+      if (mounted) setState(() => _error = "Couldn't open the ${source == ImageSource.camera ? 'camera' : 'photos'}. Allow access in Settings, then try again.");
+      return;
+    }
+    if (photo == null || !mounted) return;
+    setState(() {
+      _looking = true;
+      _error = null;
+    });
+    try {
+      final region = ref.read(foodRegionProvider);
+      final found = await (widget.analyzeDish ?? (p, r) => PhotoEstimationService().analyzePhoto(p, region: r))(photo, region);
+      if (!mounted) return;
+      setState(() {
+        _looking = false;
+        if (found.isEmpty) {
+          _error = "We couldn't tell what's in that photo. Try a clearer one, or add the ingredients yourself.";
+          return;
+        }
+        _dishPhoto = photo;
+        for (final f in found) {
+          final id = f.matchedFdcId;
+          _items.add(DraftIngredient(
+            name: f.name,
+            grams: f.estimatedGrams.clamp(1, 20000).toDouble(),
+            fdcId: f.matched && !f.estimated && id != null && id > 0 ? id : null,
+            caloriesPer100g: f.caloriesPer100g,
+            proteinPer100g: f.proteinPer100g ?? 0,
+            carbsPer100g: f.carbsPer100g ?? 0,
+            fatPer100g: f.fatPer100g ?? 0,
+            fromEstimate: f.estimated,
+          ));
+        }
+      });
+    } on PhotoAnalysisException catch (e) {
+      if (mounted) {
+        setState(() {
+          _looking = false;
+          _error = e.message;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _looking = false;
+          _error = "Couldn't look at that photo. Check your connection and try again.";
+        });
+      }
     }
   }
 
@@ -212,21 +320,31 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
       _error = null;
     });
     final meal = widget.fromMeal;
-    final result = await ref.read(houseRecipesProvider.notifier).service.create(
-          id: (widget.makeId ?? newRecipeId)(),
-          title: _title.text.trim(),
-          servings: servings,
-          ingredients: meal == null ? List.of(_items) : const [],
-          perServing: meal == null
-              ? null
-              : {
-                  // What was eaten, split across the servings the recipe makes.
-                  'calories': (meal.fold<int>(0, (a, e) => a + e.calories) / servings).round(),
-                  'protein_g': _per(meal.fold<double>(0, (a, e) => a + e.proteinG), servings),
-                  'carbs_g': _per(meal.fold<double>(0, (a, e) => a + e.carbsG), servings),
-                  'fat_g': _per(meal.fold<double>(0, (a, e) => a + e.fatG), servings),
-                },
-        );
+    final service = ref.read(houseRecipesProvider.notifier).service;
+    final editing = widget.edit;
+    final result = editing != null
+        ? await service.update(
+            editing.id,
+            title: _title.text.trim(),
+            servings: servings,
+            // Only when they changed: pricing them again asks USDA again.
+            ingredients: _ingredientsChanged ? List.of(_items) : null,
+          )
+        : await service.create(
+            id: (widget.makeId ?? newRecipeId)(),
+            title: _title.text.trim(),
+            servings: servings,
+            ingredients: meal == null ? List.of(_items) : const [],
+            perServing: meal == null
+                ? null
+                : {
+                    // What was eaten, split across the servings the recipe makes.
+                    'calories': (meal.fold<int>(0, (a, e) => a + e.calories) / servings).round(),
+                    'protein_g': _per(meal.fold<double>(0, (a, e) => a + e.proteinG), servings),
+                    'carbs_g': _per(meal.fold<double>(0, (a, e) => a + e.carbsG), servings),
+                    'fat_g': _per(meal.fold<double>(0, (a, e) => a + e.fatG), servings),
+                  },
+          );
     if (!mounted) return;
     final recipe = result.recipe;
     if (recipe == null) {
@@ -236,7 +354,13 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
       });
       return;
     }
+    // The photo the ingredients came from is the cover. Best effort: the
+    // recipe is saved either way.
+    final dish = _dishPhoto;
+    if (editing == null && dish != null) await service.putPhoto(recipe.id, 0, dish);
+    if (!mounted) return;
     ref.read(houseRecipesProvider.notifier).add(recipe);
+    if (dish != null) unawaited(ref.read(houseRecipesProvider.notifier).load());
     Navigator.pop(context, recipe);
   }
 
@@ -249,7 +373,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
     return CupertinoPageScaffold(
       backgroundColor: TrackerColors.background,
       navigationBar: CupertinoNavigationBar(
-        middle: Text(_fromMeal ? 'Save as recipe' : 'New recipe'),
+        middle: Text(_editing ? 'Edit recipe' : (_fromMeal ? 'Save as recipe' : 'New recipe')),
         backgroundColor: TrackerColors.background,
       ),
       child: SafeArea(
@@ -301,7 +425,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
                             children: [
                               Text(_items[i].name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.body(size: 14)),
                               Text(
-                                '${_items[i].grams.round()} g${_items[i].typedByHand ? ' · typed by you' : ''}',
+                                '${_items[i].grams.round()} g${_items[i].fromEstimate ? ' · estimated' : (_items[i].typedByHand ? ' · typed by you' : '')}',
                                 style: AppType.caption(size: 12),
                               ),
                             ],
@@ -318,7 +442,32 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
                     ),
                   ),
                 ),
-              AppButton.glass(key: const ValueKey('add_ingredient'), label: 'Add an ingredient', icon: CupertinoIcons.add, onPressed: _addIngredient),
+              if (_looking)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    key: const ValueKey('looking_at_photo'),
+                    children: [
+                      const CupertinoActivityIndicator(),
+                      const SizedBox(width: 10),
+                      Text('Looking at your photo…', style: AppType.caption(size: 13)),
+                    ],
+                  ),
+                ),
+              AppButton.glass(
+                key: const ValueKey('add_ingredient'),
+                label: 'Add an ingredient',
+                icon: CupertinoIcons.add,
+                onPressed: _looking ? null : _addIngredient,
+              ),
+              if (_dishPhoto != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'Read from your photo. It becomes the recipe’s cover. Check the amounts: they are estimates.',
+                  key: const ValueKey('dish_photo_note'),
+                  style: AppType.caption(size: 12),
+                ),
+              ],
               if (preview != null) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -333,7 +482,7 @@ class _NewRecipeScreenState extends ConsumerState<NewRecipeScreen> {
               Text(_error!, key: const ValueKey('recipe_error'), style: AppType.body(size: 13, color: TrackerColors.error)),
             ],
             const SizedBox(height: 20),
-            AppButton(key: const ValueKey('save_recipe'), label: 'Save recipe', loading: _saving, onPressed: _canSave ? _save : null),
+            AppButton(key: const ValueKey('save_recipe'), label: _editing ? 'Save changes' : 'Save recipe', loading: _saving, onPressed: _canSave ? _save : null),
           ],
         ),
       ),

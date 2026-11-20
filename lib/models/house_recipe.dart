@@ -3,18 +3,90 @@ import 'nutrients.dart';
 /// One of the person's own recipes ("house recipes"), from `/recipes`. The
 /// server computes the numbers from the ingredients; the app only shows them.
 class HouseIngredient {
-  const HouseIngredient({required this.name, required this.grams, this.isBaseline = false});
+  const HouseIngredient({
+    required this.name,
+    required this.grams,
+    this.isBaseline = false,
+    this.fdcId,
+    this.caloriesPer100g,
+    this.proteinPer100g = 0,
+    this.carbsPer100g = 0,
+    this.fatPer100g = 0,
+  });
 
   final String name;
   final double grams;
   final bool isBaseline;
+  final int? fdcId;
+  final double? caloriesPer100g;
+  final double proteinPer100g;
+  final double carbsPer100g;
+  final double fatPer100g;
+
+  /// Back into an editable ingredient: a USDA food is sent by id (the server
+  /// prices it again), anything typed keeps the values it was saved with.
+  DraftIngredient toDraft() => DraftIngredient(
+        name: name,
+        grams: grams,
+        fdcId: fdcId,
+        caloriesPer100g: caloriesPer100g,
+        proteinPer100g: proteinPer100g,
+        carbsPer100g: carbsPer100g,
+        fatPer100g: fatPer100g,
+        isBaseline: isBaseline,
+      );
 
   static HouseIngredient? fromJson(Object? raw) {
     if (raw is! Map<String, dynamic>) return null;
     final name = raw['name'];
     final grams = raw['grams'];
     if (name is! String || grams is! num) return null;
-    return HouseIngredient(name: name, grams: grams.toDouble(), isBaseline: raw['is_baseline'] == true);
+    double? n(Object? v) => v is num ? v.toDouble() : null;
+    final id = raw['fdc_id'];
+    return HouseIngredient(
+      name: name,
+      grams: grams.toDouble(),
+      isBaseline: raw['is_baseline'] == true,
+      fdcId: id is int && id > 0 ? id : null,
+      caloriesPer100g: n(raw['calories_per_100g']),
+      proteinPer100g: n(raw['protein_g_per_100g']) ?? 0,
+      carbsPer100g: n(raw['carbs_g_per_100g']) ?? 0,
+      fatPer100g: n(raw['fat_g_per_100g']) ?? 0,
+    );
+  }
+}
+
+/// One photo of a recipe: position 0 is the cover, 1-5 are carousel slides.
+class RecipePhoto {
+  const RecipePhoto({required this.position, required this.url, this.caption});
+
+  final int position;
+  final String url;
+  final String? caption;
+
+  static RecipePhoto? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final position = raw['position'];
+    final url = raw['url'];
+    if (position is! int || url is! String) return null;
+    return RecipePhoto(position: position, url: url, caption: raw['caption'] as String?);
+  }
+}
+
+/// A friend I have shared one of my recipes with.
+class RecipeSharee {
+  const RecipeSharee({required this.friendId, required this.username, this.avatarUrl});
+
+  final String friendId;
+  final String username;
+  final String? avatarUrl;
+
+  static RecipeSharee? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final id = raw['friend_id'];
+    final name = raw['username'];
+    if (id is! String || name is! String) return null;
+    return RecipeSharee(friendId: id, username: name, avatarUrl: raw['avatar_url'] as String?);
   }
 }
 
@@ -34,6 +106,9 @@ class HouseRecipe {
     this.description,
     this.steps = const [],
     this.ingredients = const [],
+    this.visibility = 'private',
+    this.coverUrl,
+    this.media = const [],
   });
 
   final String id;
@@ -56,6 +131,21 @@ class HouseRecipe {
   final String? description;
   final List<String> steps;
   final List<HouseIngredient> ingredients;
+
+  /// "private" (only me, and friends I send it to) or "friends".
+  final String visibility;
+  final String? coverUrl;
+
+  /// Carousel slides (positions 1-5), in order.
+  final List<RecipePhoto> media;
+
+  bool get sharedWithFriends => visibility == 'friends';
+
+  /// The cover first, then the slides: what the carousel swipes through.
+  List<RecipePhoto> get gallery => [
+        if (coverUrl != null) RecipePhoto(position: 0, url: coverUrl!),
+        ...media,
+      ];
 
   /// The food-log amounts for eating [portions] servings.
   int caloriesFor(double portions) => (calories * portions).round();
@@ -80,6 +170,9 @@ class HouseRecipe {
         ingredients: [
           for (final i in (j['ingredients'] as List? ?? const [])) ?HouseIngredient.fromJson(i),
         ],
+        visibility: j['visibility'] == 'friends' ? 'friends' : 'private',
+        coverUrl: j['cover_url'] as String?,
+        media: [for (final m in (j['media'] as List? ?? const [])) ?RecipePhoto.fromJson(m)],
       );
     } catch (_) {
       return null;
@@ -99,7 +192,12 @@ class DraftIngredient {
     this.carbsPer100g = 0,
     this.fatPer100g = 0,
     this.isBaseline = false,
+    this.fromEstimate = false,
   });
+
+  /// Came from a typical-value estimate of a photographed dish, not a database
+  /// match. Only used to label the row; the server just sees typed values.
+  final bool fromEstimate;
 
   final String name;
   final double grams;
@@ -143,7 +241,16 @@ int? previewCaloriesPerServing(List<DraftIngredient> items, double servings) {
 
 /// A recipe as listed inside a collection or in Highlights.
 class RecipeBrief {
-  const RecipeBrief({required this.id, required this.title, required this.calories, required this.estimated, required this.mine});
+  const RecipeBrief({
+    required this.id,
+    required this.title,
+    required this.calories,
+    required this.estimated,
+    required this.mine,
+    this.coverUrl,
+  });
+
+  final String? coverUrl;
 
   final String id;
   final String title;
@@ -160,6 +267,7 @@ class RecipeBrief {
         calories: (j['calories_per_serving'] as num).toInt(),
         estimated: j['estimated'] == true,
         mine: j['mine'] != false,
+        coverUrl: j['cover_url'] as String?,
       );
     } catch (_) {
       return null;

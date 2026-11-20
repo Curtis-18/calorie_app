@@ -11,6 +11,7 @@ import '../widgets/app_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/house_recipe_sheet.dart';
 import '../widgets/pressable.dart';
+import '../widgets/recipe_gallery.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/shimmer.dart';
 import 'new_recipe_screen.dart';
@@ -173,6 +174,10 @@ class _Row extends StatelessWidget {
         borderRadius: AppRadii.containerAll,
         child: Row(
           children: [
+            if (recipe.coverUrl != null) ...[
+              RecipeThumb(key: ValueKey('cover_${recipe.id}'), url: recipe.coverUrl, size: 48),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,7 +212,7 @@ class _HighlightTile extends StatelessWidget {
         haptics: true,
         child: Container(
           width: 150,
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: TrackerColors.alpha(TrackerColors.accentEnd, 0.1),
             borderRadius: BorderRadius.circular(AppRadii.button),
@@ -217,7 +222,13 @@ class _HighlightTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(CupertinoIcons.pin_fill, size: 12, color: TrackerColors.accentEnd),
+              if (brief.coverUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: RecipeThumb(key: ValueKey('highlight_cover_${brief.id}'), url: brief.coverUrl, size: 28),
+                )
+              else
+                Icon(CupertinoIcons.pin_fill, size: 12, color: TrackerColors.accentEnd),
               const SizedBox(height: 4),
               Text(brief.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 13)),
               Text('${brief.calories} kcal', style: AppType.caption(size: 11)),
