@@ -61,7 +61,7 @@ void main() {
     });
 
     test('every phrase the app asks to translate has a translation (catches typos)', () {
-      final literal = RegExp(r"""context\.tr\(\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")""");
+      final literal = RegExp(r"""\btr\(\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")""");
       final missing = <String>[];
       for (final file in Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart') && !f.path.contains('/l10n/'))) {
         for (final m in literal.allMatches(file.readAsStringSync())) {

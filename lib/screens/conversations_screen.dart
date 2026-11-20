@@ -11,6 +11,7 @@ import '../widgets/glass.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
 import 'chat_screen.dart';
+import 'coach_screen.dart';
 import 'friends_screen.dart' show FriendAvatar;
 import '../l10n/app_strings.dart';
 
@@ -85,6 +86,9 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     );
   }
 
+  /// The AI coach, always first. It is not a friend: no unread count.
+  Widget _coachRow() => _CoachRow(onTap: () => openCoach(context));
+
   List<Widget> _rows(AsyncValue<ConversationsData> state) {
     final data = state.valueOrNull;
     if (data == null) {
@@ -102,7 +106,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     }
     if (data.conversations.isEmpty) {
       return [
-        const SizedBox(height: 40),
+        _coachRow(),
+        const SizedBox(height: 28),
         AppEmptyState(
           icon: CupertinoIcons.chat_bubble_text,
           title: tr('No messages yet'),
@@ -112,8 +117,53 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     }
     final now = DateTime.now();
     return [
+      _coachRow(),
       for (final c in data.conversations) _ConversationRow(conversation: c, now: now, onTap: () => _open(c)),
     ];
+  }
+}
+
+class _CoachRow extends StatelessWidget {
+  const _CoachRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Pressable(
+        key: const ValueKey('conversation_coach'),
+        onTap: onTap,
+        borderRadius: AppRadii.buttonAll,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: AppDecor.card(borderRadius: AppRadii.buttonAll),
+          child: Row(
+            children: [
+              const CoachBadge(),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tr('Coach'), style: AppType.body(size: 15)),
+                    const SizedBox(height: 2),
+                    Text(
+                      tr('Ask about your food, your day or your week.'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppType.caption(color: TrackerColors.textTertiary, size: 12.5),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(CupertinoIcons.chevron_right, size: 16, color: TrackerColors.textTertiary),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

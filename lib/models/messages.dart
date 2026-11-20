@@ -57,6 +57,15 @@ class ChatMessage {
         attachment: MessageAttachment.fromJson(json['attachment']),
       );
 
+  /// A turn with the AI coach: the person's own turns are `mine`; the coach's
+  /// are not. No read receipts, no attachments.
+  factory ChatMessage.fromCoachJson(Map<String, dynamic> json) => ChatMessage(
+        id: json['id'] as String,
+        mine: json['role'] == 'user',
+        body: json['body'] as String,
+        createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
+      );
+
   ChatMessage copyWith({SendState? state, String? error, bool clearError = false}) => ChatMessage(
         id: id,
         mine: mine,
