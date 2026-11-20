@@ -23,6 +23,37 @@ class WhatsNewRelease {
 /// Newest first.
 const whatsNewReleases = <WhatsNewRelease>[
   WhatsNewRelease(
+    id: 'nov-2026-coach-languages',
+    title: 'What’s new: your coach, your language and more',
+    items: [
+      WhatsNewItem(
+        icon: CupertinoIcons.sparkles,
+        title: 'Meet your coach',
+        body: 'Messages → Coach. Ask what to eat today, for ideas from your own recipes, or how your week is going. It’s an AI, not a doctor, and your messages are processed by Google Gemini.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.globe,
+        title: 'In your language',
+        body: 'The app now follows your phone’s language: Spanish, French, German, Portuguese, Italian or English. Settings → Language lets you choose another. Weekly reports, badges, Insights and notifications use it too.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.flame,
+        title: 'Dishes from home',
+        body: 'If a dish isn’t in the food database, you now get a typical estimate, marked Estimated, that you can edit and save. Settings → Food → Where you mostly eat helps us name your dishes.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.photo_on_rectangle,
+        title: 'Recipes with photos',
+        body: 'Add a cover photo and up to five slides to a recipe, let friends open it, and see a friend’s recipes from Friends → ⋯ → Their recipes. You can also edit a recipe’s ingredients, or start one from a photo of the finished dish.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.chart_bar_alt_fill,
+        title: 'Smarter habits and barcodes',
+        body: 'After about two weeks of logging, your weekly report can notice things like sugar late in the evening or low-fibre days. Barcodes from outside the US now work too.',
+      ),
+    ],
+  ),
+  WhatsNewRelease(
     id: 'nov-2026',
     title: 'What’s new in November',
     items: [

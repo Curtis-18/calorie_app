@@ -1,3 +1,4 @@
+import 'package:calorie_app/l10n/app_strings.dart';
 import 'dart:async';
 
 import 'package:calorie_app/models/whats_new.dart';
@@ -36,6 +37,16 @@ void main() {
         for (final i in r.items) {
           expect(i.title.trim(), isNotEmpty);
           expect(i.body.trim().length, greaterThan(20));
+        }
+      }
+    });
+
+    test('every release reads in every language the app offers', () {
+      for (final entry in translationTables.entries) {
+        for (final r in whatsNewReleases) {
+          for (final text in [r.title, for (final i in r.items) ...[i.title, i.body]]) {
+            expect(entry.value.containsKey(text), isTrue, reason: '${entry.key}: $text');
+          }
         }
       }
     });
