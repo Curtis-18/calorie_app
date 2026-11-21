@@ -23,6 +23,22 @@ class WhatsNewRelease {
 /// Newest first.
 const whatsNewReleases = <WhatsNewRelease>[
   WhatsNewRelease(
+    id: 'nov-21-2026-coach-cards',
+    title: 'What’s new: coach suggestions and routines',
+    items: [
+      WhatsNewItem(
+        icon: CupertinoIcons.book,
+        title: 'Recipes from your coach',
+        body: 'When you ask the coach what to eat, it can now suggest your own saved recipes that fit what’s left today. Tap the card to open the recipe and log it in one tap.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.sportscourt,
+        title: 'A move routine, when you want one',
+        body: 'Ask the coach about moving more, or say you’re short on time, and it can offer a simple 5, 15 or 30 minute routine with no equipment. Tap the card to see the moves. It’s general information, not medical advice.',
+      ),
+    ],
+  ),
+  WhatsNewRelease(
     id: 'nov-2026-coach-languages',
     title: 'What’s new: your coach, your language and more',
     items: [

@@ -915,4 +915,9 @@ const Map<String, String> german = {
   'Couldn\'t turn notifications on. Please try again.': 'Mitteilungen konnten nicht eingeschaltet werden. Bitte versuche es erneut.',
   'Notifications in your browser': 'Mitteilungen in deinem Browser',
   'On Today, open the bell, tap the gear and turn on Notifications in this browser to get friend bites and reminders even when NuStreak isn’t open. On iPhone, add NuStreak to your Home Screen first.': 'Öffne unter Heute die Glocke, tippe auf das Zahnrad und schalte Mitteilungen in diesem Browser ein, um Bissen von Freunden und Erinnerungen auch bei geschlossener App zu bekommen. Füge NuStreak auf dem iPhone zuerst zum Home-Bildschirm hinzu.',
+  'What’s new: coach suggestions and routines': 'Neu: Vorschläge und Routinen von deinem Coach',
+  'Recipes from your coach': 'Rezepte von deinem Coach',
+  'When you ask the coach what to eat, it can now suggest your own saved recipes that fit what’s left today. Tap the card to open the recipe and log it in one tap.': 'Wenn du deinen Coach fragst, was du essen sollst, kann er dir jetzt deine eigenen gespeicherten Rezepte vorschlagen, die zu dem passen, was heute noch übrig ist. Tippe auf die Karte, um das Rezept zu öffnen und mit einem Tippen einzutragen.',
+  'A move routine, when you want one': 'Eine Bewegungsroutine, wenn du eine möchtest',
+  'Ask the coach about moving more, or say you’re short on time, and it can offer a simple 5, 15 or 30 minute routine with no equipment. Tap the card to see the moves. It’s general information, not medical advice.': 'Frag deinen Coach, wie du dich mehr bewegen kannst, oder sag, dass du wenig Zeit hast. Er kann dir eine einfache Routine von 5, 15 oder 30 Minuten ohne Geräte anbieten. Tippe auf die Karte, um die Übungen zu sehen. Das sind allgemeine Informationen, keine medizinische Beratung.',
 };
