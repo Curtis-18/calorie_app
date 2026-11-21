@@ -36,10 +36,10 @@ class FoodItem {
         fdcId: (json['fdc_id'] as num).toInt(),
         description: json['description'] as String? ?? tr('Unknown food'),
         dataType: json['data_type'] as String?,
-        caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble(),
-        proteinPer100g: (json['protein_g_per_100g'] as num?)?.toDouble(),
-        carbsPer100g: (json['carbs_g_per_100g'] as num?)?.toDouble(),
-        fatPer100g: (json['fat_g_per_100g'] as num?)?.toDouble(),
+        caloriesPer100g: nonNegative(json['calories_per_100g'] as num?),
+        proteinPer100g: nonNegative(json['protein_g_per_100g'] as num?),
+        carbsPer100g: nonNegative(json['carbs_g_per_100g'] as num?),
+        fatPer100g: nonNegative(json['fat_g_per_100g'] as num?),
         extrasPer100g: Nutrients.per100gFromApi(json),
       );
 }

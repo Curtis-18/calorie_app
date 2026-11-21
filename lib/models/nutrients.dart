@@ -1,3 +1,9 @@
+/// An amount per 100 g as the app uses it: never below zero. USDA's
+/// "carbohydrate, by difference" is a calculated figure and comes out slightly
+/// negative for some foods (-0.4 g per 100 g), which then became a negative
+/// entry the server refuses. Missing stays missing.
+double? nonNegative(num? value) => value == null ? null : (value < 0 ? 0.0 : value.toDouble());
+
 /// The extra nutrients tracked beyond calories and macros.
 ///
 /// The numbers come from the USDA food a log entry was matched to, never from
@@ -41,7 +47,7 @@ class Nutrients {
   /// are named `<key>_per_100g`. Empty when the food has none.
   static Map<String, double> per100gFromApi(Map<String, dynamic> json) => {
         for (final info in nutrientInfos)
-          if (json['${info.key}_per_100g'] case final num value) info.key: value.toDouble(),
+          if (json['${info.key}_per_100g'] case final num value) info.key: nonNegative(value)!,
       };
 
   /// The amounts in [grams] of a food with these per-100 g values, or null

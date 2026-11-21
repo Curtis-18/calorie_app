@@ -32,6 +32,7 @@ FoodEntry _entry(String id, {Nutrients? nutrients}) => FoodEntry(
     );
 
 void main() {
+  negativeAmountsTests();
   group('reading and scaling', () {
     test('a search result keeps only the nutrients USDA has', () {
       final item = FoodItem.fromApiJson(_spinach);
@@ -222,5 +223,37 @@ void main() {
         expect(text, isNot(contains(word)), reason: word);
       }
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  });
+}
+
+void negativeAmountsTests() {
+  group('a negative amount from the food database', () {
+    test('is read as zero, so the entry can be saved (the server refuses a negative)', () {
+      final food = DetectedFood.fromApiJson({
+        'name': 'chicken',
+        'estimated_grams': 100,
+        'calories_per_100g': 120,
+        'protein_g_per_100g': 24,
+        'carbs_g_per_100g': -1.24,
+        'fat_g_per_100g': 2,
+        'fiber_g_per_100g': -0.2,
+        'matched': true,
+      });
+      expect(food.carbsPer100g, 0);
+      expect(food.estimatedCarbs, 0);
+      expect(food.extrasPer100g['fiber_g'], 0);
+      expect(food.proteinPer100g, 24);
+    });
+
+    test('a missing amount stays missing', () {
+      expect(nonNegative(null), isNull);
+      expect(nonNegative(-3), 0);
+      expect(nonNegative(2.5), 2.5);
+    });
+
+    test('a searched food too', () {
+      final item = FoodItem.fromApiJson({'fdc_id': 1, 'description': 'x', 'carbs_g_per_100g': -0.4});
+      expect(item.carbsPer100g, 0);
+    });
   });
 }

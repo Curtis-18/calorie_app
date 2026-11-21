@@ -46,7 +46,7 @@ class Adjustment {
     try {
       final j = raw as Map<String, dynamic>;
       final scale = j['kind'] == 'scale';
-      final calories = (j['calories_per_100g'] as num?)?.toDouble();
+      final calories = nonNegative(j['calories_per_100g'] as num?);
       if (!scale && calories == null) return null; // nothing to add without numbers
       return Adjustment(
         id: j['id'] as String,
@@ -56,9 +56,9 @@ class Adjustment {
         grams: (j['grams'] as num?)?.toDouble() ?? 0,
         factor: (j['factor'] as num?)?.toDouble() ?? 1,
         caloriesPer100g: calories,
-        proteinPer100g: (j['protein_g_per_100g'] as num?)?.toDouble(),
-        carbsPer100g: (j['carbs_g_per_100g'] as num?)?.toDouble(),
-        fatPer100g: (j['fat_g_per_100g'] as num?)?.toDouble(),
+        proteinPer100g: nonNegative(j['protein_g_per_100g'] as num?),
+        carbsPer100g: nonNegative(j['carbs_g_per_100g'] as num?),
+        fatPer100g: nonNegative(j['fat_g_per_100g'] as num?),
         extrasPer100g: Nutrients.per100gFromApi(j),
         matchedDescription: j['matched_description'] as String?,
         matchedFdcId: (j['matched_fdc_id'] as num?)?.toInt(),
