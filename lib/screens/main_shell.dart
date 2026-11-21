@@ -4,6 +4,8 @@ import '../services/web_push_service.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import '../services/app_shortcut.dart';
+import 'conversations_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/friends_provider.dart';
 import '../providers/messages_provider.dart';
@@ -67,11 +69,32 @@ class _MainShellState extends ConsumerState<MainShell> {
     // A fresh shell (after signing in again) starts on Today.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(shellTabProvider.notifier).state = ShellTab.today;
+      _openLaunchShortcut();
       // So push notifications are written in the language the app is showing.
       FoodRegionService().saveLanguage(AppStrings.active);
       // A browser that allowed notifications is registered again for whoever is signed in.
       WebPushService().refreshRegistration();
     });
+  }
+
+  /// Opened from a long-press shortcut on the Home Screen icon: go straight
+  /// to what it names. Only at the first launch, never when coming back to Today.
+  static bool _shortcutHandled = false;
+
+  void _openLaunchShortcut({Uri? uri}) {
+    if (_shortcutHandled) return;
+    _shortcutHandled = true;
+    switch (shortcutFromUri(uri ?? Uri.base)) {
+      case AppShortcut.bites:
+        ref.read(shellTabProvider.notifier).state = ShellTab.friends;
+      case AppShortcut.insights:
+        ref.read(shellTabProvider.notifier).state = ShellTab.insights;
+      case AppShortcut.messages:
+        Navigator.of(context, rootNavigator: true).push(CupertinoPageRoute<void>(builder: (_) => const ConversationsScreen()));
+      case AppShortcut.log:
+      case null:
+        break; // Today is where logging happens: the camera button is right there.
+    }
   }
 
   /// A friend's profile link was opened: offer to add them, once the app is

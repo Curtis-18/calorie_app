@@ -942,4 +942,13 @@ const Map<String, String> german = {
   '{n} new, latest from {name}': '{n} neu, zuletzt von {name}',
   'All caught up': 'Alles gelesen',
   'Nothing logged yet. Tap to open your meals.': 'Noch nichts eingetragen. Tippe, um deine Mahlzeiten zu öffnen.',
+  'Add to Home Screen': 'Zum Home-Bildschirm',
+  'Home Screen': 'Home-Bildschirm',
+  'Add NuStreak to your Home Screen': 'Füge NuStreak zu deinem Home-Bildschirm hinzu',
+  'Open NuStreak like an app, one tap away.': 'Öffne NuStreak wie eine App, mit einem Tipp.',
+  'Show me how': 'Zeig mir, wie',
+  'Tap the Share button in Safari.': 'Tippe in Safari auf „Teilen“.',
+  'Scroll down and choose Add to Home Screen.': 'Scrolle nach unten und wähle „Zum Home-Bildschirm“.',
+  'Tap Add. NuStreak is now on your Home Screen.': 'Tippe auf „Hinzufügen“. NuStreak ist jetzt auf deinem Home-Bildschirm.',
+  'Don\'t see it? Open this page in Safari first.': 'Nicht zu sehen? Öffne diese Seite zuerst in Safari.',
 };

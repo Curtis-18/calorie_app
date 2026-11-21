@@ -24,9 +24,10 @@
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NuStreak">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
@@ -35,6 +36,22 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body style="background-color:#0B0C10;margin:0">
+<script>
+  // Chrome and Edge offer "install" through an event that fires early, often
+  // before the app has started. Keep it here so the app can use it later, from
+  // its own "Add to Home Screen" button. (iPhone has no such event: the app
+  // shows how to do it by hand.)
+  window.__nustreakInstall = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    window.__nustreakInstall = e;
+    window.dispatchEvent(new Event('nustreak-install-change'));
+  });
+  window.addEventListener('appinstalled', function () {
+    window.__nustreakInstall = null;
+    window.dispatchEvent(new Event('nustreak-install-change'));
+  });
+</script>
 <script>
   // Match the saved appearance before Flutter loads, so there is no dark flash.
   (function () {

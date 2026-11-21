@@ -1,6 +1,8 @@
 import '../l10n/app_language.dart';
 import '../l10n/app_strings.dart';
 import '../providers/language_provider.dart';
+import '../providers/pwa_install_provider.dart';
+import '../widgets/install_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -256,6 +258,23 @@ class SettingsView extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xxl),
+                    // Only where it can work: a browser, not yet installed.
+                    if (ref.watch(installProvider).available) ...[
+                      SettingsGroup(
+                        label: context.tr('Home Screen'),
+                        children: [
+                          SettingsRow(
+                            key: const ValueKey('add_to_home_screen'),
+                            icon: CupertinoIcons.plus_app,
+                            color: TrackerColors.accentStart,
+                            title: context.tr('Add to Home Screen'),
+                            subtitle: context.tr('Open NuStreak like an app, one tap away.'),
+                            onTap: () => startInstall(context, ref),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                    ],
                     SettingsGroup(
                       label: context.tr('Today screen'),
                       footer: context.tr('Calories and meals always show. These cards are optional.'),

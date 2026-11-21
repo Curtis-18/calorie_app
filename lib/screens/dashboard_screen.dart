@@ -44,6 +44,7 @@ import '../widgets/log_food_sheet.dart';
 import '../widgets/macro_breakdown.dart';
 import '../widgets/meal_section.dart';
 import '../widgets/home_social_tiles.dart';
+import '../widgets/install_card.dart';
 import '../widgets/meals_fold.dart';
 import '../widgets/nutrients_card.dart';
 import '../widgets/save_toast.dart';
@@ -521,6 +522,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             if (_isToday) ...[
                               const SizedBox(height: 14),
                               const HomeSocialTiles(),
+                              // Once there is something logged (never before the first
+                              // meal), offer the Home Screen. Hidden everywhere it can't work.
+                              if (entries.isNotEmpty) const InstallCard(),
                             ],
                             if (_isToday && budget.weekly) ...[
                               const SizedBox(height: 14),

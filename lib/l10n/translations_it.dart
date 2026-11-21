@@ -942,4 +942,13 @@ const Map<String, String> italian = {
   '{n} new, latest from {name}': '{n} nuovi, l\'ultimo da {name}',
   'All caught up': 'Tutto letto',
   'Nothing logged yet. Tap to open your meals.': 'Ancora niente registrato. Tocca per aprire i tuoi pasti.',
+  'Add to Home Screen': 'Aggiungi alla schermata Home',
+  'Home Screen': 'Schermata Home',
+  'Add NuStreak to your Home Screen': 'Aggiungi NuStreak alla schermata Home',
+  'Open NuStreak like an app, one tap away.': 'Aprila come un’app, a un tocco.',
+  'Show me how': 'Mostrami come',
+  'Tap the Share button in Safari.': 'Tocca il pulsante Condividi in Safari.',
+  'Scroll down and choose Add to Home Screen.': 'Scorri e scegli Aggiungi alla schermata Home.',
+  'Tap Add. NuStreak is now on your Home Screen.': 'Tocca Aggiungi. NuStreak è ora nella tua schermata Home.',
+  'Don\'t see it? Open this page in Safari first.': 'Non lo vedi? Apri prima questa pagina in Safari.',
 };
