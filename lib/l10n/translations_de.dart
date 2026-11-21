@@ -966,4 +966,7 @@ const Map<String, String> german = {
   'You will find your link on the Profile tab, under your name. Tap it to copy and share it with friends.': 'Deinen Link findest du im Tab „Profil“ unter deinem Namen. Tippe darauf, um ihn zu kopieren und mit Freunden zu teilen.',
   'A friendlier welcome': 'Ein herzlicherer Empfang',
   'New people now get a warm hello by name, smoother steps through sign-up and a nicer way to choose a date of birth. You can open it again from Update my details.': 'Neue Leute werden jetzt herzlich mit Namen begrüßt, kommen sanfter durch die Anmeldung und wählen ihr Geburtsdatum auf eine schönere Art. Du findest sie wieder unter „Meine Angaben aktualisieren“.',
+  'Never miss a bite': 'Verpasse keinen Bissen',
+  'Hear when a friend sends you a bite or your streak needs you. A few a day at most, quiet at night.': 'Erfahre, wenn ein Freund dir einen Bissen schickt oder deine Serie dich braucht. Höchstens ein paar am Tag, nachts ist Ruhe.',
+  'Turn on': 'Einschalten',
 };

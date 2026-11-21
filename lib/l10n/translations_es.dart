@@ -966,4 +966,7 @@ const Map<String, String> spanish = {
   'You will find your link on the Profile tab, under your name. Tap it to copy and share it with friends.': 'Encontrarás tu enlace en la pestaña Perfil, debajo de tu nombre. Tócalo para copiarlo y compartirlo con tus amigos.',
   'A friendlier welcome': 'Una bienvenida más cálida',
   'New people now get a warm hello by name, smoother steps through sign-up and a nicer way to choose a date of birth. You can open it again from Update my details.': 'Quien llega nuevo recibe ahora un saludo cálido con su nombre, pasos más fluidos al registrarse y una forma más agradable de elegir la fecha de nacimiento. Puedes volver a verla desde Actualizar mis datos.',
+  'Never miss a bite': 'No te pierdas ningún bocado',
+  'Hear when a friend sends you a bite or your streak needs you. A few a day at most, quiet at night.': 'Entérate cuando un amigo te envíe un bocado o tu racha te necesite. Unas pocas al día como máximo y en silencio por la noche.',
+  'Turn on': 'Activar',
 };
