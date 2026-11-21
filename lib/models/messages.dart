@@ -23,6 +23,93 @@ class MessageAttachment {
   }
 }
 
+/// One of the person's own recipes the coach named in its answer. The numbers
+/// come from the saved recipe (the server reads them), not from the coach's words.
+class CoachSuggestion {
+  const CoachSuggestion({required this.recipeId, required this.title, required this.calories});
+
+  final String recipeId;
+  final String title;
+  final int calories;
+
+  static CoachSuggestion? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final id = raw['recipe_id'];
+    final title = raw['title'];
+    if (id is! String || title is! String || title.isEmpty) return null;
+    return CoachSuggestion(recipeId: id, title: title, calories: ((raw['calories'] as num?) ?? 0).toInt());
+  }
+}
+
+class WorkoutStep {
+  const WorkoutStep({required this.name, required this.cue, required this.amount});
+
+  final String name;
+  final String cue;
+  final String amount;
+}
+
+class WorkoutSection {
+  const WorkoutSection({required this.title, required this.steps, this.repeat});
+
+  final String title;
+  final List<WorkoutStep> steps;
+
+  /// "Repeat the main moves 3 times...", only for a section done in rounds.
+  final String? repeat;
+}
+
+/// A routine from the server's curated library, already written in the
+/// person's language. The coach only names it; the moves are fixed text.
+class CoachWorkout {
+  const CoachWorkout({
+    required this.id,
+    required this.name,
+    required this.duration,
+    required this.focus,
+    required this.summary,
+    required this.sections,
+    required this.safety,
+  });
+
+  final String id;
+  final String name;
+  final String duration;
+  final String focus;
+  final String summary;
+  final List<WorkoutSection> sections;
+  final String safety;
+
+  static CoachWorkout? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final id = raw['id'];
+    final name = raw['name'];
+    final rawSections = raw['sections'];
+    if (id is! String || name is! String || name.isEmpty || rawSections is! List) return null;
+    final sections = <WorkoutSection>[];
+    for (final s in rawSections) {
+      if (s is! Map<String, dynamic> || s['title'] is! String || s['steps'] is! List) continue;
+      final steps = [
+        for (final st in s['steps'] as List)
+          if (st is Map<String, dynamic> && st['name'] is String)
+            WorkoutStep(name: st['name'] as String, cue: (st['cue'] as String?) ?? '', amount: (st['amount'] as String?) ?? ''),
+      ];
+      if (steps.isEmpty) continue;
+      sections.add(WorkoutSection(title: s['title'] as String, steps: steps, repeat: s['repeat'] as String?));
+    }
+    if (sections.isEmpty) return null;
+    return CoachWorkout(
+      id: id,
+      name: name,
+      duration: (raw['duration'] as String?) ?? '',
+      focus: (raw['focus'] as String?) ?? '',
+      summary: (raw['summary'] as String?) ?? '',
+      sections: sections,
+      safety: (raw['safety'] as String?) ?? '',
+    );
+  }
+}
+
 class ChatMessage {
   const ChatMessage({
     required this.id,
@@ -33,9 +120,19 @@ class ChatMessage {
     this.state = SendState.sent,
     this.error,
     this.attachment,
+    this.suggestions = const [],
+    this.workouts = const [],
   });
 
   final MessageAttachment? attachment;
+
+  /// Recipes the coach just named, shown as tap-to-open cards under its answer.
+  /// Only on the live answer: the server does not store them, so a reloaded
+  /// thread has the words without the cards.
+  final List<CoachSuggestion> suggestions;
+
+  /// The routine the coach just named (at most one), also live-only.
+  final List<CoachWorkout> workouts;
   final String id;
   final bool mine;
   final String body;
@@ -64,6 +161,12 @@ class ChatMessage {
         mine: json['role'] == 'user',
         body: json['body'] as String,
         createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
+        suggestions: [
+          if (json['suggestions'] is List) for (final j in json['suggestions'] as List) ?CoachSuggestion.fromJson(j),
+        ],
+        workouts: [
+          if (json['workouts'] is List) for (final j in json['workouts'] as List) ?CoachWorkout.fromJson(j),
+        ],
       );
 
   ChatMessage copyWith({SendState? state, String? error, bool clearError = false}) => ChatMessage(
@@ -75,6 +178,8 @@ class ChatMessage {
         state: state ?? this.state,
         error: clearError ? null : (error ?? this.error),
         attachment: attachment,
+        suggestions: suggestions,
+        workouts: workouts,
       );
 }
 

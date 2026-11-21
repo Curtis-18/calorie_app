@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/messages.dart';
+import '../providers/house_recipes_provider.dart';
 import '../services/coach_service.dart';
 import '../services/voice_note.dart';
 import '../theme/app_shapes.dart';
@@ -11,6 +13,8 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/glass.dart';
+import '../widgets/house_recipe_sheet.dart';
+import '../widgets/workout_sheet.dart';
 import '../widgets/pressable.dart';
 
 /// How the screen makes its service when it is not given one. Tests replace it.
@@ -26,10 +30,14 @@ Future<void> openCoach(BuildContext context) {
 /// words on the phone; audio never leaves it). The coach is not a friend: no
 /// read receipts, nothing to unsend, and the thread can be cleared.
 class CoachScreen extends StatefulWidget {
-  const CoachScreen({super.key, this.service, this.recognizer});
+  const CoachScreen({super.key, this.service, this.recognizer, this.openRecipe});
 
   final CoachService? service;
   final VoiceRecognizer? recognizer;
+
+  /// Opens a recipe the coach named (its sheet has the servings and "Log this").
+  /// Tests replace it; the app opens the person's own recipe by id.
+  final Future<void> Function(BuildContext context, String recipeId)? openRecipe;
 
   @override
   State<CoachScreen> createState() => _CoachScreenState();
@@ -145,6 +153,12 @@ class _CoachScreenState extends State<CoachScreen> {
         _replace(message.copyWith(state: SendState.failed, error: e.message));
       });
     }
+  }
+
+  Future<void> _openRecipe(String id) {
+    final open = widget.openRecipe;
+    if (open != null) return open(context, id);
+    return openRecipeById(context, ProviderScope.containerOf(context).read(houseRecipesProvider.notifier), id);
   }
 
   void _replace(ChatMessage next) {
@@ -296,7 +310,7 @@ class _CoachScreenState extends State<CoachScreen> {
                       style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5)),
                 ),
               ),
-            _Bubble(message: message, onRetry: () => _deliver(message)),
+            _Bubble(message: message, onRetry: () => _deliver(message), onOpenRecipe: _openRecipe),
           ],
         );
       },
@@ -411,10 +425,11 @@ class _Greeting extends StatelessWidget {
 }
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.onRetry});
+  const _Bubble({required this.message, required this.onRetry, required this.onOpenRecipe});
 
   final ChatMessage message;
   final VoidCallback onRetry;
+  final void Function(String recipeId) onOpenRecipe;
 
   @override
   Widget build(BuildContext context) {
@@ -452,6 +467,16 @@ class _Bubble extends StatelessWidget {
               ),
             ),
           ),
+          for (final suggestion in message.suggestions)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: _SuggestionCard(suggestion: suggestion, onTap: () => onOpenRecipe(suggestion.recipeId)),
+            ),
+          for (final workout in message.workouts)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: _WorkoutCard(workout: workout, onTap: () => showWorkoutSheet(context, workout)),
+            ),
           if (failed)
             Padding(
               padding: const EdgeInsets.fromLTRB(6, 3, 6, 0),
@@ -461,6 +486,100 @@ class _Bubble extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// A recipe of the person's own that the coach named: tap to open it and log it.
+class _SuggestionCard extends StatelessWidget {
+  const _SuggestionCard({required this.suggestion, required this.onTap});
+
+  final CoachSuggestion suggestion;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.8),
+      child: Pressable(
+        key: ValueKey('coach_recipe_${suggestion.recipeId}'),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: TrackerColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: TrackerColors.border),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(suggestion.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.body(size: 15, color: TrackerColors.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(tr('{n} kcal per serving · tap to open', {'n': '${suggestion.calories}'}),
+                        style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
+                  ],
+                ),
+              ),
+              Icon(CupertinoIcons.chevron_right, size: 16, color: TrackerColors.textTertiary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A routine the coach named: tap to see the moves.
+class _WorkoutCard extends StatelessWidget {
+  const _WorkoutCard({required this.workout, required this.onTap});
+
+  final CoachWorkout workout;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.8),
+      child: Pressable(
+        key: ValueKey('coach_workout_${workout.id}'),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: TrackerColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: TrackerColors.border),
+          ),
+          child: Row(
+            children: [
+              Icon(CupertinoIcons.sportscourt, size: 20, color: TrackerColors.textSecondary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(workout.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.body(size: 15, color: TrackerColors.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text([workout.duration, workout.focus].where((x) => x.isNotEmpty).join(' · '),
+                        style: AppType.caption(color: TrackerColors.textTertiary, size: 12)),
+                  ],
+                ),
+              ),
+              Icon(CupertinoIcons.chevron_right, size: 16, color: TrackerColors.textTertiary),
+            ],
+          ),
+        ),
       ),
     );
   }

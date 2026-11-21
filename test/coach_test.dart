@@ -37,6 +37,8 @@ class _Server {
   int failTimes = 0;
   Duration delay = Duration.zero;
   String reply = 'Your lentil stew fits well tonight.';
+  List<Object> suggestions = [];
+  List<Object> workouts = [];
   bool hasMore = false;
   List<Map<String, dynamic>> older = [];
   final asked = <Map<String, dynamic>>[];
@@ -67,7 +69,11 @@ class _Server {
         if (askStatus != 200) return _json({'detail': 'x'}, askStatus);
         final answer = _turn('c-${asked.length}', 'coach', reply, minutesAgo: 0);
         thread = [...thread, _turn(body['id'] as String, 'user', body['text'] as String, minutesAgo: 0), answer];
-        return _json(answer);
+        return _json({
+          ...answer,
+          if (suggestions.isNotEmpty) 'suggestions': suggestions,
+          if (workouts.isNotEmpty) 'workouts': workouts,
+        });
       });
 }
 
@@ -92,6 +98,31 @@ Future<void> _settle(WidgetTester tester, [int steps = 8]) async {
   }
 }
 
+Map<String, dynamic> _walk() => {
+      'id': 'walk_15',
+      'name': '15-minute walk',
+      'duration': '15 minutes',
+      'focus': 'Walking',
+      'summary': 'A steady walk. Take a hill or stairs if you like.',
+      'sections': [
+        {
+          'title': 'Warm-up',
+          'repeat': null,
+          'steps': [
+            {'name': 'Easy walk', 'cue': 'Walk slowly and let your shoulders loosen.', 'amount': '3 minutes'},
+          ],
+        },
+        {
+          'title': 'Main moves',
+          'repeat': 'Repeat the main moves 3 times, resting a little between.',
+          'steps': [
+            {'name': 'Brisk walk', 'cue': 'Walk at a pace where you can still talk.', 'amount': '10 minutes'},
+          ],
+        },
+      ],
+      'safety': 'Stop if anything hurts or you feel dizzy.',
+    };
+
 void main() {
   tearDown(() => AppStrings.active = 'en');
 
@@ -104,6 +135,38 @@ void main() {
       expect(server.headers.single['Accept-Language'], 'es');
       expect(reply.mine, isFalse);
       expect(reply.body, 'Your lentil stew fits well tonight.');
+    });
+
+    test('suggestions are read from the answer; malformed ones and an old backend are ignored', () async {
+      final server = _Server()
+        ..suggestions = [
+          {'recipe_id': 'r-1', 'title': 'Lentil stew', 'calories': 420},
+          {'title': 'no id'},
+          {'recipe_id': 'r-3', 'title': ''},
+          'junk',
+        ];
+      final reply = await _service(server).ask(id: 'm-1', text: 'dinner?');
+      expect(reply.suggestions.map((s) => (s.recipeId, s.title, s.calories)), [('r-1', 'Lentil stew', 420)]);
+      server.suggestions = [];
+      expect((await _service(server).ask(id: 'm-2', text: 'again')).suggestions, isEmpty);
+    });
+
+    test('a routine is read from the answer; broken ones and an old backend are ignored', () async {
+      final server = _Server()
+        ..workouts = [
+          _walk(),
+          {'id': 'x', 'name': 'No sections', 'sections': []},
+          {'name': 'No id', 'sections': []},
+          'junk',
+        ];
+      final w = (await _service(server).ask(id: 'm-1', text: 'move?')).workouts;
+      expect(w.map((x) => x.id), ['walk_15']);
+      expect(w.single.sections.map((s) => s.title), ['Warm-up', 'Main moves']);
+      expect(w.single.sections[0].repeat, isNull);
+      expect(w.single.sections[1].repeat, startsWith('Repeat the main moves 3 times'));
+      expect(w.single.sections[1].steps.single.amount, '10 minutes');
+      server.workouts = [];
+      expect((await _service(server).ask(id: 'm-2', text: 'again')).workouts, isEmpty);
     });
 
     test('the thread is read oldest first, in pages, and can be cleared', () async {
@@ -145,13 +208,14 @@ void main() {
   });
 
   group('the coach screen', () {
-    Future<void> open(WidgetTester tester, _Server server, {VoiceRecognizer? voice}) async {
+    Future<void> open(WidgetTester tester, _Server server,
+        {VoiceRecognizer? voice, Future<void> Function(BuildContext, String)? openRecipe}) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(CupertinoApp(
         theme: AppTheme.cupertino,
-        home: CoachScreen(service: _service(server), recognizer: voice ?? _Voice(ok: false)),
+        home: CoachScreen(service: _service(server), recognizer: voice ?? _Voice(ok: false), openRecipe: openRecipe),
       ));
       await _settle(tester);
     }
@@ -185,6 +249,67 @@ void main() {
       expect(find.text('Your lentil stew fits well tonight.'), findsOneWidget);
       expect(server.asked.single['text'], 'What should I eat for dinner?');
       expect((server.asked.single['id'] as String).length, 36);
+    }, variant: ios);
+
+    testWidgets('a recipe the coach names shows as a card that opens that recipe; a reload has no cards', (tester) async {
+      final server = _Server()
+        ..suggestions = [
+          {'recipe_id': 'r-1', 'title': 'Lentil stew', 'calories': 420, 'protein_g': 25, 'carbs_g': 50, 'fat_g': 9},
+          {'recipe_id': 'r-2', 'title': 'Egg pie', 'calories': 350, 'protein_g': 20, 'carbs_g': 10, 'fat_g': 15},
+        ];
+      final opened = <String>[];
+      await open(tester, server, openRecipe: (_, id) async => opened.add(id));
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('coach_recipe_r-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('coach_recipe_r-2')), findsOneWidget);
+      expect(find.text('420 kcal per serving · tap to open'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('coach_recipe_r-2')));
+      await tester.pump();
+      expect(opened, ['r-2']);
+
+      // The thread read back from the server carries the words only.
+      server.suggestions = [];
+      await tester.pumpWidget(const SizedBox());
+      await open(tester, server);
+      expect(find.text('Your lentil stew fits well tonight.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('coach_recipe_r-1')), findsNothing);
+    }, variant: ios);
+
+    testWidgets('a routine the coach names is a card that opens the moves and the safety line; a reload has none', (tester) async {
+      final server = _Server()..workouts = [_walk()];
+      await open(tester, server);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('coach_workout_walk_15')), findsOneWidget);
+      expect(find.text('15-minute walk'), findsOneWidget);
+      expect(find.text('15 minutes · Walking'), findsOneWidget);
+      expect(find.byKey(const ValueKey('workout_name')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('coach_workout_walk_15')));
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('workout_name')), findsOneWidget);
+      for (final text in ['Warm-up', 'Main moves', 'Easy walk', '3 minutes', 'Brisk walk', 'Walk at a pace where you can still talk.']) {
+        expect(find.text(text), findsOneWidget, reason: text);
+      }
+      expect(find.byKey(const ValueKey('workout_repeat')), findsOneWidget); // only the main section repeats
+      expect(find.text('Stop if anything hurts or you feel dizzy.'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('workout_done')));
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('workout_name')), findsNothing);
+
+      server.workouts = [];
+      await tester.pumpWidget(const SizedBox());
+      await open(tester, server);
+      expect(find.byKey(const ValueKey('coach_workout_walk_15')), findsNothing);
+    }, variant: ios);
+
+    testWidgets('an answer with no named recipe has no cards', (tester) async {
+      final server = _Server();
+      await open(tester, server);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await _settle(tester);
+      expect(find.textContaining('tap to open'), findsNothing);
     }, variant: ios);
 
     testWidgets('typing a message sends it trimmed and clears the box; blank cannot be sent', (tester) async {
