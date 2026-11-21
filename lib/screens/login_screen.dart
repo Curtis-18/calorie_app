@@ -7,6 +7,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_field.dart';
+import '../widgets/google_sign_in_button.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 
@@ -115,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     loading: _isLoading,
                     onPressed: _isLoading ? null : _logIn,
                   ),
+                  const GoogleSignInButton(),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
                     label: context.tr('Forgot password?'),

@@ -95,9 +95,15 @@ class MessagesService {
   }
 
   /// Safe to repeat with the same [id]: the server returns the original.
-  Future<ChatMessage> send(String friendId, {required String id, required String body}) async {
+  ///
+  /// [replyTo] is the id of an earlier message of this conversation to quote.
+  Future<ChatMessage> send(String friendId, {required String id, required String body, String? replyTo}) async {
     final r = await _send(
-      (c, h) => c.post(_uri('/messages/with/$friendId'), headers: h, body: jsonEncode({'id': id, 'body': body})),
+      (c, h) => c.post(
+        _uri('/messages/with/$friendId'),
+        headers: h,
+        body: jsonEncode({'id': id, 'body': body, 'reply_to': ?replyTo}),
+      ),
     );
     if (r.statusCode == 200) return ChatMessage.fromJson(_json(r));
     throw MessagesException(_detail(r, tr("Couldn't send that message.")), statusCode: r.statusCode);

@@ -8,6 +8,7 @@ import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/app_field.dart';
+import '../widgets/google_sign_in_button.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -125,6 +126,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     loading: _isLoading,
                     onPressed: _isLoading ? null : _signUp,
                   ),
+                  const GoogleSignInButton(),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
                     label: context.tr('Already have an account? Log in'),

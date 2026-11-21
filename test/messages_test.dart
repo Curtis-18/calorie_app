@@ -21,12 +21,21 @@ http.Response _json(Object body, [int status = 200]) => http.Response.bytes(
       headers: {'content-type': 'application/json; charset=utf-8'},
     );
 
-Map<String, dynamic> _msg(String id, String body, {bool mine = false, bool read = false, int minutesAgo = 5}) => {
+Map<String, dynamic> _msg(
+  String id,
+  String body, {
+  bool mine = false,
+  bool read = false,
+  int minutesAgo = 5,
+  Map<String, dynamic>? quote,
+}) =>
+    {
       'id': id,
       'mine': mine,
       'body': body,
       'created_at': DateTime.now().toUtc().subtract(Duration(minutes: minutesAgo)).toIso8601String(),
       'read_at': read ? DateTime.now().toUtc().toIso8601String() : null,
+      'quote': ?quote,
     };
 
 Map<String, dynamic> _conv(String name, {int unread = 0, bool mine = false, String last = 'hey'}) => {
@@ -50,6 +59,9 @@ class _Server {
   int threadStatus = 200;
   String threadDetail = 'You can only message your friends.';
   int sendFailures = 0;
+
+  /// The next send that quotes something is answered "that message isn't there any more".
+  bool originalGone = false;
   Duration sendDelay = Duration.zero;
   final calls = <String>[];
   final sentBodies = <Map<String, dynamic>>[];
@@ -76,7 +88,14 @@ class _Server {
             sendFailures--;
             return _json({'detail': "Couldn't send that message."}, 500);
           }
-          final saved = _msg(body['id'] as String, body['body'] as String, mine: true, minutesAgo: 0);
+          Map<String, dynamic>? quote;
+          final replyTo = body['reply_to'];
+          if (replyTo != null) {
+            if (originalGone) return _json({'detail': "That message isn't there any more."}, 404);
+            final original = thread.firstWhere((m) => m['id'] == replyTo);
+            quote = {'id': original['id'], 'mine': original['mine'], 'body': original['body'], 'deleted': false};
+          }
+          final saved = _msg(body['id'] as String, body['body'] as String, mine: true, minutesAgo: 0, quote: quote);
           thread = [...thread, saved];
           return _json(saved);
         }
@@ -114,6 +133,56 @@ void main() {
       expect(conversationTimeLabel(DateTime(2026, 11, 13, 23, 59), now), 'Yesterday');
       expect(conversationTimeLabel(DateTime(2026, 11, 10, 8, 0), now), 'Tue');
       expect(conversationTimeLabel(DateTime(2026, 10, 1, 8, 0), now), '1 Oct');
+    });
+  });
+
+  group('quotes', () {
+    test('a quote is read from the server, shortened text and all', () {
+      final q = MessageQuote.fromJson({'id': 'a', 'mine': true, 'body': 'hello', 'deleted': false})!;
+      expect((q.id, q.mine, q.body, q.deleted), ('a', true, 'hello', false));
+    });
+
+    test('an unsent original has no text at all', () {
+      final q = MessageQuote.fromJson({'id': null, 'mine': null, 'body': null, 'deleted': true})!;
+      expect((q.deleted, q.body, q.id), (true, null, null));
+    });
+
+    test('nothing, or something odd, is no quote and never breaks a message', () {
+      expect(MessageQuote.fromJson(null), isNull);
+      expect(MessageQuote.fromJson('text'), isNull);
+      expect(MessageQuote.fromJson({'deleted': false}), isNull);
+      final m = ChatMessage.fromJson({'id': 'z', 'mine': true, 'body': 'x', 'created_at': '2026-11-21T10:00:00Z', 'quote': 5});
+      expect(m.quote, isNull);
+    });
+
+    test('a quote is shortened to one line, with an ellipsis', () {
+      expect(MessageQuote.shorten('  a   b\n c '), 'a b c');
+      final long = MessageQuote.shorten('x' * 300);
+      expect(long.length, 140);
+      expect(long.endsWith('\u2026'), isTrue);
+    });
+
+    test('the service sends reply_to only when replying', () async {
+      final server = _Server(thread: [_msg('a', 'hi')]);
+      final service = _service(server);
+      await service.send('u-sam', id: 'n1', body: 'plain');
+      await service.send('u-sam', id: 'n2', body: 'reply', replyTo: 'a');
+      expect(server.sentBodies[0].containsKey('reply_to'), isFalse);
+      expect(server.sentBodies[1]['reply_to'], 'a');
+    });
+
+    test('dropping the quote also drops the id to send', () {
+      final m = ChatMessage(
+        id: 'n',
+        mine: true,
+        body: 'x',
+        createdAt: DateTime(2026),
+        quote: const MessageQuote(id: 'a', mine: false, body: 'q'),
+        replyToId: 'a',
+      );
+      expect(m.copyWith(state: SendState.failed).replyToId, 'a');
+      final plain = m.copyWith(clearQuote: true);
+      expect((plain.quote, plain.replyToId), (null, null));
     });
   });
 
@@ -302,6 +371,115 @@ void main() {
       expect(find.text('Sent'), findsOneWidget);
       expect(tester.widget<CupertinoTextField>(find.byKey(const ValueKey('chat_input'))).controller!.text, isEmpty);
     }, variant: ios);
+
+    group('replying to a message', () {
+      Future<void> replyTo(WidgetTester tester, String text) async {
+        await tester.longPress(find.text(text));
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.tap(find.text('Reply'));
+        await settle(tester, 4);
+      }
+
+      testWidgets('Reply in the menu shows who and what is quoted above the input', (tester) async {
+        final server = _Server(thread: [_msg('a', 'Dinner at 7?'), _msg('b', 'sure', mine: true, minutesAgo: 3)]);
+        await open(tester, server);
+        expect(find.byKey(const ValueKey('reply_bar')), findsNothing);
+        await replyTo(tester, 'Dinner at 7?');
+        expect(find.byKey(const ValueKey('reply_bar')), findsOneWidget);
+        expect(find.text('Replying to @sam'), findsOneWidget);
+        // Their line now appears twice: in the list and in the bar.
+        expect(find.text('Dinner at 7?'), findsNWidgets(2));
+      }, variant: ios);
+
+      testWidgets('replying to my own line says You', (tester) async {
+        final server = _Server(thread: [_msg('b', 'my plan', mine: true, minutesAgo: 3)]);
+        await open(tester, server);
+        await replyTo(tester, 'my plan');
+        expect(find.text('Replying to You'), findsOneWidget);
+      }, variant: ios);
+
+      testWidgets('sending sends the id of the quoted message, and the bubble shows the quote at once', (tester) async {
+        final server = _Server(thread: [_msg('a', 'Dinner at 7?')])..sendDelay = const Duration(milliseconds: 400);
+        await open(tester, server);
+        await replyTo(tester, 'Dinner at 7?');
+        await type(tester, 'Yes!');
+        await tester.tap(find.byKey(const ValueKey('chat_send')));
+        await tester.pump(); // before the server answers
+        expect(find.byKey(const ValueKey('reply_bar')), findsNothing, reason: 'the reply bar is spent');
+        expect(find.byWidgetPredicate((w) => w.key is ValueKey && (w.key as ValueKey).value.toString().startsWith('quote_')), findsOneWidget);
+        await settle(tester);
+        expect(server.sentBodies.single['reply_to'], 'a');
+        expect(server.sentBodies.single['body'], 'Yes!');
+        // The saved reply still carries its quote: the quoted line is in the list and in the quote.
+        expect(find.text('Dinner at 7?'), findsNWidgets(2));
+        expect(find.text('@sam'), findsNWidgets(2), reason: 'the header and the quote label');
+      }, variant: ios);
+
+      testWidgets('cancelling the reply sends a plain message', (tester) async {
+        final server = _Server(thread: [_msg('a', 'Dinner at 7?')]);
+        await open(tester, server);
+        await replyTo(tester, 'Dinner at 7?');
+        await tester.tap(find.byKey(const ValueKey('reply_cancel')));
+        await tester.pump();
+        expect(find.byKey(const ValueKey('reply_bar')), findsNothing);
+        await type(tester, 'hello');
+        await tester.tap(find.byKey(const ValueKey('chat_send')));
+        await settle(tester);
+        expect(server.sentBodies.single.containsKey('reply_to'), isFalse);
+      }, variant: ios);
+
+      testWidgets('a plain message never sends reply_to', (tester) async {
+        final server = _Server(thread: [_msg('a', 'hi')]);
+        await open(tester, server);
+        await type(tester, 'hello');
+        await tester.tap(find.byKey(const ValueKey('chat_send')));
+        await settle(tester);
+        expect(server.sentBodies.single.containsKey('reply_to'), isFalse);
+      }, variant: ios);
+
+      testWidgets('replies from the server show what they quote, and an unsent original says so', (tester) async {
+        final server = _Server(thread: [
+          _msg('r1', 'Count me in', mine: true, minutesAgo: 4, quote: {'id': 'x', 'mine': false, 'body': 'Dinner at 7?', 'deleted': false}),
+          _msg('r2', 'what did I say?', minutesAgo: 3, quote: {'deleted': true}),
+        ]);
+        await open(tester, server);
+        expect(find.text('Dinner at 7?'), findsOneWidget);
+        expect(find.text('@sam'), findsNWidgets(2));
+        expect(find.text('Original message deleted'), findsOneWidget);
+        expect(find.text('Count me in'), findsOneWidget);
+      }, variant: ios);
+
+      testWidgets('if the quoted message was unsent meanwhile, the reply says so and retrying sends it without the quote', (tester) async {
+        final server = _Server(thread: [_msg('a', 'Dinner at 7?')])..originalGone = true;
+        await open(tester, server);
+        await replyTo(tester, 'Dinner at 7?');
+        await type(tester, 'Yes!');
+        await tester.tap(find.byKey(const ValueKey('chat_send')));
+        await settle(tester);
+        expect(find.textContaining('was deleted, so it will be sent without the quote'), findsOneWidget);
+        expect(find.textContaining('Tap to try again'), findsOneWidget);
+
+        await tester.tap(find.text('Yes!'));
+        await settle(tester);
+        expect(server.sentBodies.length, 2);
+        expect(server.sentBodies[0]['reply_to'], 'a');
+        expect(server.sentBodies[1].containsKey('reply_to'), isFalse);
+        expect(server.sentBodies[0]['id'], server.sentBodies[1]['id']);
+        expect(find.textContaining('Tap to try again'), findsNothing);
+      }, variant: ios);
+
+      testWidgets('a failed reply that is retried keeps quoting the same message', (tester) async {
+        final server = _Server(thread: [_msg('a', 'Dinner at 7?')])..sendFailures = 1;
+        await open(tester, server);
+        await replyTo(tester, 'Dinner at 7?');
+        await type(tester, 'Yes!');
+        await tester.tap(find.byKey(const ValueKey('chat_send')));
+        await settle(tester);
+        await tester.tap(find.text('Yes!'));
+        await settle(tester);
+        expect(server.sentBodies.map((b) => b['reply_to']), ['a', 'a']);
+      }, variant: ios);
+    });
 
     testWidgets('an empty message cannot be sent', (tester) async {
       final server = _Server();

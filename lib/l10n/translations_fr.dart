@@ -922,4 +922,13 @@ const Map<String, String> french = {
   'Ask the coach about moving more, or say you’re short on time, and it can offer a simple 5, 15 or 30 minute routine with no equipment. Tap the card to see the moves. It’s general information, not medical advice.': 'Demandez à votre coach comment bouger davantage, ou dites-lui que vous manquez de temps : il peut vous proposer une routine simple de 5, 15 ou 30 minutes, sans matériel. Touchez la carte pour voir les mouvements. Ce sont des informations générales, pas un avis médical.',
   'The photo scanner has reached its limit for now. Try again later, or add your food with search or a barcode.': 'Le scanner de photos a atteint sa limite pour le moment. Réessayez plus tard, ou ajoutez votre repas avec la recherche ou un code-barres.',
   'You\'ve used today\'s photo scans. They come back tomorrow, or add your food with search or a barcode.': 'Vous avez utilisé les scans de photos d’aujourd’hui. Ils reviennent demain, ou ajoutez votre repas avec la recherche ou un code-barres.',
+  'Reply': 'Répondre',
+  'Replying to {name}': 'Réponse à {name}',
+  'You': 'Vous',
+  'Original message deleted': 'Message d’origine supprimé',
+  'Cancel reply': 'Annuler la réponse',
+  'The message you replied to was deleted, so it will be sent without the quote': 'Le message auquel vous répondez a été supprimé, il sera donc envoyé sans la citation',
+  'or': 'ou',
+  'Continue with Google': 'Continuer avec Google',
+  'Couldn\'t open Google sign-in. Check your connection and try again.': 'Impossible d’ouvrir la connexion Google. Vérifiez votre connexion et réessayez.',
 };

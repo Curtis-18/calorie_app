@@ -23,6 +23,35 @@ class MessageAttachment {
   }
 }
 
+/// The earlier message a reply quotes, as the server describes it. When the
+/// original was unsent only [deleted] is set: the text is gone for both people.
+class MessageQuote {
+  const MessageQuote({this.id, this.mine, this.body, this.deleted = false});
+
+  final String? id;
+
+  /// Whether I wrote the quoted message.
+  final bool? mine;
+  final String? body;
+  final bool deleted;
+
+  static MessageQuote? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    if (raw['deleted'] == true) return const MessageQuote(deleted: true);
+    final body = raw['body'];
+    if (body is! String) return null;
+    final id = raw['id'];
+    final mine = raw['mine'];
+    return MessageQuote(id: id is String ? id : null, mine: mine is bool ? mine : null, body: body);
+  }
+
+  /// How a quote is shortened for display and for a reply that is still being sent.
+  static String shorten(String text, {int max = 140}) {
+    final one = text.trim().split(RegExp(r'\s+')).join(' ');
+    return one.length <= max ? one : '${one.substring(0, max - 1).trimRight()}\u2026';
+  }
+}
+
 /// One of the person's own recipes the coach named in its answer. The numbers
 /// come from the saved recipe (the server reads them), not from the coach's words.
 class CoachSuggestion {
@@ -122,9 +151,18 @@ class ChatMessage {
     this.attachment,
     this.suggestions = const [],
     this.workouts = const [],
+    this.quote,
+    this.replyToId,
   });
 
   final MessageAttachment? attachment;
+
+  /// What this message replies to, if anything.
+  final MessageQuote? quote;
+
+  /// Only while a reply is on its way: the id to send, kept so a retry quotes
+  /// the same message. The server's own copy of a message does not carry it.
+  final String? replyToId;
 
   /// Recipes the coach just named, shown as tap-to-open cards under its answer.
   /// Only on the live answer: the server does not store them, so a reloaded
@@ -152,6 +190,7 @@ class ChatMessage {
         createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
         readAt: json['read_at'] == null ? null : DateTime.parse(json['read_at'] as String).toLocal(),
         attachment: MessageAttachment.fromJson(json['attachment']),
+        quote: MessageQuote.fromJson(json['quote']),
       );
 
   /// A turn with the AI coach: the person's own turns are `mine`; the coach's
@@ -169,7 +208,7 @@ class ChatMessage {
         ],
       );
 
-  ChatMessage copyWith({SendState? state, String? error, bool clearError = false}) => ChatMessage(
+  ChatMessage copyWith({SendState? state, String? error, bool clearError = false, bool clearQuote = false}) => ChatMessage(
         id: id,
         mine: mine,
         body: body,
@@ -180,6 +219,8 @@ class ChatMessage {
         attachment: attachment,
         suggestions: suggestions,
         workouts: workouts,
+        quote: clearQuote ? null : quote,
+        replyToId: clearQuote ? null : replyToId,
       );
 }
 

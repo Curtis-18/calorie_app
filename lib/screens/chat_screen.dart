@@ -56,6 +56,10 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
+  final _focus = FocusNode();
+
+  /// The message the next one will quote ("Reply" in a message's menu).
+  ChatMessage? _replyingTo;
 
   /// Oldest first. Messages still on their way, or that failed, sit at the end.
   List<ChatMessage> _messages = const [];
@@ -85,6 +89,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _noticeTimer?.cancel();
     _lifecycle.dispose();
     _input.dispose();
+    _focus.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -205,14 +210,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final text = _input.text.trim();
     if (text.isEmpty || text.length > maxMessageChars) return;
     _input.clear();
+    final replied = _replyingTo;
     final message = ChatMessage(
       id: newMessageId(),
       mine: true,
       body: text,
       createdAt: DateTime.now(),
       state: SendState.sending,
+      quote: replied == null
+          ? null
+          : MessageQuote(id: replied.id, mine: replied.mine, body: MessageQuote.shorten(replied.body)),
+      replyToId: replied?.id,
     );
-    setState(() => _messages = [..._messages, message]);
+    setState(() {
+      _messages = [..._messages, message];
+      _replyingTo = null;
+    });
     _toBottom();
     await _deliver(message);
   }
@@ -221,10 +234,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _deliver(ChatMessage message) async {
     _replace(message.id, (m) => m.copyWith(state: SendState.sending, clearError: true));
     try {
-      final saved = await _service.send(widget.userId, id: message.id, body: message.body);
+      final saved = await _service.send(widget.userId, id: message.id, body: message.body, replyTo: message.replyToId);
       _replace(message.id, (_) => saved);
       if (mounted) ref.read(conversationsProvider.notifier).load();
     } on MessagesException catch (e) {
+      if (e.statusCode == 404 && message.replyToId != null) {
+        // The quoted message was unsent meanwhile. Trying again sends the text
+        // without the quote, and the line below says so.
+        _replace(
+          message.id,
+          (m) => m.copyWith(
+            state: SendState.failed,
+            error: tr('The message you replied to was deleted, so it will be sent without the quote'),
+            clearQuote: true,
+          ),
+        );
+        return;
+      }
       _replace(message.id, (m) => m.copyWith(state: SendState.failed, error: e.message));
     }
   }
@@ -238,6 +264,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       builder: (sheet) => CupertinoActionSheet(
         actions: [
+          CupertinoActionSheetAction(onPressed: () => Navigator.pop(sheet, 'reply'), child: Text(tr('Reply'))),
           CupertinoActionSheetAction(onPressed: () => Navigator.pop(sheet, 'copy'), child: Text(tr('Copy'))),
           if (message.mine)
             CupertinoActionSheetAction(
@@ -257,6 +284,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
     if (!mounted) return;
     switch (choice) {
+      case 'reply':
+        setState(() => _replyingTo = message);
+        _focus.requestFocus();
       case 'copy':
         await Clipboard.setData(ClipboardData(text: message.body));
       case 'delete':
@@ -268,7 +298,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _unsend(ChatMessage message) async {
     final before = _messages;
-    setState(() => _messages = [for (final m in _messages) if (m.id != message.id) m]);
+    setState(() {
+      _messages = [for (final m in _messages) if (m.id != message.id) m];
+      if (_replyingTo?.id == message.id) _replyingTo = null;
+    });
     try {
       await _service.unsend(message.id);
       if (mounted) ref.read(conversationsProvider.notifier).load();
@@ -323,7 +356,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           _Composer(
             controller: _input,
+            focusNode: _focus,
             username: widget.username,
+            replyingTo: _replyingTo,
+            onCancelReply: () => setState(() => _replyingTo = null),
             onChanged: () => setState(() {}),
             onSend: _submit,
             // Not friends any more (403): there is nobody to write to.
@@ -399,6 +435,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             _Bubble(
               message: message,
+              otherName: widget.username,
               isLastMine: identical(message, lastMine),
               onLongPress: () => _menu(message),
               onRetry: () => _deliver(message),
@@ -454,6 +491,7 @@ class _Header extends StatelessWidget {
 class _Bubble extends StatelessWidget {
   const _Bubble({
     required this.message,
+    required this.otherName,
     required this.isLastMine,
     required this.onLongPress,
     required this.onRetry,
@@ -461,6 +499,7 @@ class _Bubble extends StatelessWidget {
   });
 
   final ChatMessage message;
+  final String otherName;
   final bool isLastMine;
   final VoidCallback onLongPress;
   final VoidCallback onRetry;
@@ -507,20 +546,34 @@ class _Bubble extends StatelessWidget {
                     borderRadius: radius,
                     border: mine || !TrackerColors.isDark ? null : Border.all(color: TrackerColors.border),
                   ),
-                  child: message.attachment == null
-                      ? Text(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (message.quote != null)
+                        _QuoteBlock(
+                          key: ValueKey('quote_${message.id}'),
+                          quote: message.quote!,
+                          mine: mine,
+                          otherName: otherName,
+                        ),
+                      if (message.attachment == null)
+                        Text(
                           message.body,
                           style: AppType.body(
                             size: 15.5,
                             color: mine ? TrackerColors.onAccent : TrackerColors.textPrimary,
                           ),
                         )
-                      : _RecipeCard(
+                      else
+                        _RecipeCard(
                           key: ValueKey('recipe_card_${message.id}'),
                           card: message.attachment!,
                           mine: mine,
                           onOpen: () => onOpenRecipe(message.attachment!.recipeId),
                         ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -545,6 +598,9 @@ class _Bubble extends StatelessWidget {
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
+    required this.focusNode,
+    required this.replyingTo,
+    required this.onCancelReply,
     required this.username,
     required this.onChanged,
     required this.onSend,
@@ -552,6 +608,9 @@ class _Composer extends StatelessWidget {
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
+  final ChatMessage? replyingTo;
+  final VoidCallback onCancelReply;
   final String username;
   final VoidCallback onChanged;
   final VoidCallback onSend;
@@ -574,6 +633,8 @@ class _Composer extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (replyingTo != null)
+                _ReplyBar(message: replyingTo!, username: username, onCancel: onCancelReply),
               if (controller.text.length >= maxMessageChars - 100)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4, right: 4),
@@ -590,6 +651,7 @@ class _Composer extends StatelessWidget {
                     child: CupertinoTextField(
                       key: const ValueKey('chat_input'),
                       controller: controller,
+                      focusNode: focusNode,
                       enabled: !disabled,
                       placeholder: tr('Message @{username}', {'username': username}),
                       minLines: 1,
@@ -670,6 +732,101 @@ class _RecipeCard extends StatelessWidget {
                 Text(card.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 15.5, color: ink)),
                 Text(tr('{n} kcal per serving · tap to open', {'n': card.calories}), style: AppType.caption(size: 11.5, color: ink.withValues(alpha: 0.8))),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The quoted message at the top of a reply's bubble.
+class _QuoteBlock extends StatelessWidget {
+  const _QuoteBlock({super.key, required this.quote, required this.mine, required this.otherName});
+
+  final MessageQuote quote;
+  final bool mine;
+  final String otherName;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = mine ? TrackerColors.onAccent : TrackerColors.textPrimary;
+    final who = quote.mine == true ? tr('You') : '@$otherName';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
+      decoration: BoxDecoration(
+        color: ink.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: ink.withValues(alpha: 0.6), width: 3)),
+      ),
+      child: quote.deleted
+          ? Text(
+              tr('Original message deleted'),
+              style: AppType.caption(size: 12.5, color: ink.withValues(alpha: 0.75)).copyWith(fontStyle: FontStyle.italic),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(who, style: AppType.caption(size: 11.5, color: ink.withValues(alpha: 0.8))),
+                Text(
+                  quote.body ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.body(size: 13.5, color: ink.withValues(alpha: 0.9)),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+/// Above the input while a reply is being written: who and what is quoted, and a way to drop it.
+class _ReplyBar extends StatelessWidget {
+  const _ReplyBar({required this.message, required this.username, required this.onCancel});
+
+  final ChatMessage message;
+  final String username;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = message.mine ? tr('You') : '@$username';
+    return Container(
+      key: const ValueKey('reply_bar'),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(10, 6, 2, 6),
+      decoration: BoxDecoration(
+        color: TrackerColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border(left: BorderSide(color: TrackerColors.textSecondary, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(tr('Replying to {name}', {'name': name}), style: AppType.caption(size: 11.5, color: TrackerColors.textTertiary)),
+                Text(
+                  MessageQuote.shorten(message.body),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.body(size: 13.5, color: TrackerColors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: tr('Cancel reply'),
+            child: CupertinoButton(
+              key: const ValueKey('reply_cancel'),
+              padding: const EdgeInsets.all(8),
+              minimumSize: Size.zero,
+              onPressed: onCancel,
+              child: Icon(CupertinoIcons.xmark_circle_fill, size: 20, color: TrackerColors.textTertiary),
             ),
           ),
         ],
