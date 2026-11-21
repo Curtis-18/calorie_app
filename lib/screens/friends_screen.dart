@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../models/friends.dart';
 import '../models/snaps.dart';
@@ -24,7 +23,6 @@ import '../models/username_rules.dart';
 import '../providers/friends_provider.dart';
 import '../providers/shell_provider.dart';
 import '../services/friends_service.dart';
-import '../services/profile_link.dart';
 import '../services/tour_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
@@ -45,13 +43,10 @@ import '../l10n/app_strings.dart';
 /// Friends tab: your username, add someone by theirs, answer requests, and
 /// see who you're connected with. Snaps and shared streaks build on this.
 class FriendsScreen extends ConsumerStatefulWidget {
-  const FriendsScreen({super.key, this.pickPhoto, this.share});
+  const FriendsScreen({super.key, this.pickPhoto});
 
   /// Replaces the camera; for tests.
   final Future<XFile?> Function()? pickPhoto;
-
-  /// Replaces the system share sheet; for tests.
-  final Future<void> Function(String text)? share;
 
   @override
   ConsumerState<FriendsScreen> createState() => _FriendsScreenState();
@@ -61,7 +56,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   final _controller = TextEditingController();
   bool _sending = false;
   bool _searching = false;
-  bool _copied = false;
   String? _notice;
   bool _noticeIsError = false;
   int _embers = 0;
@@ -438,30 +432,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     }
   }
 
-  /// Copy the link to your profile, to paste into a message or a bio.
-  Future<void> _copyLink(String username) async {
-    await Clipboard.setData(ClipboardData(text: ProfileLink.urlFor(username)));
-    HapticFeedback.selectionClick();
-    if (!mounted) return;
-    setState(() => _copied = true);
-    Future<void>.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _copied = false);
-    });
-  }
-
-  /// Open the system share sheet with your profile link.
-  Future<void> _shareLink(String username) async {
-    final url = ProfileLink.urlFor(username);
-    try {
-      await (widget.share ?? (text) => SharePlus.instance.share(ShareParams(text: text)))(
-        tr('Add me on NuStreak: {url}', {'url': url}),
-      );
-    } catch (_) {
-      // No share sheet here (some desktop browsers): copying still works.
-      await _copyLink(username);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Coming back to this tab shows what arrived meanwhile.
@@ -706,64 +676,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         ),
                       ),
               ),
-              if (data?.myUsername != null) ...[
-                const SizedBox(height: AppSpacing.lg),
-                const AppDivider(),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    FriendAvatar(username: data!.myUsername!, size: 40, imageUrl: data.myAvatarUrl),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tr('Your profile link'),
-                            style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5),
-                          ),
-                          const SizedBox(height: 2),
-                          // Shrinks rather than cutting off the end of the link.
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              ProfileLink.display(data.myUsername!),
-                              key: const ValueKey('my_profile_link'),
-                              style: AppType.body(size: 14).copyWith(fontWeight: FontWeight.w700),
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppButton.glass(
-                        key: const ValueKey('copy_profile_link'),
-                        label: _copied ? tr('Copied') : tr('Copy link'),
-                        icon: _copied ? CupertinoIcons.checkmark : CupertinoIcons.link,
-                        height: 44,
-                        onPressed: () => _copyLink(data.myUsername!),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: AppButton(
-                        key: const ValueKey('share_profile_link'),
-                        label: tr('Share'),
-                        icon: CupertinoIcons.share,
-                        height: 44,
-                        onPressed: () => _shareLink(data.myUsername!),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),

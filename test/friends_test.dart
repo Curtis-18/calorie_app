@@ -12,7 +12,6 @@ import 'package:calorie_app/services/profile_link.dart';
 import 'package:calorie_app/widgets/profile_link_sheet.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -255,7 +254,6 @@ void main() {
     Future<_Server> open(
       WidgetTester tester,
       _Server server, {
-      Future<void> Function(String text)? share,
       List<Map<String, dynamic>> conversations = const [],
     }) async {
       tester.view.physicalSize = const Size(1179, 2556);
@@ -281,7 +279,7 @@ void main() {
                 userIdChanges: const Stream.empty(),
               )),
         ],
-        child: CupertinoApp(theme: AppTheme.cupertino, home: FriendsScreen(share: share)),
+        child: CupertinoApp(theme: AppTheme.cupertino, home: const FriendsScreen()),
       ));
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -291,7 +289,7 @@ void main() {
 
     testWidgets('shows my username, requests and friends', (tester) async {
       await open(tester, _Server(friends: ['Sam'], incoming: ['Bea'], outgoing: ['Cy']));
-      expect(find.text('calorie-app-ug.vercel.app/u/River_Song'), findsOneWidget); // a link, not a name to copy
+      expect(find.text('calorie-app-ug.vercel.app/u/River_Song'), findsNothing, reason: 'the link moved to the Profile tab');
       expect(find.text('@Bea'), findsOneWidget);
       expect(find.text('wants to be your friend'), findsOneWidget);
       expect(find.text('@Cy'), findsOneWidget);
@@ -347,31 +345,8 @@ void main() {
 
     testWidgets('with no friends yet the search is still the first thing on the page', (tester) async {
       await open(tester, _Server());
-      expect(find.byKey(const ValueKey('copy_profile_link')), findsOneWidget);
+      expect(find.byKey(const ValueKey('copy_profile_link')), findsNothing, reason: 'the link lives on the Profile tab now');
       expect(tester.getTopLeft(find.text('ADD A FRIEND')).dy, lessThan(tester.getTopLeft(find.text('YOUR FRIENDS')).dy));
-    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
-
-    testWidgets('Copy link puts your profile link on the clipboard', (tester) async {
-      String? copied;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
-        if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
-        return null;
-      });
-      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
-      await open(tester, _Server());
-      await tester.tap(find.byKey(const ValueKey('copy_profile_link')));
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(copied, 'https://calorie-app-ug.vercel.app/u/River_Song');
-      expect(find.text('Copied'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 3));
-    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
-
-    testWidgets('Share hands the link to the share sheet', (tester) async {
-      final shared = <String>[];
-      await open(tester, _Server(), share: (text) async => shared.add(text));
-      await tester.tap(find.byKey(const ValueKey('share_profile_link')));
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(shared.single, contains('https://calorie-app-ug.vercel.app/u/River_Song'));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     group('opening a friend\'s profile link', () {

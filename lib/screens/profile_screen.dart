@@ -18,6 +18,7 @@ import '../widgets/game/flame_style.dart';
 import '../widgets/game/progress_sheet.dart';
 import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
+import '../widgets/profile_link_chip.dart';
 import '../widgets/profile_photo.dart';
 import '../widgets/settings_list.dart';
 import '../providers/whats_new_provider.dart';
@@ -224,6 +225,11 @@ class ProfileView extends StatelessWidget {
                 if (details != null) ...[
                   const SizedBox(height: 2),
                   Text(details, style: AppType.callout()),
+                ],
+                // Small: the link to send people, with a copy icon.
+                if (name != null) ...[
+                  const SizedBox(height: 4),
+                  ProfileLinkChip(username: name),
                 ],
               ],
             ),
