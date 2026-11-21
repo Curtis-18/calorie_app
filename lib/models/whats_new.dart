@@ -23,6 +23,42 @@ class WhatsNewRelease {
 /// Newest first.
 const whatsNewReleases = <WhatsNewRelease>[
   WhatsNewRelease(
+    id: 'nov-21-2026-bites-home',
+    title: 'What’s new: bites on Today, Home Screen and more',
+    items: [
+      WhatsNewItem(
+        icon: CupertinoIcons.camera_fill,
+        title: 'Bites right on Today',
+        body: 'Under your calorie ring there are now two tiles. Tap Bites to open the camera, take a photo and choose which friends get it. Messages shows who has written to you.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.chevron_down_circle,
+        title: 'Fold your meals',
+        body: 'Tap Today’s meals to fold it into a row of small chips with each meal’s calories, and tap again to open it. NuStreak remembers your choice.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.plus_app,
+        title: 'Add NuStreak to your Home Screen',
+        body: 'Open it like an app, one tap away. Use the card on Today or Add to Home Screen in Settings, then press and hold the icon for shortcuts to the camera, Bites, Messages and Insights.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.sparkles,
+        title: 'Sharper bites',
+        body: 'The camera now captures bites in higher quality, so what your friends see looks closer to what was on your plate.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.person_crop_circle,
+        title: 'Your profile link moved',
+        body: 'You will find your link on the Profile tab, under your name. Tap it to copy and share it with friends.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.hand_raised,
+        title: 'A friendlier welcome',
+        body: 'New people now get a warm hello by name, smoother steps through sign-up and a nicer way to choose a date of birth. You can open it again from Update my details.',
+      ),
+    ],
+  ),
+  WhatsNewRelease(
     id: 'nov-21-2026-coach-cards',
     title: 'What’s new: coach suggestions and routines',
     items: [
