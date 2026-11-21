@@ -951,4 +951,7 @@ const Map<String, String> portuguese = {
   'Scroll down and choose Add to Home Screen.': 'Role para baixo e escolha Adicionar à Tela de Início.',
   'Tap Add. NuStreak is now on your Home Screen.': 'Toque em Adicionar. O NuStreak já está na sua Tela de Início.',
   'Don\'t see it? Open this page in Safari first.': 'Não aparece? Abra esta página primeiro no Safari.',
+  'Snap one for your friends': 'Tire uma para seus amigos',
+  'View {n}': 'Ver {n}',
+  'View waiting bites': 'Ver mordidas pendentes',
 };

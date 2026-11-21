@@ -46,6 +46,41 @@ void main() {
       expect((stamped.getPixel(biteWidth - 40, 40).r - plain.getPixel(biteWidth - 40, 40).r).abs(), lessThan(4));
     });
 
+    testWidgets('keeps detail: a sharp pattern survives at high JPEG quality', (tester) async {
+      // Fine one-pixel stripes: a blurry or heavily compressed result smears them.
+      final stripes = img.Image(width: 1080, height: 1350);
+      for (var y = 0; y < 1350; y++) {
+        for (var x = 0; x < 1080; x++) {
+          final v = x.isEven ? 235 : 20;
+          stripes.setPixelRgb(x, y, v, v, v);
+        }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(stripes, quality: 98));
+      final out = await tester.runAsync(() => prepareBite(input, null));
+      final im = img.decodeJpg(out!)!;
+      final bright = im.getPixel(500, 600).r, dark = im.getPixel(501, 600).r;
+      expect(bright - dark, greaterThan(120), reason: 'edges stay crisp');
+    });
+
+    testWidgets('stays under the size the server accepts, even for a very busy photo', (tester) async {
+      final noise = img.Image(width: 1920, height: 1440);
+      var seed = 7;
+      for (var y = 0; y < noise.height; y++) {
+        for (var x = 0; x < noise.width; x++) {
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          noise.setPixelRgb(x, y, seed & 255, (seed >> 8) & 255, (seed >> 16) & 255);
+        }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(noise, quality: 95));
+      final out = await tester.runAsync(() => prepareBite(input, null));
+      expect(out!.length, lessThanOrEqualTo(2 * 1024 * 1024), reason: 'the server refuses over 2 MB');
+    });
+
+    test('quality is set high and the limit sits under the server cap', () {
+      expect(biteJpegQuality, greaterThanOrEqualTo(90));
+      expect(biteMaxBytes, lessThan(2 * 1024 * 1024));
+    });
+
     testWidgets('rejects bytes that are not an image', (tester) async {
       await tester.runAsync(() async {
         await expectLater(prepareBite(Uint8List.fromList([1, 2, 3]), null), throwsA(anything));

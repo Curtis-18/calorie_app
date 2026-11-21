@@ -66,7 +66,9 @@ class _BiteCameraScreenState extends State<BiteCameraScreen> with WidgetsBinding
     final old = _controller;
     final c = CameraController(
       _cameras[_cameraIndex],
-      ResolutionPreset.high,
+      // 1080p: after the 4:5 crop that is 1080 px wide, so nothing is stretched
+      // up (the old 720p setting was enlarged by a third and looked soft).
+      ResolutionPreset.veryHigh,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );

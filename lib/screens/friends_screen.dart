@@ -8,14 +8,13 @@ import 'package:image_picker/image_picker.dart';
 import '../models/friends.dart';
 import '../models/snaps.dart';
 import '../models/stories.dart';
-import 'bite_camera_screen.dart';
+import 'bite_flow.dart';
 import '../providers/messages_provider.dart';
 import '../providers/snaps_provider.dart';
 import 'chat_screen.dart';
 import 'conversations_screen.dart';
 import '../widgets/snaps/flame.dart';
 import '../widgets/snaps/sent_bites_sheet.dart';
-import 'snap_compose_screen.dart';
 import 'snap_viewer_screen.dart';
 import 'story_viewer_screen.dart';
 import '../widgets/snaps/story_tray.dart';
@@ -267,37 +266,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   /// Open the camera (no gallery: bites are food you're eating right now),
   /// then compose. [to] pre-selects a friend; [story] pre-selects your story.
   Future<void> _snap({String? to, bool story = false}) async {
-    final XFile? photo;
-    try {
-      photo = await (widget.pickPhoto ?? _takePhoto)();
-    } catch (_) {
-      if (!mounted) return;
-      await showAppDialog(
-        context: context,
-        title: tr("Couldn't open the camera"),
-        message: tr('Allow camera access in Settings to send bites.'),
-      );
-      return;
-    }
-    if (photo == null || !mounted) return;
-    final bytes = await photo.readAsBytes();
-    if (!mounted) return;
-    final shared = await Navigator.of(context).push<ComposeResult>(
-      CupertinoPageRoute(builder: (_) => SnapComposeScreen(image: bytes, preselect: to, toStory: story)),
-    );
+    final shared = await runBiteFlow(context, to: to, story: story, pickPhoto: widget.pickPhoto);
     if (shared == null || !mounted) return;
-    final results = shared.outcomes;
     _hideTip(); // they have shared: the tip has done its job
-    if (results.isNotEmpty) ref.read(friendsProvider.notifier).load();
-    if (shared.addedToStory) ref.read(storiesProvider.notifier).load();
-    final lit = results.where((r) => r.completedToday).toList();
     setState(() => _embers++);
-    if (lit.isNotEmpty) {
-      final best = lit.reduce((a, b) => a.streak >= b.streak ? a : b);
-      await showStreakCelebration(context, username: best.username, streak: best.streak);
-    } else {
-      _say(shareSummary(shared));
-    }
+    await afterBiteShared(context, ref, shared, say: _say);
   }
 
   /// Play stories full screen. [mine] opens your own; otherwise the tray's
@@ -318,22 +291,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       ),
     );
     if (result == storyViewerAdd && mounted) await _snap(story: true);
-  }
-
-  /// The food camera (plate guide + meal stamp). If the live camera can't
-  /// start, the system camera takes over so sending a bite never dead-ends.
-  Future<XFile?> _takePhoto() async {
-    final result = await Navigator.of(context).push<BiteCameraResult>(
-      CupertinoPageRoute(fullscreenDialog: true, builder: (_) => const BiteCameraScreen()),
-    );
-    if (result == null) return null; // closed without a photo
-    if (result.bytes != null) return XFile.fromData(result.bytes!, mimeType: 'image/jpeg', name: 'bite.jpg');
-    return ImagePicker().pickImage(
-      source: ImageSource.camera,
-      maxWidth: 1080,
-      maxHeight: 1350,
-      imageQuality: 82,
-    );
   }
 
   void _openInbox(List<InboxSnap> snaps, int index) {

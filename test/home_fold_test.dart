@@ -1,8 +1,15 @@
+import 'dart:typed_data';
+
+import 'package:calorie_app/models/friends.dart';
 import 'package:calorie_app/models/messages.dart';
+import 'package:calorie_app/providers/friends_provider.dart';
+import 'package:calorie_app/screens/bite_flow.dart';
+import 'package:calorie_app/screens/snap_compose_screen.dart';
+import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
 import 'package:calorie_app/models/snaps.dart';
 import 'package:calorie_app/providers/display_prefs_provider.dart';
 import 'package:calorie_app/providers/messages_provider.dart';
-import 'package:calorie_app/providers/shell_provider.dart';
 import 'package:calorie_app/providers/snaps_provider.dart';
 import 'package:calorie_app/screens/conversations_screen.dart';
 import 'package:calorie_app/theme/app_theme.dart';
@@ -18,6 +25,12 @@ final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 class FakeInbox extends SnapInboxNotifier {
   FakeInbox(List<InboxSnap> snaps) : super(currentUserId: () => null, userIdChanges: const Stream.empty()) {
     state = AsyncValue.data(snaps);
+  }
+}
+
+class FakeFriends extends FriendsNotifier {
+  FakeFriends(List<Person> people) : super(currentUserId: () => null, userIdChanges: const Stream.empty()) {
+    state = AsyncValue.data(FriendsData(friends: people, incoming: const [], outgoing: const [], limit: 50));
   }
 }
 
@@ -48,20 +61,27 @@ Conversation chat(String from, int unread) => Conversation(
       unread: unread,
     );
 
-Future<ProviderContainer> showTiles(WidgetTester tester, {List<InboxSnap> snaps = const [], List<Conversation> chats = const []}) async {
+Future<ProviderContainer> showTiles(
+  WidgetTester tester, {
+  List<InboxSnap> snaps = const [],
+  List<Conversation> chats = const [],
+  List<Person> friends = const [],
+  Future<XFile?> Function()? pick,
+}) async {
   tester.view.physicalSize = const Size(1179, 2556);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   final container = ProviderContainer(overrides: [
     snapInboxProvider.overrideWith((ref) => FakeInbox(snaps)),
     conversationsProvider.overrideWith((ref) => FakeConversations(chats)),
+    friendsProvider.overrideWith((ref) => FakeFriends(friends)),
   ]);
   addTearDown(container.dispose);
   await tester.pumpWidget(UncontrolledProviderScope(
     container: container,
     child: CupertinoApp(
       theme: AppTheme.cupertino,
-      home: const CupertinoPageScaffold(child: SafeArea(child: Padding(padding: EdgeInsets.all(24), child: HomeSocialTiles()))),
+      home: CupertinoPageScaffold(child: SafeArea(child: Padding(padding: const EdgeInsets.all(24), child: HomeSocialTiles(pickPhoto: pick)))),
     ),
   ));
   await tester.pumpAndSettle();
@@ -73,7 +93,7 @@ void main() {
 
   group('the Bites and Messages tiles', () {
     test('what the lines say', () {
-      expect(HomeSocialTiles.bitesLine(0, null), 'Send one to a friend');
+      expect(HomeSocialTiles.bitesLine(0, null), 'Snap one for your friends');
       expect(HomeSocialTiles.bitesLine(1, 'mia'), 'From mia');
       expect(HomeSocialTiles.bitesLine(3, 'mia'), '3 new, latest from mia');
       expect(HomeSocialTiles.messagesLine(0, null), 'All caught up');
@@ -86,7 +106,7 @@ void main() {
       await showTiles(tester);
       expect(find.text('Bites'), findsOneWidget);
       expect(find.text('Messages'), findsOneWidget);
-      expect(find.text('Send one to a friend'), findsOneWidget);
+      expect(find.text('Snap one for your friends'), findsOneWidget);
       expect(find.text('All caught up'), findsOneWidget);
     }, variant: ios);
 
@@ -102,15 +122,91 @@ void main() {
 
     testWidgets('a viewed bite does not count as waiting', (tester) async {
       await showTiles(tester, snaps: [snap('1', 'mia', viewed: true)]);
-      expect(find.text('Send one to a friend'), findsOneWidget);
+      expect(find.text('Snap one for your friends'), findsOneWidget);
     }, variant: ios);
 
-    testWidgets('with no bite waiting, the Bites tile takes you to Friends', (tester) async {
-      final container = await showTiles(tester);
-      expect(container.read(shellTabProvider), ShellTab.today);
+    final photo = Uint8List.fromList(img.encodePng(img.Image(width: 8, height: 10)));
+    final friends = [
+      Person(userId: 'u-sam', username: 'sam', since: DateTime(2026)),
+      Person(userId: 'u-mia', username: 'mia', since: DateTime(2026)),
+      Person(userId: 'u-leo', username: 'leo', since: DateTime(2026)),
+    ];
+
+    testWidgets('the Bites tile opens the camera, then lets you pick any of your friends', (tester) async {
+      var shots = 0;
+      await showTiles(tester, friends: friends, pick: () async {
+        shots++;
+        return XFile.fromData(photo, mimeType: 'image/png', name: 'bite.png');
+      });
       await tester.tap(find.byKey(const ValueKey('home_bites_tile')));
       await tester.pump();
-      expect(container.read(shellTabProvider), ShellTab.friends);
+      await tester.pump(const Duration(milliseconds: 800));
+      expect(shots, 1);
+      expect(find.byType(SnapComposeScreen), findsOneWidget);
+      expect(find.text('Send a bite'), findsOneWidget);
+      expect(find.text('Pick who gets it'), findsOneWidget);
+      final list = find.descendant(of: find.byType(SnapComposeScreen), matching: find.byType(Scrollable)).first;
+      for (final name in ['@sam', '@mia', '@leo']) {
+        await tester.scrollUntilVisible(find.text(name), 120, scrollable: list);
+        expect(find.text(name), findsOneWidget, reason: '$name is offered');
+      }
+      await tester.tap(find.text('@leo'));
+      await tester.scrollUntilVisible(find.text('@sam'), -120, scrollable: list);
+      await tester.tap(find.text('@sam'));
+      await tester.pump();
+      expect(find.text('Send to 2 friends'), findsOneWidget, reason: 'several friends at once, not one');
+    }, variant: ios);
+
+    testWidgets('backing out of the camera sends nothing and opens nothing', (tester) async {
+      await showTiles(tester, friends: friends, pick: () async => null);
+      await tester.tap(find.byKey(const ValueKey('home_bites_tile')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 800));
+      expect(find.byType(SnapComposeScreen), findsNothing);
+    }, variant: ios);
+
+    testWidgets('a camera that cannot start explains why', (tester) async {
+      await showTiles(tester, pick: () async => throw Exception('no camera'));
+      await tester.tap(find.byKey(const ValueKey('home_bites_tile')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text("Couldn't open the camera"), findsOneWidget);
+    }, variant: ios);
+
+    testWidgets('waiting bites do not stop the tile opening the camera; a View pill opens them', (tester) async {
+      var shots = 0;
+      await showTiles(tester, snaps: [snap('1', 'mia'), snap('2', 'mia')], friends: friends, pick: () async {
+        shots++;
+        return null;
+      });
+      expect(find.byKey(const ValueKey('home_view_bites')), findsOneWidget);
+      expect(find.text('View 2'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('home_bites_tile')), warnIfMissed: false);
+      await tester.pump();
+      expect(shots, 1);
+    }, variant: ios);
+
+    testWidgets('without waiting bites there is no View pill', (tester) async {
+      await showTiles(tester);
+      expect(find.byKey(const ValueKey('home_view_bites')), findsNothing);
+    }, variant: ios);
+
+    testWidgets('the sent toast shows the line and goes away by itself', (tester) async {
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: Builder(
+          builder: (context) => CupertinoPageScaffold(
+            child: Center(child: CupertinoButton(onPressed: () => showBiteToast(context, 'Sent to 2 friends.'), child: const Text('go'))),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('go'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Sent to 2 friends.'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('Sent to 2 friends.'), findsNothing);
     }, variant: ios);
 
     testWidgets('the Messages tile opens the conversations', (tester) async {
@@ -125,7 +221,7 @@ void main() {
       final handle = tester.ensureSemantics();
       await showTiles(tester, chats: [chat('leo', 1)]);
       expect(find.bySemanticsLabel('Messages. From leo'), findsOneWidget);
-      expect(find.bySemanticsLabel('Bites. Send one to a friend'), findsOneWidget);
+      expect(find.bySemanticsLabel('Bites. Snap one for your friends'), findsOneWidget);
       handle.dispose();
     }, variant: ios);
   });

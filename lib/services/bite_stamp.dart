@@ -11,6 +11,13 @@ import '../models/bite_meal.dart';
 const biteWidth = 1080;
 const biteHeight = 1350;
 
+/// JPEG quality of a bite: high, like a phone's own camera app.
+const biteJpegQuality = 92;
+
+/// A bite is made smaller (never blurrier than needed) if it passes this size;
+/// the server refuses anything over 2 MB.
+const biteMaxBytes = 1600 * 1024;
+
 /// Turn a raw camera photo into what gets sent: baked-in rotation, cropped to
 /// the 4:5 frame the person saw, 1080 wide, JPEG, with the meal stamped in the
 /// bottom-left corner when [meal] is set.
@@ -57,7 +64,13 @@ Uint8List _compose(_Job job) {
       img.compositeImage(photo, pill, dstX: margin, dstY: biteHeight - pill.height - margin);
     }
   }
-  return Uint8List.fromList(img.encodeJpg(photo, quality: 85));
+  // Sharp first, then smaller only if a busy photo would not fit what the
+  // server accepts (2 MB), so a bite is never refused for being too good.
+  var bytes = Uint8List.fromList(img.encodeJpg(photo, quality: biteJpegQuality));
+  for (var quality = biteJpegQuality - 8; bytes.length > biteMaxBytes && quality >= 60; quality -= 8) {
+    bytes = Uint8List.fromList(img.encodeJpg(photo, quality: quality));
+  }
+  return bytes;
 }
 
 /// The stamp itself: a dark rounded pill with a lime dot and the meal name,
