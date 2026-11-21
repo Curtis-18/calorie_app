@@ -43,6 +43,8 @@ import '../widgets/game/celebrations.dart';
 import '../widgets/log_food_sheet.dart';
 import '../widgets/macro_breakdown.dart';
 import '../widgets/meal_section.dart';
+import '../widgets/home_social_tiles.dart';
+import '../widgets/meals_fold.dart';
 import '../widgets/nutrients_card.dart';
 import '../widgets/save_toast.dart';
 import '../widgets/shimmer.dart';
@@ -449,6 +451,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return '${context.tr(months[day.month - 1])} ${day.day}';
   }
 
+  /// A small picture for each meal, used on the folded meals row.
+  static IconData _mealIcon(MealType meal) => switch (meal) {
+        MealType.breakfast => CupertinoIcons.sunrise_fill,
+        MealType.lunch => CupertinoIcons.sun_max_fill,
+        MealType.dinner => CupertinoIcons.moon_stars_fill,
+        MealType.snack => CupertinoIcons.sparkles,
+      };
+
   @override
   Widget build(BuildContext context) {
     ref.listen<List<FoodEntry>>(foodLogProvider, (previous, next) => _refreshStreak());
@@ -507,6 +517,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 perfectDay: _isToday && (progress?.today.perfectDay ?? false),
                               ),
                             ),
+                            // The sharing half of the app, one glance from the ring.
+                            if (_isToday) ...[
+                              const SizedBox(height: 14),
+                              const HomeSocialTiles(),
+                            ],
                             if (_isToday && budget.weekly) ...[
                               const SizedBox(height: 14),
                               WeekStrip(week: budget.week!),
@@ -549,22 +564,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                             ],
                             const SizedBox(height: 24),
-                            SectionHeader(
-                              label: _isToday ? context.tr("Today's meals") : context.tr('Meals'),
-                              trailing: _isToday
-                                  ? Text(
-                                      entries.isEmpty
-                                          ? context.tr('Nothing yet')
-                                          : (entries.length == 1 ? context.tr('1 item') : context.tr('{n} items', {'n': entries.length})),
-                                      style: AppType.caption(
-                                        color: TrackerColors.textTertiary,
-                                        size: 11,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(height: 12),
-                            // Photos being scanned, or waiting to be checked.
+                            // Photos being scanned stay visible even when the meals
+                            // are folded: they are waiting for the person.
                             if (_isToday)
                               for (final scan in scans)
                                 Padding(
@@ -578,6 +579,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     onNote: () => _addNote(context, scan),
                                   ),
                                 ),
+                            MealsFold(
+                              label: _isToday ? context.tr("Today's meals") : context.tr('Meals'),
+                              countLabel: entries.isEmpty
+                                  ? context.tr('Nothing yet')
+                                  : (entries.length == 1 ? context.tr('1 item') : context.tr('{n} items', {'n': entries.length})),
+                              open: display.mealsOpen,
+                              onToggle: () => ref.read(displayPrefsProvider.notifier).setMealsOpen(!display.mealsOpen),
+                              totals: [
+                                for (final meal in MealType.values)
+                                  MealTotal(
+                                    title: meal.name[0].toUpperCase() + meal.name.substring(1),
+                                    calories: entries.forMeal(meal).totalCalories,
+                                    icon: _mealIcon(meal),
+                                  ),
+                              ],
+                              child: Column(
+                                children: [
                             ...MealType.values.map(
                               (meal) => Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
@@ -601,6 +619,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                           )
                                       : null,
                                 ),
+                              ),
+                            )
+                                ],
                               ),
                             ),
                             const SizedBox(height: 2),

@@ -18,10 +18,10 @@ UserProfile _profile() => UserProfile(
 /// Mirrors `MyApp`: a `CupertinoApp` carrying only the delegates the app
 /// itself installs. Adding a delegate here would hide the regression this
 /// exists to catch.
-Widget _appUnderTest({UserProfile? profile}) => ProviderScope(
+Widget _appUnderTest({UserProfile? profile, String? welcomeName}) => ProviderScope(
   child: CupertinoApp(
     localizationsDelegates: appLocalizationsDelegates,
-    home: OnboardingScreen(existingProfile: profile),
+    home: OnboardingScreen(existingProfile: profile, welcomeName: welcomeName),
   ),
 );
 
@@ -34,10 +34,16 @@ void main() {
     addTearDown(tester.platformDispatcher.clearLocaleTestValue);
   }
 
-  // The welcome overlay is timer-driven, so settle it in small steps.
+  // The welcome scene builds up over a few seconds and then waits for "Let's
+  // go", so let it finish, tap the button, and let the form rise into place.
+  // (It breathes forever, so it can only be settled once it has gone.)
   Future<void> skipWelcome(WidgetTester tester) async {
-    for (var i = 0; i < 40; i++) {
+    for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 250));
+    }
+    await tester.tap(find.byKey(const ValueKey('welcome_go')));
+    for (var i = 0; i < 16; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
     }
     await tester.pumpAndSettle();
   }
@@ -120,6 +126,61 @@ void main() {
           await tester.pumpAndSettle();
         }
       }
+    });
+
+    testWidgets('the welcome greets the new person by their username', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(_appUnderTest(welcomeName: 'sam_1'));
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+      final letters = find.descendant(of: find.byKey(const ValueKey('welcome_hello')), matching: find.byType(Text));
+      final text = tester.widgetList<Text>(letters).map((t) => (t.data ?? '').replaceAll('\u00A0', ' ')).join();
+      expect(text, 'Hello, sam_1!');
+      expect(find.byKey(const ValueKey('welcome_go')), findsOneWidget);
+    });
+
+    testWidgets('the welcome waits for "Let\'s go" and then the form appears', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(_appUnderTest(welcomeName: 'sam'));
+      for (var i = 0; i < 100; i++) {
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+      expect(find.text('Step 1 of 4'), findsNothing, reason: 'still on the welcome, however long it takes');
+      await tester.tap(find.byKey(const ValueKey('welcome_go')));
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Step 1 of 4'), findsOneWidget);
+    });
+
+    testWidgets('the birthday is chosen in the new picker and shown on the field', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(_appUnderTest());
+      await skipWelcome(tester);
+
+      await tester.tap(find.text('Tap to choose').first);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('birthday_readout')), findsOneWidget);
+      expect(find.text('You need to be 18 or older.'), findsWidgets);
+
+      await tester.tap(find.byKey(const ValueKey('birthday_done')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining(RegExp(r'^[A-Z][a-z]{2} \d{1,2}, \d{4}$')), findsOneWidget, reason: 'the chosen date is on the field');
+      expect(find.byKey(const ValueKey('birthday_readout')), findsNothing, reason: 'the sheet closed');
+    });
+
+    testWidgets('going forward and back between steps ends on the right card', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(_appUnderTest(profile: _profile()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text('Step 2 of 4'), findsOneWidget);
+      await tester.tap(find.text('Back'));
+      await tester.pumpAndSettle();
+      expect(find.text('Step 1 of 4'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('choices are required, with a friendly nudge', (tester) async {

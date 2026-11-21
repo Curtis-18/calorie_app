@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Which optional cards the Today screen shows. Chosen in Settings and
 /// remembered on this device, like the appearance.
 class DisplayPrefs {
-  const DisplayPrefs({this.showMacros = true, this.showNutrients = true, this.launchToCamera = false});
+  const DisplayPrefs({this.showMacros = true, this.showNutrients = true, this.launchToCamera = false, this.mealsOpen = true});
 
   final bool showMacros;
   final bool showNutrients;
@@ -14,10 +14,15 @@ class DisplayPrefs {
   /// app to log (handover: PRODUCT ROADMAP P0.3, decision D1).
   final bool launchToCamera;
 
-  DisplayPrefs copyWith({bool? showMacros, bool? showNutrients, bool? launchToCamera}) => DisplayPrefs(
+  /// Whether "Today's meals" is unfolded. Folded, the day shows as one row of
+  /// chips. Remembered on this device; open for someone new.
+  final bool mealsOpen;
+
+  DisplayPrefs copyWith({bool? showMacros, bool? showNutrients, bool? launchToCamera, bool? mealsOpen}) => DisplayPrefs(
         showMacros: showMacros ?? this.showMacros,
         showNutrients: showNutrients ?? this.showNutrients,
         launchToCamera: launchToCamera ?? this.launchToCamera,
+        mealsOpen: mealsOpen ?? this.mealsOpen,
       );
 }
 
@@ -29,6 +34,7 @@ class DisplayPrefsNotifier extends StateNotifier<DisplayPrefs> {
   static const macrosKey = 'today_show_macros';
   static const nutrientsKey = 'today_show_nutrients';
   static const launchToCameraKey = 'launch_to_camera';
+  static const mealsOpenKey = 'today_meals_open';
 
   Future<void> _load() async {
     try {
@@ -38,6 +44,7 @@ class DisplayPrefsNotifier extends StateNotifier<DisplayPrefs> {
         showMacros: prefs.getBool(macrosKey) ?? true,
         showNutrients: prefs.getBool(nutrientsKey) ?? true,
         launchToCamera: prefs.getBool(launchToCameraKey) ?? false,
+        mealsOpen: prefs.getBool(mealsOpenKey) ?? true,
       );
     } catch (_) {
       // Storage unavailable: everything stays visible.
@@ -49,6 +56,8 @@ class DisplayPrefsNotifier extends StateNotifier<DisplayPrefs> {
   Future<void> setShowNutrients(bool value) => _save(state.copyWith(showNutrients: value), nutrientsKey, value);
 
   Future<void> setLaunchToCamera(bool value) => _save(state.copyWith(launchToCamera: value), launchToCameraKey, value);
+
+  Future<void> setMealsOpen(bool value) => _save(state.copyWith(mealsOpen: value), mealsOpenKey, value);
 
   Future<void> _save(DisplayPrefs next, String key, bool value) async {
     state = next;

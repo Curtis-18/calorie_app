@@ -122,6 +122,31 @@ void main() {
       expect(broken.phase.value, HandshakePhase.ready);
     });
 
+    test('the chosen name is kept so the welcome can greet them by it', () async {
+      final h = _handshake(server(targets: 404, me: {'user_id': 'u', 'username': null}));
+      await h.start();
+      expect(h.username, isNull);
+
+      h.usernameChosen('sam_1');
+      expect(h.username, 'sam_1');
+      expect(h.phase.value, HandshakePhase.needsOnboarding);
+    });
+
+    test('an empty name does not replace what is known', () async {
+      final h = _handshake(server(targets: 404, me: {'user_id': 'u', 'username': null}));
+      await h.start();
+      h.usernameChosen('');
+      expect(h.username, isNull);
+      expect(h.phase.value, HandshakePhase.needsOnboarding);
+    });
+
+    test('a name the server already has is known from /me', () async {
+      final h = _handshake(server(targets: 404, me: {'user_id': 'u', 'username': 'mia'}));
+      await h.start();
+      expect(h.username, 'mia');
+      expect(h.phase.value, HandshakePhase.needsOnboarding);
+    });
+
     test('usernameChosen does nothing outside the username phase', () async {
       final h = _handshake(server(targets: 200, me: {'username': 'sam'}));
       await h.start();

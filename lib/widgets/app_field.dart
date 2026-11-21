@@ -17,6 +17,8 @@ class AppField extends StatelessWidget {
     this.autofocus = false,
     this.inputFormatters,
     this.onChanged,
+    this.onSubmitted,
+    this.textInputAction,
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
   });
 
@@ -29,6 +31,8 @@ class AppField extends StatelessWidget {
   final bool autofocus;
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final TextInputAction? textInputAction;
   final EdgeInsetsGeometry padding;
 
   @override
@@ -44,6 +48,8 @@ class AppField extends StatelessWidget {
       autofocus: autofocus,
       inputFormatters: inputFormatters,
       onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      textInputAction: textInputAction,
       padding: padding,
       suffix: suffix == null
           ? null

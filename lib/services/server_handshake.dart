@@ -78,6 +78,10 @@ class ServerHandshake {
 
   int _run = 0;
 
+  /// The person's username once known (from the server, or just chosen), so
+  /// the welcome screen can greet them by name. Null until then.
+  String? username;
+
   /// Where to go once the username is picked.
   HandshakePhase _afterUsername = HandshakePhase.ready;
   Timer? _wakingTimer;
@@ -131,7 +135,8 @@ class ServerHandshake {
         if (status == 200 || status == 404) {
           if (status == 200) _handOffTargets(body);
           final next = status == 200 ? HandshakePhase.ready : HandshakePhase.needsOnboarding;
-          if (await _lacksUsername(client, token) && current()) {
+          final lacks = await _lacksUsername(client, token);
+          if (lacks && current()) {
             _afterUsername = next;
             return _finish(run, HandshakePhase.needsUsername);
           }
@@ -156,8 +161,9 @@ class ServerHandshake {
   }
 
   /// The username was saved: carry on to where the user was headed.
-  void usernameChosen() {
+  void usernameChosen([String? name]) {
     if (_disposed || phase.value != HandshakePhase.needsUsername) return;
+    if (name != null && name.isNotEmpty) username = name;
     phase.value = _afterUsername;
   }
 
@@ -171,6 +177,7 @@ class ServerHandshake {
           .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) return false;
       final json = jsonDecode(response.body);
+      if (json is Map && json['username'] is String) username = json['username'] as String;
       return json is Map && json.containsKey('username') && json['username'] == null;
     } catch (_) {
       return false;

@@ -60,6 +60,7 @@ class FriendsScreen extends ConsumerStatefulWidget {
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   final _controller = TextEditingController();
   bool _sending = false;
+  bool _searching = false;
   bool _copied = false;
   String? _notice;
   bool _noticeIsError = false;
@@ -205,10 +206,45 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         _noticeIsError = error;
       });
 
-  Future<void> _add([String? picked]) async {
+  /// Ask for the people matching what is typed right now (the search icon, or
+  /// the keyboard's search key), without waiting for the pause after typing.
+  Future<void> _searchNow() async {
+    final text = _controller.text.trim().replaceFirst(RegExp(r'^@'), '');
+    if (text.isEmpty || _searching) return;
+    final query = peopleSearchQuery(text);
+    if (query == null) {
+      final problem = validateUsername(text) ?? tr('Use at least two characters.');
+      _say(tr("That doesn't look like a username. {problem}", {'problem': problem}), error: true);
+      return;
+    }
+    _searchDebounce?.cancel();
+    setState(() {
+      _notice = null;
+      _searching = true;
+    });
+    try {
+      final known = _knownAnswer(query);
+      if (known != null) {
+        _searchRun++;
+        setState(() {
+          _found = known;
+          _foundFor = query;
+        });
+      } else {
+        await _search(query);
+      }
+      if (!mounted) return;
+      if (_foundFor == query && _found.isEmpty) {
+        _say(tr('No one found. Check the spelling of the username.'), error: true);
+      }
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  /// Send a friend request to [name], picked from the people found.
+  Future<void> _add(String name) async {
     if (_sending) return;
-    final name = picked ?? _controller.text.trim().replaceFirst(RegExp(r'^@'), '');
-    if (name.isEmpty) return;
     final problem = validateUsername(name);
     if (problem != null) {
       _say(tr("That doesn't look like a username. {problem}", {'problem': problem}), error: true);
@@ -589,27 +625,35 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: AppField(
-                      placeholder: tr('Their username'),
-                      controller: _controller,
-                      icon: CupertinoIcons.at,
-                      keyboardType: TextInputType.visiblePassword, // no autocorrect or suggestions
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_@]')),
-                        LengthLimitingTextInputFormatter(usernameMaxLength + 1),
-                      ],
-                      onChanged: _onNameChanged,
+              AppField(
+                placeholder: tr('Their username'),
+                controller: _controller,
+                icon: CupertinoIcons.at,
+                keyboardType: TextInputType.visiblePassword, // no autocorrect or suggestions
+                textInputAction: TextInputAction.search,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_@]')),
+                  LengthLimitingTextInputFormatter(usernameMaxLength + 1),
+                ],
+                onChanged: _onNameChanged,
+                onSubmitted: (_) => _searchNow(),
+                // The search icon sits in the bar. Adding happens from the
+                // person found, so nobody is sent a request by a typo.
+                suffix: Semantics(
+                  button: true,
+                  label: tr('Search'),
+                  child: GestureDetector(
+                    key: const ValueKey('people_search_icon'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _searchNow,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: _searching
+                          ? const CupertinoActivityIndicator(radius: 9)
+                          : Icon(CupertinoIcons.search, size: 20, color: TrackerColors.accentStartText),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  SizedBox(
-                    width: 84,
-                    child: AppButton(label: _sending ? '…' : tr('Add'), onPressed: _sending ? null : _add),
-                  ),
-                ],
+                ),
               ),
               AnimatedSize(
                 duration: AppMotion.quick,

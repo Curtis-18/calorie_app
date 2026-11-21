@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/password_recovery.dart';
 import '../services/server_handshake.dart';
+import '../theme/app_motion.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/animated_logo.dart';
 import '../widgets/waking_up_view.dart';
@@ -96,46 +97,69 @@ class _AuthGateState extends State<AuthGate> {
         return ValueListenableBuilder<HandshakePhase>(
           valueListenable: handshake.phase,
           builder: (context, phase, _) {
-            switch (phase) {
-              case HandshakePhase.checking:
-                // Usually a fraction of a second: keep the splash's calm look.
-                return CupertinoPageScaffold(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: TrackerColors.background),
-                    child: const Center(child: AnimatedLogo(size: 140, tile: true, sparks: false)),
-                  ),
-                );
-              case HandshakePhase.waking:
-                return WakingUpView(startedAt: handshake.startedAt);
-              case HandshakePhase.ready:
-                return const MainShell();
-              case HandshakePhase.needsUsername:
-                return UsernameScreen(
-                  onDone: (_) => handshake.usernameChosen(),
-                  onSignOut: _signOut,
-                );
-              case HandshakePhase.needsOnboarding:
-                return const OnboardingScreen();
-              case HandshakePhase.signedOut:
-                // Session can't be refreshed: back to sign-in rather than a
-                // misleading "Could not reach the server".
-                WidgetsBinding.instance.addPostFrameCallback((_) => _signOut());
-                return CupertinoPageScaffold(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: TrackerColors.background),
-                    child: const Center(child: AnimatedLogo(size: 140, tile: true, sparks: false)),
-                  ),
-                );
-              case HandshakePhase.unreachable:
-                return ServerUnreachableView(
-                  onRetry: handshake.start,
-                  onSignOut: _signOut,
-                );
-            }
+            // Each step (splash, username, welcome, the app) eases into the
+            // next instead of snapping, so signing up feels like one journey.
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 700),
+              switchInCurve: AppMotion.standard,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: _phaseTransition,
+              child: KeyedSubtree(key: ValueKey(phase), child: _phaseView(phase, handshake)),
+            );
           },
         );
       },
     );
   }
-}
 
+  /// The incoming screen fades up from slightly smaller; the outgoing one
+  /// simply fades away behind it.
+  static Widget _phaseTransition(Widget child, Animation<double> animation) {
+    return FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.965, end: 1).animate(animation),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _phaseView(HandshakePhase phase, ServerHandshake handshake) {
+        switch (phase) {
+          case HandshakePhase.checking:
+            // Usually a fraction of a second: keep the splash's calm look.
+            return CupertinoPageScaffold(
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: TrackerColors.background),
+                child: const Center(child: AnimatedLogo(size: 140, tile: true, sparks: false)),
+              ),
+            );
+          case HandshakePhase.waking:
+            return WakingUpView(startedAt: handshake.startedAt);
+          case HandshakePhase.ready:
+            return const MainShell();
+          case HandshakePhase.needsUsername:
+            return UsernameScreen(
+              onDone: handshake.usernameChosen,
+              onSignOut: _signOut,
+            );
+          case HandshakePhase.needsOnboarding:
+            return OnboardingScreen(welcomeName: handshake.username);
+          case HandshakePhase.signedOut:
+            // Session can't be refreshed: back to sign-in rather than a
+            // misleading "Could not reach the server".
+            WidgetsBinding.instance.addPostFrameCallback((_) => _signOut());
+            return CupertinoPageScaffold(
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: TrackerColors.background),
+                child: const Center(child: AnimatedLogo(size: 140, tile: true, sparks: false)),
+              ),
+            );
+          case HandshakePhase.unreachable:
+            return ServerUnreachableView(
+              onRetry: handshake.start,
+              onSignOut: _signOut,
+            );
+    }
+  }
+}

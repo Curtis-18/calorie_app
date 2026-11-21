@@ -432,40 +432,110 @@ void main() {
       expect(find.textContaining('friends since'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-    testWidgets('adding a friend shows a confirmation; a missing user shows the reason', (tester) async {
-      final server = await open(tester, _Server());
-      await tester.enterText(find.byType(CupertinoTextField), '@Sam_1');
-      await tester.tap(find.text('Add'));
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-      expect(find.text('Request sent to @Sam_1.'), findsOneWidget);
-      expect(server.calls, contains('POST /friends/requests'));
-
-      await tester.enterText(find.byType(CupertinoTextField), 'ghost');
-      await tester.tap(find.text('Add'));
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-      expect(find.text("We couldn't find anyone with that username."), findsOneWidget);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
-
-    testWidgets('a malformed name is caught without asking the server', (tester) async {
-      final server = await open(tester, _Server());
-      final before = server.calls.length;
-      await tester.enterText(find.byType(CupertinoTextField), '1bad');
-      await tester.tap(find.text('Add'));
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(find.textContaining('must start with a letter'), findsOneWidget);
-      expect(server.calls.length, before);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
-
     Future<void> type(WidgetTester tester, String text) async {
       await tester.enterText(find.byType(CupertinoTextField), text);
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
     }
+
+    Future<void> settle(WidgetTester tester, [int steps = 10]) async {
+      for (var i = 0; i < steps; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    testWidgets('the search bar has a search icon and no Add button of its own', (tester) async {
+      await open(tester, _Server());
+      expect(find.byKey(const ValueKey('people_search_icon')), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.search), findsOneWidget);
+      expect(find.text('Add'), findsNothing, reason: 'adding happens from the person found');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the search icon looks now, without waiting for the pause after typing', (tester) async {
+      final server = await open(tester, _Server()..everyone = ['Sam', 'Sammy']);
+      await tester.enterText(find.byType(CupertinoTextField), 'sam');
+      await tester.tap(find.byKey(const ValueKey('people_search_icon')));
+      await tester.pump(); // well under the 150 ms pause
+      expect(server.searches, ['sam']);
+      await settle(tester);
+      expect(server.searches, ['sam'], reason: 'the pending typing search was replaced, not repeated');
+      expect(find.text('@Sam'), findsOneWidget);
+      expect(find.text('@Sammy'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets("the keyboard's search key does the same", (tester) async {
+      final server = await open(tester, _Server()..everyone = ['Sam']);
+      await tester.enterText(find.byType(CupertinoTextField), '@sam');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await settle(tester);
+      expect(server.searches, ['sam']);
+      expect(find.text('@Sam'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('an empty bar does nothing when the icon is tapped', (tester) async {
+      final server = await open(tester, _Server());
+      final before = server.calls.length;
+      await tester.tap(find.byKey(const ValueKey('people_search_icon')));
+      await settle(tester, 4);
+      expect(server.calls.length, before);
+      expect(find.textContaining("doesn't look like"), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('finding a person and adding them shows a confirmation', (tester) async {
+      final server = await open(tester, _Server()..everyone = ['Sam_1']);
+      await tester.enterText(find.byType(CupertinoTextField), '@Sam_1');
+      await tester.tap(find.byKey(const ValueKey('people_search_icon')));
+      await settle(tester);
+      expect(server.calls, isNot(contains('POST /friends/requests')), reason: 'searching never sends a request');
+      await tester.tap(find.descendant(of: find.byKey(const ValueKey('suggest_Sam_1')), matching: find.text('Add')));
+      await settle(tester);
+      expect(find.text('Request sent to @Sam_1.'), findsOneWidget);
+      expect(server.calls, contains('POST /friends/requests'));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a name nobody has says so, and sends nothing', (tester) async {
+      final server = await open(tester, _Server()..everyone = ['Sam']);
+      await tester.enterText(find.byType(CupertinoTextField), 'ghost');
+      await tester.tap(find.byKey(const ValueKey('people_search_icon')));
+      await settle(tester);
+      expect(find.text('No one found. Check the spelling of the username.'), findsOneWidget);
+      expect(server.calls, isNot(contains('POST /friends/requests')));
+      // Typing again clears the message.
+      await tester.enterText(find.byType(CupertinoTextField), 'sam');
+      await tester.pump();
+      expect(find.text('No one found. Check the spelling of the username.'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a malformed name is caught without asking the server', (tester) async {
+      final server = await open(tester, _Server());
+      final before = server.calls.length;
+      await tester.enterText(find.byType(CupertinoTextField), '1bad');
+      await tester.tap(find.byKey(const ValueKey('people_search_icon')));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.textContaining('must start with a letter'), findsOneWidget);
+      expect(server.calls.length, before);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('one letter is too short to search and says so', (tester) async {
+      final server = await open(tester, _Server());
+      final before = server.calls.length;
+      await tester.enterText(find.byType(CupertinoTextField), 's');
+      await tester.tap(find.byKey(const ValueKey('people_search_icon')));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.textContaining("doesn't look like a username"), findsOneWidget);
+      expect(server.calls.length, before);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a repeat of an answer already received is shown at once without asking again', (tester) async {
+      final server = await open(tester, _Server()..everyone = ['Sam']);
+      await type(tester, 'sam');
+      expect(server.searches, ['sam']);
+      await tester.tap(find.byKey(const ValueKey('people_search_icon')));
+      await settle(tester, 4);
+      expect(server.searches, ['sam']);
+      expect(find.text('@Sam'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('suggestions appear as you type and narrow at once, without asking the server again', (tester) async {
       final server = await open(tester, _Server()..everyone = ['Sam', 'Sammy', 'Sara', 'Bea']);

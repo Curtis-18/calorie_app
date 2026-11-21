@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../models/body_input.dart';
 import '../models/profile_copy.dart';
 import '../models/user_profile.dart';
@@ -14,7 +13,7 @@ import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_dialog.dart';
-import '../widgets/glass.dart';
+import '../widgets/birthday_picker.dart';
 import '../widgets/pressable.dart';
 import '../widgets/onboarding/choice_card.dart';
 import '../widgets/onboarding/plan_ready_sheet.dart';
@@ -26,7 +25,10 @@ import '../l10n/app_strings.dart';
 class OnboardingScreen extends ConsumerStatefulWidget {
   final UserProfile? existingProfile;
 
-  const OnboardingScreen({super.key, this.existingProfile});
+  /// The username to greet in the welcome scene (Hello, NAME!).
+  final String? welcomeName;
+
+  const OnboardingScreen({super.key, this.existingProfile, this.welcomeName});
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -41,6 +43,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _currentStep = 0;
   static const int _stepCount = 4;
   bool _showWelcome = true;
+
+  /// Which way the last step change went, so the next card slides in from the
+  /// right going forward and from the left going back.
+  bool _forward = true;
 
   // People nearly everywhere use kg and cm, a few countries use lb and ft.
   // Only a starting guess: both are one tap away.
@@ -179,14 +185,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _next() {
     if (!_validateStep(_currentStep)) return;
     if (_currentStep < _stepCount - 1) {
-      setState(() => _currentStep++);
+      setState(() {
+        _forward = true;
+        _currentStep++;
+      });
     } else {
       _submit();
     }
   }
 
   void _prev() {
-    if (_currentStep > 0) setState(() => _currentStep--);
+    if (_currentStep > 0) {
+      setState(() {
+        _forward = false;
+        _currentStep--;
+      });
+    }
   }
 
   static DateTime get _latestAdultBirthday {
@@ -287,37 +301,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _pickDateOfBirth() async {
-    final latest = _latestAdultBirthday;
-    var selected = _dateOfBirth ?? DateTime(2000, 1, 1);
-    if (selected.isAfter(latest)) selected = latest;
-
-    final picked = await showAppSheet<DateTime>(
-      context: context,
-      builder: (sheetContext) => AppSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(tr('Date of birth'), style: AppType.title()),
-            const SizedBox(height: AppSpacing.lg),
-            SizedBox(
-              height: 220,
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.date,
-                initialDateTime: selected,
-                minimumDate: DateTime(1920),
-                maximumDate: latest, // adults only
-                onDateTimeChanged: (date) => selected = date,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              label: tr('Done'),
-              onPressed: () => Navigator.of(sheetContext).pop(selected),
-            ),
-          ],
-        ),
-      ),
-    );
+    final latest = _latestAdultBirthday; // adults only
+    final picked = await showBirthdayPicker(context, initial: _dateOfBirth, latest: latest);
     if (picked != null && mounted) setState(() => _dateOfBirth = picked);
   }
 
@@ -354,7 +339,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     suffixIcon: Icon(Icons.calendar_today, size: 16),
                   ),
                   child: Text(
-                    _dateOfBirth == null ? tr('Tap to choose') : DateFormat.yMMMMd().format(_dateOfBirth!),
+                    _dateOfBirth == null ? tr('Tap to choose') : formatBirthday(_dateOfBirth!),
                     style: AppType.body(
                       size: 15,
                       color: _dateOfBirth == null ? TrackerColors.textTertiary : TrackerColors.textPrimary,
@@ -587,6 +572,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  /// Welcome to the form: the welcome scene swells slightly as it fades, while
+  /// the form rises into place a moment later, so it reads as one move.
+  Widget _welcomeTransition(Widget child, Animation<double> animation) {
+    if (child.key == const ValueKey('welcome')) {
+      // Runs 1 -> 0 as it leaves: grows from 1.0 to 1.1 while it fades out.
+      return FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(scale: Tween<double>(begin: 1.1, end: 1).animate(animation), child: child),
+      );
+    }
+    final late = CurvedAnimation(parent: animation, curve: const Interval(0.35, 1, curve: Curves.easeOutCubic));
+    return FadeTransition(
+      opacity: late,
+      child: SlideTransition(position: Tween(begin: const Offset(0, 0.04), end: Offset.zero).animate(late), child: child),
+    );
+  }
+
+  /// Between steps the new card slides in from the side the person is heading
+  /// to (right going forward, left going back) while the old one drifts away
+  /// the other way, both fading.
+  Widget _stepTransition(Widget child, Animation<double> animation) {
+    final incoming = child.key == ValueKey(_currentStep);
+    final direction = _forward ? 1.0 : -1.0;
+    final slide = incoming
+        ? Tween(begin: Offset(0.14 * direction, 0), end: Offset.zero).animate(animation)
+        : Tween(begin: Offset(-0.14 * direction, 0), end: Offset.zero).animate(animation);
+    return FadeTransition(opacity: animation, child: SlideTransition(position: slide, child: child));
+  }
+
   @override
   Widget build(BuildContext context) {
     final steps = [
@@ -612,9 +626,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Stack(
                 children: [
                   AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 800),
+                    duration: const Duration(milliseconds: 1100),
+                    switchInCurve: AppMotion.standard,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: _welcomeTransition,
                     child: showingWelcome
-                        ? WelcomeOverlay(onFinished: () => setState(() => _showWelcome = false))
+                        ? WelcomeOverlay(
+                            key: const ValueKey('welcome'),
+                            name: widget.welcomeName,
+                            onFinished: () => setState(() => _showWelcome = false),
+                          )
                         : Form(
                             key: _formKey,
                             child: Material(
@@ -643,7 +664,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     physics: const BouncingScrollPhysics(),
                                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                                     child: AnimatedSwitcher(
-                                      duration: AppMotion.quick,
+                                      duration: const Duration(milliseconds: 520),
+                                      switchInCurve: AppMotion.standard,
+                                      switchOutCurve: Curves.easeInCubic,
+                                      transitionBuilder: _stepTransition,
                                       child: KeyedSubtree(
                                         key: ValueKey(_currentStep),
                                         child: steps[_currentStep],
