@@ -110,7 +110,7 @@ class PhotoEstimationService {
 
     if (response.statusCode != 200) {
       throw PhotoAnalysisException(
-        messageForStatus(response.statusCode),
+        messageForStatus(response.statusCode, detail: _detailOf(response)),
         retryable: const {502, 503, 504}.contains(response.statusCode),
       );
     }
@@ -137,8 +137,26 @@ class PhotoEstimationService {
   /// person's own day, like food logs.
   static String _deviceDate() => DateTime.now().toIso8601String().substring(0, 10);
 
-  /// User-facing text for a non-200 from `POST /estimate-photo`.
-  static String messageForStatus(int status) {
+  /// The server's `detail` code or text, when the error body has one.
+  static String? _detailOf(http.Response response) {
+    try {
+      final detail = (jsonDecode(response.body) as Map<String, dynamic>)['detail'];
+      return detail is String ? detail : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// User-facing text for a non-200 from `POST /estimate-photo`. A 429 can mean
+  /// the person scanned a lot, or that the AI's own allowance is spent (the
+  /// server says which in `detail`); neither is retried.
+  static String messageForStatus(int status, {String? detail}) {
+    if (status == 429 && detail == 'ai_quota') {
+      return tr("The photo scanner has reached its limit for now. Try again later, or add your food with search or a barcode.");
+    }
+    if (status == 429 && detail == 'daily_scan_cap') {
+      return tr("You've used today's photo scans. They come back tomorrow, or add your food with search or a barcode.");
+    }
     switch (status) {
       case 401:
         return sessionExpiredMessage;

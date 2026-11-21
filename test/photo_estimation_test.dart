@@ -179,4 +179,47 @@ void main() {
       PhotoEstimationService.badResponseMessage,
     );
   });
+
+  group('when the AI allowance is spent', () {
+    Future<String> failWith(int status, Object body) async {
+      var requests = 0;
+      final client = MockClient((_) async {
+        requests++;
+        return http.Response(jsonEncode(body), status);
+      });
+      final message = await _messageFor(() => _service(client).analyzePhoto(bytes));
+      expect(requests, 1, reason: 'the service does not retry by itself');
+      return message;
+    }
+
+    test('an ai_quota answer says the scanner is at its limit and points to search and barcode', () async {
+      final message = await failWith(429, {'detail': 'ai_quota'});
+      expect(message, contains('photo scanner has reached its limit'));
+      expect(message, contains('search or a barcode'));
+      expect(message, isNot(contains('scanned a lot')));
+    });
+
+    test('the per-person daily cap has its own message', () async {
+      final message = await failWith(429, {'detail': 'daily_scan_cap'});
+      expect(message, contains("used today's photo scans"));
+    });
+
+    test('an ordinary 429 keeps the old message, and neither quota answer is retryable', () async {
+      expect(await failWith(429, {'detail': 'You\'ve scanned a lot of photos.'}), contains('Try again in a little while'));
+      for (final detail in ['ai_quota', 'daily_scan_cap']) {
+        final client = MockClient((_) async => http.Response(jsonEncode({'detail': detail}), 429));
+        try {
+          await _service(client).analyzePhoto(bytes);
+          fail('expected an exception');
+        } on PhotoAnalysisException catch (e) {
+          expect(e.retryable, isFalse);
+        }
+      }
+    });
+
+    test('an unreadable error body still gives the status message', () async {
+      final client = MockClient((_) async => http.Response('<html>', 429));
+      expect(await _messageFor(() => _service(client).analyzePhoto(bytes)), contains('Try again in a little while'));
+    });
+  });
 }
