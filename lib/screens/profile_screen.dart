@@ -26,6 +26,7 @@ import 'notifications_screen.dart';
 import 'onboarding_screen.dart';
 import 'settings_screen.dart';
 import '../l10n/app_strings.dart';
+import 'insights_screen.dart' show openInsights;
 
 /// The Profile tab: who you are, your progress, your plan and your body
 /// numbers, with Settings behind the gear. Replaces the old profile sheet.
@@ -153,6 +154,14 @@ class ProfileView extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xxl),
                   SettingsGroup(
                     children: [
+                      SettingsRow(
+                        key: const ValueKey('profile_insights'),
+                        icon: CupertinoIcons.chart_bar_alt_fill,
+                        color: TrackerColors.accentStart,
+                        title: tr('Insights'),
+                        subtitle: tr('Your week at a glance'),
+                        onTap: () => openInsights(context),
+                      ),
                       SettingsRow(
                         key: const ValueKey('profile_notifications'),
                         icon: CupertinoIcons.bell,

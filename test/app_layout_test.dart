@@ -256,7 +256,7 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
-  test('the tutorial follows the layout: ring, camera, search, then Insights, Friends and Profile', () {
+  test('the tutorial follows the layout: ring, camera, search, then Workouts, Friends and Profile', () {
     final ring = GlobalKey();
     final camera = GlobalKey();
     final search = GlobalKey();
@@ -265,7 +265,7 @@ void main() {
       ring,
       camera,
       search,
-      MainShell.insightsTabKey,
+      MainShell.workoutsTabKey,
       MainShell.friendsTabKey,
       MainShell.profileTabKey,
     ]);

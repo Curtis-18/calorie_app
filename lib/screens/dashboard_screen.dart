@@ -53,6 +53,8 @@ import '../widgets/shimmer.dart';
 import 'food_search_screen.dart';
 import 'main_shell.dart';
 import 'photo_review_screen.dart';
+import '../widgets/insights_row.dart';
+import 'insights_screen.dart' show openInsights;
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -167,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _isFrontmost() {
     final local = ModalRoute.of(context);
     if (local != null && !local.isCurrent) return false;
-    final shellContext = MainShell.insightsTabKey.currentContext;
+    final shellContext = MainShell.workoutsTabKey.currentContext;
     final shell = shellContext == null ? null : ModalRoute.of(shellContext);
     return shell == null || shell.isCurrent;
   }
@@ -204,7 +206,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (!TickerMode.valuesOf(context).enabled) return false; // another tab
     final local = ModalRoute.of(context);
     if (local != null && !local.isCurrent) return false; // pushed within the tab
-    final shellContext = MainShell.insightsTabKey.currentContext;
+    final shellContext = MainShell.workoutsTabKey.currentContext;
     if (shellContext == null) return false;
     final shell = ModalRoute.of(shellContext);
     return shell == null || shell.isCurrent;
@@ -587,6 +589,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                             ],
+                            if (_isToday) ...[
+                              SizedBox(height: display.showMacros || display.showNutrients ? 10 : 14),
+                              InsightsRow(onTap: () => openInsights(context)),
+                            ],
                             const SizedBox(height: 24),
                             // Photos being scanned stay visible even when the meals
                             // are folded: they are waiting for the person.
@@ -752,10 +758,10 @@ List<TourStep> dashboardTourSteps({
         padding: 5,
       ),
       TourStep(
-        targetKey: MainShell.insightsTabKey,
-        icon: CupertinoIcons.chart_bar_alt_fill,
-        title: tr('Your weekly coach'),
-        body: tr("Insights shows your trends, your weight and personal tips based on what you've logged."),
+        targetKey: MainShell.workoutsTabKey,
+        icon: CupertinoIcons.bolt_fill,
+        title: tr('Move your way'),
+        body: tr('Workouts has short guided sessions, a weekly plate to fill and rest days that count. Insights is one tap below your meals on Today.'),
         shape: TourShape.pill,
         padding: 6,
       ),

@@ -18,7 +18,8 @@ import '../theme/app_motion.dart';
 import '../theme/tracker_colors.dart';
 import 'dashboard_screen.dart';
 import 'friends_screen.dart';
-import 'insights_screen.dart';
+import 'insights_screen.dart' show openInsights;
+import 'workouts_screen.dart';
 import 'library_screen.dart';
 import 'profile_screen.dart';
 
@@ -27,7 +28,7 @@ class MainShell extends ConsumerStatefulWidget {
 
   /// Tour target keys for tab icons. Exposed statically so that
   /// DashboardScreen can reference them without constructor coupling.
-  static final insightsTabKey = GlobalKey(debugLabel: 'tourInsightsTab');
+  static final workoutsTabKey = GlobalKey(debugLabel: 'tourWorkoutsTab');
   static final friendsTabKey = GlobalKey(debugLabel: 'tourFriendsTab');
   static final profileTabKey = GlobalKey(debugLabel: 'tourProfileTab');
 
@@ -43,7 +44,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   late final AppLifecycleListener _lifecycle;
   final _screens = const [
     DashboardScreen(),
-    InsightsScreen(),
+    WorkoutsScreen(),
     FriendsScreen(),
     LibraryScreen(),
     ProfileScreen(),
@@ -52,7 +53,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   // In ShellTab order.
   static final _tabs = [
     (icon: CupertinoIcons.square_list, label: tr('Today'), key: null),
-    (icon: CupertinoIcons.chart_bar, label: tr('Insights'), key: MainShell.insightsTabKey),
+    (icon: CupertinoIcons.bolt, label: tr('Workouts'), key: MainShell.workoutsTabKey),
     (icon: CupertinoIcons.person_2, label: tr('Friends'), key: MainShell.friendsTabKey),
     (icon: CupertinoIcons.book, label: tr('Recipes'), key: null),
     (icon: CupertinoIcons.person_crop_circle, label: tr('Profile'), key: MainShell.profileTabKey),
@@ -89,7 +90,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       case AppShortcut.bites:
         ref.read(shellTabProvider.notifier).state = ShellTab.friends;
       case AppShortcut.insights:
-        ref.read(shellTabProvider.notifier).state = ShellTab.insights;
+        openInsights(context);
       case AppShortcut.messages:
         Navigator.of(context, rootNavigator: true).push(CupertinoPageRoute<void>(builder: (_) => const ConversationsScreen()));
       case AppShortcut.log:

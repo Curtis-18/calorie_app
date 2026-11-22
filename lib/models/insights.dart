@@ -26,7 +26,6 @@ class DayTrend {
 
 class InsightsData {
   final String narrative;
-  final List<String> tips;
   final List<DayTrend> weeklyTrend;
   final DateTime generatedAt;
 
@@ -35,7 +34,6 @@ class InsightsData {
 
   InsightsData({
     required this.narrative,
-    required this.tips,
     required this.weeklyTrend,
     required this.generatedAt,
     this.estimatedEntries = 0,
@@ -44,7 +42,6 @@ class InsightsData {
   factory InsightsData.fromJson(Map<String, dynamic> json) {
     return InsightsData(
       narrative: json['narrative'] as String,
-      tips: (json['tips'] as List).map((e) => e as String).toList(),
       weeklyTrend: (json['weekly_trend'] as List)
           .map((e) => DayTrend.fromJson(e as Map<String, dynamic>))
           .toList(),

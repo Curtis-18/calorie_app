@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 InsightsData _insights(String narrative) => InsightsData(
       narrative: narrative,
-      tips: const [],
       weeklyTrend: const [],
       generatedAt: DateTime(2026, 11, 2),
     );

@@ -1021,4 +1021,8 @@ const Map<String, String> french = {
   '600 kcal or more a serving.': '600 kcal ou plus par portion.',
   'Matched from each recipe’s calories and protein. A guide, not advice.': 'Classée d’après les calories et les protéines de chaque recette. Un repère, pas un conseil.',
   'None of your recipes match this yet.': 'Aucune de tes recettes ne correspond pour l’instant.',
+  'Workouts': 'Entraînements',
+  'Move your way': 'Bouge à ta façon',
+  'Workouts has short guided sessions, a weekly plate to fill and rest days that count. Insights is one tap below your meals on Today.': 'Entraînements propose de courtes séances guidées, une assiette de la semaine à remplir et des jours de repos qui comptent. Insights est à un toucher sous tes repas dans Aujourd’hui.',
+  'Insights shows your week at a glance, in one place.': 'Insights montre ta semaine d’un coup d’œil, au même endroit.',
 };

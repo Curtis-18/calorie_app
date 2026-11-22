@@ -18,8 +18,16 @@ import '../widgets/weekly_trend_chart.dart';
 import '../widgets/weight/weight_card.dart';
 import '../l10n/app_strings.dart';
 
+/// Insights is no longer a tab: it opens on top of the tabs from the "Your week"
+/// row on Today and from Profile.
+Future<void> openInsights(BuildContext context) =>
+    Navigator.of(context, rootNavigator: true).push(CupertinoPageRoute<void>(builder: (_) => const InsightsScreen(showBack: true)));
+
 class InsightsScreen extends ConsumerWidget {
-  const InsightsScreen({super.key});
+  const InsightsScreen({super.key, this.showBack = false});
+
+  /// A back arrow in the header (when opened on top of the tabs).
+  final bool showBack;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,6 +42,7 @@ class InsightsScreen extends ConsumerWidget {
         child: Column(
           children: [
             PageHeader(
+              onBack: showBack ? () => Navigator.of(context).maybePop() : null,
               title: tr('Insights'),
               subtitle: tr('Your week at a glance'),
               actions: [
@@ -163,24 +172,6 @@ class InsightsScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.lg),
                       WeeklyReportCard(report: report),
                     ],
-                    const SizedBox(height: AppSpacing.lg),
-                    AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SectionHeader(label: tr('Tips')),
-                          const SizedBox(height: AppSpacing.lg),
-                          ...insights.tips.asMap().entries.map(
-                            (entry) => Padding(
-                              padding: EdgeInsets.only(
-                                bottom: entry.key == insights.tips.length - 1 ? 0 : AppSpacing.md,
-                              ),
-                              child: _TipRow(index: entry.key, tip: entry.value),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     const SizedBox(height: AppSpacing.xxl),
                     SectionHeader(label: tr('Body')),
                     const SizedBox(height: AppSpacing.md),
@@ -192,52 +183,6 @@ class InsightsScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _TipRow extends StatelessWidget {
-  const _TipRow({required this.index, required this.tip});
-
-  final int index;
-  final String tip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: TrackerColors.alpha(TrackerColors.textPrimary, 0.04),
-        borderRadius: AppRadii.buttonAll,
-        border: Border.all(color: TrackerColors.border, width: 1),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: TrackerColors.alpha(TrackerColors.macroProtein, 0.14),
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-              boxShadow: AppDecor.glow(TrackerColors.macroProtein, blur: 10, opacity: 0.25),
-            ),
-            child: Icon(
-              CupertinoIcons.check_mark,
-              size: 11,
-              color: TrackerColors.macroProtein,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(
-              tip,
-              style: AppType.body(size: 14, color: TrackerColors.textSecondary),
-            ),
-          ),
-        ],
       ),
     );
   }

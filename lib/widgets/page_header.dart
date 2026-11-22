@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../l10n/app_strings.dart';
 
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
@@ -19,6 +20,7 @@ class PageHeader extends StatelessWidget {
     this.titleAccessory,
     this.actions = const [],
     this.bottom,
+    this.onBack,
   });
 
   final String title;
@@ -31,6 +33,9 @@ class PageHeader extends StatelessWidget {
   final Widget? titleAccessory;
   final List<Widget> actions;
   final Widget? bottom;
+
+  /// A back arrow before the title, for a page opened on top of another.
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +56,18 @@ class PageHeader extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  if (onBack != null)
+                    Semantics(
+                      button: true,
+                      label: tr('Back'),
+                      child: CupertinoButton(
+                        key: const ValueKey('page_back'),
+                        padding: const EdgeInsets.only(right: 10),
+                        minimumSize: const Size(36, 36),
+                        onPressed: onBack,
+                        child: Icon(CupertinoIcons.chevron_back, size: 24, color: TrackerColors.textPrimary),
+                      ),
+                    ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

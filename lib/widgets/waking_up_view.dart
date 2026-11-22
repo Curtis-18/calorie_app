@@ -27,7 +27,7 @@ class WakingUpView extends StatefulWidget {
   static final tips = [
     tr('Take a photo of your plate to log a whole meal in seconds.'),
     tr('Use the arrows next to the date to look back at earlier days.'),
-    tr('Insights turns your week into a few simple, personal tips.'),
+    tr('Insights shows your week at a glance, in one place.'),
     tr('Logging as you eat keeps the ring accurate all day.'),
   ];
 

@@ -208,6 +208,12 @@ void main() {
       expect(find.byType(NotificationsScreen), findsOneWidget);
     });
 
+    testWidgets('the Profile tab has an Insights row that opens Insights (it is no longer a tab)', (tester) async {
+      await pump(tester, const ProfileView(profile: null), unread: false);
+      expect(find.byKey(const ValueKey('profile_insights')), findsOneWidget);
+      expect(find.text('Your week at a glance'), findsOneWidget);
+    });
+
     testWidgets('no dot on the Profile row once read', (tester) async {
       await pump(tester, const ProfileView(profile: null), unread: false);
       expect(find.byKey(const ValueKey('unread_dot')), findsNothing);
