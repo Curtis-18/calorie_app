@@ -119,7 +119,7 @@ void main() {
 
     testWidgets('someone who has seen it is not shown it again', (tester) async {
       ignoreOverflow();
-      SharedPreferences.setMockInitialValues({'tour_seen_workouts_walkthrough': true});
+      SharedPreferences.setMockInitialValues({'tour_seen_workouts_tour': true});
       phone(tester);
       final c = containerFor(Server());
       c.read(shellTabProvider.notifier).state = ShellTab.workouts;
@@ -128,9 +128,20 @@ void main() {
       expect(find.text('Your week, at a glance'), findsNothing);
     });
 
-    testWidgets('the ? button shows it again, and Skip closes it', (tester) async {
+    testWidgets('someone who only saw the old slideshow still gets the tour', (tester) async {
       ignoreOverflow();
       SharedPreferences.setMockInitialValues({'tour_seen_workouts_walkthrough': true});
+      phone(tester);
+      final c = containerFor(Server());
+      c.read(shellTabProvider.notifier).state = ShellTab.workouts;
+      await tester.pumpWidget(app(c, const WorkoutsScreen()));
+      await settle(tester, 20);
+      expect(find.text('Your week, at a glance'), findsOneWidget);
+    });
+
+    testWidgets('the ? button shows it again, and Skip closes it', (tester) async {
+      ignoreOverflow();
+      SharedPreferences.setMockInitialValues({'tour_seen_workouts_tour': true});
       phone(tester);
       await tester.pumpWidget(app(containerFor(Server()), const WorkoutsScreen()));
       await settle(tester, 10);
@@ -144,7 +155,7 @@ void main() {
 
     testWidgets('steps whose parts are missing are skipped, not left pointing at nothing', (tester) async {
       ignoreOverflow();
-      SharedPreferences.setMockInitialValues({'tour_seen_workouts_walkthrough': true});
+      SharedPreferences.setMockInitialValues({'tour_seen_workouts_tour': true});
       phone(tester);
       final s = Server()..failLibrary = true; // no feelings, bites or library on screen
       await tester.pumpWidget(app(containerFor(s), const WorkoutsScreen()));
