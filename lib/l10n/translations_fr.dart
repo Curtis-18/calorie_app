@@ -1119,4 +1119,8 @@ const Map<String, String> french = {
   'just now': 'à l’instant',
   '{n} min ago': 'il y a {n} min',
   '{n}h ago': 'il y a {n} h',
+  'Looks great': 'Ça a l’air super',
+  'Save me a plate': 'Garde-moi une assiette',
+  'Drop the recipe': 'Donne la recette',
+  'Sent to @{name}': 'Envoyé à @{name}',
 };

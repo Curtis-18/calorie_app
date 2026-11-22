@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:calorie_app/models/snaps.dart';
 import 'package:calorie_app/screens/snap_viewer_screen.dart';
 import 'package:calorie_app/providers/friends_provider.dart';
+import 'package:calorie_app/providers/messages_provider.dart';
+import 'package:calorie_app/services/messages_service.dart';
 import 'package:calorie_app/providers/snaps_provider.dart';
 import 'package:calorie_app/screens/friends_screen.dart';
 import 'package:calorie_app/screens/snap_compose_screen.dart';
@@ -319,6 +321,76 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       expect(sends.single, 'u-sam,u-bea');
       expect(find.text('Sent to 2 friends.'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    Future<void> openViewer(WidgetTester tester, {required List<Map<String, dynamic>> posted, int failWith = 0}) async {
+      tester.view.physicalSize = const Size(1179, 2556);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final client = MockClient((r) async {
+        if (r.url.path == '/messages/with/u-sam' && r.method == 'POST') {
+          final body = jsonDecode(r.body) as Map<String, dynamic>;
+          posted.add({'friend': 'u-sam', ...body});
+          if (failWith != 0) return http.Response(jsonEncode({'detail': "You can't message this person."}), failWith);
+          return http.Response(
+            jsonEncode({'id': body['id'], 'mine': true, 'body': body['body'], 'created_at': '2026-11-22T10:00:00Z'}),
+            200,
+          );
+        }
+        if (r.url.path == '/messages/conversations') return http.Response(jsonEncode({'conversations': []}), 200);
+        return http.Response(jsonEncode([]), 200);
+      });
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          conversationsProvider.overrideWith((ref) => ConversationsNotifier(
+                service: MessagesService(client: client, tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+          snapInboxProvider.overrideWith((ref) => SnapInboxNotifier(
+                service: SnapsService(client: client, tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+        ],
+        child: CupertinoApp(
+          theme: AppTheme.cupertino,
+          home: SnapViewerScreen(snaps: [InboxSnap.fromJson(_inbox('a', 'sam'))]),
+        ),
+      ));
+      await settle(tester);
+    }
+
+    testWidgets('a quick reply goes to the sender as an ordinary chat message, once', (tester) async {
+      final posted = <Map<String, dynamic>>[];
+      await openViewer(tester, posted: posted);
+      expect(find.text('Looks great'), findsOneWidget);
+      expect(find.text('Save me a plate'), findsOneWidget);
+      expect(find.text('Drop the recipe'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('quick_save_plate')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('quick_save_plate'))); // a second tap does nothing
+      await settle(tester);
+      await tester.pump(const Duration(seconds: 3));
+      expect(posted.length, 1);
+      expect(posted.single['body'], 'Save me a plate');
+      expect(posted.single['friend'], 'u-sam');
+      expect(posted.single['id'], matches(RegExp(r'^[0-9a-f-]{36}$')));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a reply the server refuses says so, and can be tried again', (tester) async {
+      final posted = <Map<String, dynamic>>[];
+      await openViewer(tester, posted: posted, failWith: 403);
+      await tester.tap(find.byKey(const ValueKey('quick_drop_recipe')));
+      await settle(tester);
+      expect(find.text("You can't message this person."), findsOneWidget);
+      await tester.tap(find.text('OK'));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('quick_drop_recipe')));
+      await settle(tester);
+      expect(posted.length, 2, reason: 'not stuck as sent after a failure');
+      expect(posted[1]['id'], posted[0]['id'], reason: 'a retry reuses the id so it cannot double up');
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('"Bite back" in the viewer opens the camera, then the compose screen with the sender ticked', (tester) async {

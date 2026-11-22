@@ -1119,4 +1119,8 @@ const Map<String, String> italian = {
   'just now': 'proprio ora',
   '{n} min ago': '{n} min fa',
   '{n}h ago': '{n} h fa',
+  'Looks great': 'Ha un aspetto fantastico',
+  'Save me a plate': 'Tienimi un piatto',
+  'Drop the recipe': 'Passa la ricetta',
+  'Sent to @{name}': 'Inviato a @{name}',
 };

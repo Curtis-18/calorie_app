@@ -1119,4 +1119,8 @@ const Map<String, String> german = {
   'just now': 'gerade eben',
   '{n} min ago': 'vor {n} Min.',
   '{n}h ago': 'vor {n} Std.',
+  'Looks great': 'Sieht super aus',
+  'Save me a plate': 'Heb mir einen Teller auf',
+  'Drop the recipe': 'Schick das Rezept',
+  'Sent to @{name}': 'An @{name} gesendet',
 };

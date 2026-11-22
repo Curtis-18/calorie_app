@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/quick_replies.dart';
 import '../models/snaps.dart';
+import '../providers/messages_provider.dart';
 import '../providers/snaps_provider.dart';
+import '../services/messages_service.dart';
 import '../services/snaps_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_typography.dart';
@@ -32,6 +35,12 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
   late int _index = widget.startAt.clamp(0, widget.snaps.length - 1);
   String? _burst; // the emoji currently floating up
   int _burstKey = 0;
+
+  // Quick replies already sent for a bite ("<snap id>/<reply id>"), and the id
+  // each one went out with, so a tap while one is in flight or a retry after a
+  // failure can never send it twice.
+  final _sentReplies = <String>{};
+  final _replyIds = <String, String>{};
 
   InboxSnap get _snap {
     // Prefer the live copy so a reaction shows straight away.
@@ -73,6 +82,25 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
       await ref.read(snapInboxProvider.notifier).react(_snap, emoji);
     } on SnapsException catch (e) {
       if (mounted) await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
+    }
+  }
+
+  /// A one-tap reply, sent to the friend as an ordinary chat message.
+  Future<void> _quickReply(QuickReply reply) async {
+    final snap = _snap;
+    final key = '${snap.id}/${reply.id}';
+    if (_sentReplies.contains(key)) return;
+    HapticFeedback.selectionClick();
+    setState(() => _sentReplies.add(key));
+    final id = _replyIds.putIfAbsent(key, newMessageId);
+    try {
+      await ref.read(conversationsProvider.notifier).service.send(snap.senderId, id: id, body: reply.text);
+      ref.read(conversationsProvider.notifier).load();
+      if (mounted) showBiteToast(context, tr('Sent to @{name}', {'name': snap.senderUsername}));
+    } on MessagesException catch (e) {
+      if (!mounted) return;
+      setState(() => _sentReplies.remove(key));
+      await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
     }
   }
 
@@ -270,6 +298,35 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                           ],
                         ),
                       ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final r in quickReplies)
+                          Pressable(
+                            key: ValueKey('quick_${r.id}'),
+                            onTap: () => _quickReply(r),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _sentReplies.contains('${snap.id}/${r.id}') ? const Color(0x55FFFFFF) : const Color(0x33FFFFFF),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _sentReplies.contains('${snap.id}/${r.id}') ? const Color(0xFFFFFFFF) : const Color(0x44FFFFFF),
+                                ),
+                              ),
+                              child: Text(
+                                r.text,
+                                style: AppType.body(size: 13.5, color: const Color(0xFFFFFFFF)).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   Row(

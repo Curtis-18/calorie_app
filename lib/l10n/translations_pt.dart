@@ -1119,4 +1119,8 @@ const Map<String, String> portuguese = {
   'just now': 'agora mesmo',
   '{n} min ago': 'há {n} min',
   '{n}h ago': 'há {n} h',
+  'Looks great': 'Está lindo',
+  'Save me a plate': 'Guarda um prato pra mim',
+  'Drop the recipe': 'Manda a receita',
+  'Sent to @{name}': 'Enviado para @{name}',
 };
