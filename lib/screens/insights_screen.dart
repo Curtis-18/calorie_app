@@ -148,6 +148,14 @@ class InsightsScreen extends ConsumerWidget {
                           SectionHeader(label: tr('This week')),
                           const SizedBox(height: AppSpacing.lg),
                           WeeklyTrendChart(data: insights.weeklyTrend, target: target),
+                          if (insights.estimatedEntries > 0) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              context.tr('Some foods this week were estimated, so treat those numbers as a guide.'),
+                              key: const ValueKey('estimated_note'),
+                              style: AppType.caption(color: TrackerColors.textTertiary, size: 12),
+                            ),
+                          ],
                         ],
                       ),
                     ),

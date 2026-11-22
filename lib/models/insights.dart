@@ -30,11 +30,15 @@ class InsightsData {
   final List<DayTrend> weeklyTrend;
   final DateTime generatedAt;
 
+  /// Entries in the week shown whose numbers are an estimate (0 from an older backend).
+  final int estimatedEntries;
+
   InsightsData({
     required this.narrative,
     required this.tips,
     required this.weeklyTrend,
     required this.generatedAt,
+    this.estimatedEntries = 0,
   });
 
   factory InsightsData.fromJson(Map<String, dynamic> json) {
@@ -45,6 +49,7 @@ class InsightsData {
           .map((e) => DayTrend.fromJson(e as Map<String, dynamic>))
           .toList(),
       generatedAt: DateTime.parse(json['generated_at'] as String),
+      estimatedEntries: (json['estimated_entries'] as num?)?.toInt() ?? 0,
     );
   }
 }

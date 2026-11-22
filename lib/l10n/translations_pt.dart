@@ -978,4 +978,5 @@ const Map<String, String> portuguese = {
   'Some barcode data comes from Open Food Facts, available under the Open Database Licence.': 'Alguns dados de códigos de barras vêm do Open Food Facts, disponíveis sob a Open Database License.',
   'Saved to your log. Only you can see this.': 'Salvo no seu registro. Só você pode ver.',
   'Bite back': 'Responder com uma mordida',
+  'Some foods this week were estimated, so treat those numbers as a guide.': 'Alguns alimentos desta semana foram estimados, então use esses números como referência.',
 };
