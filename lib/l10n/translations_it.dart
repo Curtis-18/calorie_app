@@ -969,4 +969,6 @@ const Map<String, String> italian = {
   'Never miss a bite': 'Non perderti nessun boccone',
   'Hear when a friend sends you a bite or your streak needs you. A few a day at most, quiet at night.': 'Scopri quando un amico ti manda un boccone o la tua serie ha bisogno di te. Poche al giorno al massimo e silenzio di notte.',
   'Turn on': 'Attiva',
+  'Part of your meal wasn\'t saved': 'Una parte del tuo pasto non è stata salvata',
+  'The rest is saved. These were not added: {items}. You can add them again from search.': 'Il resto è salvato. Questi non sono stati aggiunti: {items}. Puoi aggiungerli di nuovo dalla ricerca.',
 };

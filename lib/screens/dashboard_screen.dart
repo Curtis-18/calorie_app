@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../services/save_entries.dart';
 import '../services/scan_photo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -367,21 +368,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       saveState.dispose();
     }
 
-    try {
-      await Future.wait(
-        entries.map((entry) => ref.read(foodLogProvider.notifier).addEntry(entry)),
-      );
+    final failed = await saveEntriesIndependently(
+      entries,
+      (entry) => ref.read(foodLogProvider.notifier).addEntry(entry),
+    );
+    if (failed.length < entries.length) _refreshStreak();
+    if (failed.isEmpty) {
       saveState.value = SaveToastState.success;
-      _refreshStreak();
       await Future<void>.delayed(const Duration(milliseconds: 1200));
       dismissSaveToast();
-    } catch (_) {
-      dismissSaveToast();
-      if (!context.mounted) return;
+      return;
+    }
+    dismissSaveToast();
+    if (!context.mounted) return;
+    if (failed.length == entries.length) {
       await showAppDialog(
         context: context,
         title: context.tr("Couldn't save your meal"),
         message: context.tr('Something went wrong while saving your meal. Please try again.'),
+        confirmLabel: 'OK',
+      );
+    } else {
+      // The rest of the meal is saved: name only what is missing, so nobody
+      // re-adds the whole meal and doubles it.
+      await showAppDialog(
+        context: context,
+        title: context.tr("Part of your meal wasn't saved"),
+        message: context.tr(
+          'The rest is saved. These were not added: {items}. You can add them again from search.',
+          {'items': failedItemNames(failed)},
+        ),
         confirmLabel: 'OK',
       );
     }

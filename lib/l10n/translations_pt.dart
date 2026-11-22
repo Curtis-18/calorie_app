@@ -969,4 +969,6 @@ const Map<String, String> portuguese = {
   'Never miss a bite': 'Não perca nenhuma mordida',
   'Hear when a friend sends you a bite or your streak needs you. A few a day at most, quiet at night.': 'Saiba quando um amigo enviar uma mordida ou quando sua sequência precisar de você. No máximo algumas por dia e em silêncio à noite.',
   'Turn on': 'Ativar',
+  'Part of your meal wasn\'t saved': 'Parte da sua refeição não foi salva',
+  'The rest is saved. These were not added: {items}. You can add them again from search.': 'O resto está salvo. Estes não foram adicionados: {items}. Você pode adicioná-los de novo pela busca.',
 };

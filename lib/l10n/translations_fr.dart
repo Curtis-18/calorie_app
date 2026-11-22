@@ -969,4 +969,6 @@ const Map<String, String> french = {
   'Never miss a bite': 'Ne rate aucune bouchée',
   'Hear when a friend sends you a bite or your streak needs you. A few a day at most, quiet at night.': 'Sois prévenu quand un ami t’envoie une bouchée ou que ta série a besoin de toi. Quelques-unes par jour au maximum, et au calme la nuit.',
   'Turn on': 'Activer',
+  'Part of your meal wasn\'t saved': 'Une partie de ton repas n’a pas été enregistrée',
+  'The rest is saved. These were not added: {items}. You can add them again from search.': 'Le reste est enregistré. Ceux-ci n’ont pas été ajoutés : {items}. Tu peux les ajouter à nouveau depuis la recherche.',
 };
