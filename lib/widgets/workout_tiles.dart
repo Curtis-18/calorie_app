@@ -6,6 +6,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_card.dart';
+import 'move_icons.dart';
 import 'pressable.dart';
 
 /// A routine as a row in the library.
@@ -22,13 +23,7 @@ class WorkoutTile extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: TrackerColors.glassFill, borderRadius: BorderRadius.circular(AppRadii.small)),
-            child: Text(card.slice.emoji, style: const TextStyle(fontSize: 24)),
-          ),
+          MoveIcon.slice(card.slice, size: 25, tile: true),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -72,7 +67,7 @@ class BiteTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(card.slice.emoji, style: const TextStyle(fontSize: 26)),
+            MoveIcon.slice(card.slice, size: 22, tile: true),
             const SizedBox(height: 8),
             Text(card.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 14, color: TrackerColors.textPrimary)),
             const SizedBox(height: 4),
@@ -86,9 +81,12 @@ class BiteTile extends StatelessWidget {
 
 /// A filter chip (length or slice).
 class FilterChipButton extends StatelessWidget {
-  const FilterChipButton({super.key, required this.label, required this.selected, required this.onTap});
+  const FilterChipButton({super.key, required this.label, required this.selected, required this.onTap, this.icon});
 
   final String label;
+
+  /// A small icon before the label.
+  final Widget? icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -103,7 +101,13 @@ class FilterChipButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.pill),
           border: Border.all(color: selected ? TrackerColors.accentStartText : TrackerColors.border),
         ),
-        child: Text(label, style: AppType.body(size: 13.5, color: selected ? TrackerColors.accentStartText : TrackerColors.textPrimary)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[icon!, const SizedBox(width: 7)],
+            Text(label, style: AppType.body(size: 13.5, color: selected ? TrackerColors.accentStartText : TrackerColors.textPrimary)),
+          ],
+        ),
       ),
     );
   }

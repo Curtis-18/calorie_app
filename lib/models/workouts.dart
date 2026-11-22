@@ -2,13 +2,10 @@ import '../l10n/app_strings.dart';
 
 /// The four slices of the weekly "Move plate". Every kind of movement fills one.
 enum MoveSlice {
-  strength('💪'),
-  cardio('🏃'),
-  mobility('🧘'),
-  fun('💃');
-
-  const MoveSlice(this.emoji);
-  final String emoji;
+  strength,
+  cardio,
+  mobility,
+  fun;
 
   static MoveSlice? parse(Object? raw) {
     for (final s in MoveSlice.values) {

@@ -8,6 +8,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_card.dart';
+import 'move_icons.dart';
 
 /// "Your week": minutes toward the weekly guide, the seven days, the four slices
 /// of the Move plate and strength days. A rest day is just an empty dot: it
@@ -180,7 +181,7 @@ class _SliceTile extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Opacity(opacity: lit ? 1 : 0.45, child: Text(slice.emoji, style: const TextStyle(fontSize: 22))),
+          MoveIcon(slice.glyph, size: 24, color: lit ? slice.color : TrackerColors.textTertiary),
           const SizedBox(height: 4),
           Text(
             lit ? tr('{n} min', {'n': '${total.minutes}'}) : '-',

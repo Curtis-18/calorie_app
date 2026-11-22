@@ -8,6 +8,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'glass.dart';
+import 'move_icons.dart';
 
 typedef WorkoutLoader = Future<WorkoutDetail> Function(String id);
 
@@ -45,7 +46,13 @@ class _WorkoutDetailSheetState extends State<WorkoutDetailSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${c.slice.emoji}  ${c.name}', key: const ValueKey('detail_name'), style: AppType.title()),
+          Row(
+            children: [
+              MoveIcon.slice(c.slice, size: 20, tile: true),
+              const SizedBox(width: 12),
+              Expanded(child: Text(c.name, key: const ValueKey('detail_name'), style: AppType.title())),
+            ],
+          ),
           const SizedBox(height: 4),
           Text(
             [tr('{n} min', {'n': '${c.minutes}'}), c.focus, c.levelLabel].where((x) => x.isNotEmpty).join(' · '),

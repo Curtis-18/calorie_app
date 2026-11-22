@@ -16,6 +16,7 @@ import '../widgets/app_tour.dart';
 import '../widgets/app_card.dart';
 import '../widgets/glass.dart';
 import '../widgets/log_movement_sheet.dart';
+import '../widgets/move_icons.dart';
 import '../widgets/move_week_card.dart';
 import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
@@ -301,7 +302,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 128,
+                    height: 152,
                     child: ListView.separated(
                       key: const ValueKey('bites'),
                       scrollDirection: Axis.horizontal,
@@ -366,7 +367,8 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                       for (final s in MoveSlice.values) ...[
                         FilterChipButton(
                           key: ValueKey('slice_${s.name}'),
-                          label: '${s.emoji} ${s.label}',
+                          label: s.label,
+                          icon: MoveIcon.slice(s, size: 16),
                           selected: _slice == s,
                           onTap: () =>
                               setState(() => _slice = _slice == s ? null : s),
@@ -426,7 +428,8 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               for (final m in Mood.values) ...[
                 FilterChipButton(
                   key: ValueKey('feeling_${m.name}'),
-                  label: '${m.emoji} ${m.label}',
+                  label: m.label,
+                  icon: MoveIcon.mood(m, size: 16),
                   selected: _feeling == m,
                   onTap: () =>
                       setState(() => _feeling = _feeling == m ? null : m),
@@ -511,7 +514,13 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('${e.slice.emoji}  ${e.label}', style: AppType.title()),
+            Row(
+              children: [
+                MoveIcon.slice(e.slice, size: 20, tile: true),
+                const SizedBox(width: 12),
+                Expanded(child: Text(e.label, style: AppType.title())),
+              ],
+            ),
             const SizedBox(height: 4),
             Text(
               tr('{n} min', {'n': '${e.minutes}'}),
@@ -557,7 +566,7 @@ class _EntryRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(entry.slice.emoji, style: const TextStyle(fontSize: 20)),
+            MoveIcon.slice(entry.slice, size: 18, tile: true),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

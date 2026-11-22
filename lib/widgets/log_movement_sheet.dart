@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 import 'glass.dart';
+import 'move_icons.dart';
 import 'pressable.dart';
 
 Future<bool?> showLogMovementSheet(BuildContext context) =>
@@ -83,7 +84,8 @@ class _LogMovementSheetState extends ConsumerState<LogMovementSheet> {
                 for (final a in list)
                   _Chip(
                     key: ValueKey('activity_${a.key}'),
-                    label: '${a.slice.emoji} ${a.label}',
+                    label: a.label,
+                    icon: MoveIcon.slice(a.slice, size: 17),
                     selected: _activity == a.key,
                     onTap: () => setState(() => _activity = a.key),
                   ),
@@ -163,9 +165,10 @@ class _LogMovementSheetState extends ConsumerState<LogMovementSheet> {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({super.key, required this.label, required this.selected, required this.onTap, this.center = false});
+  const _Chip({super.key, required this.label, required this.selected, required this.onTap, this.center = false, this.icon});
 
   final String label;
+  final Widget? icon;
   final bool selected;
   final VoidCallback onTap;
   final bool center;
@@ -182,7 +185,14 @@ class _Chip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.small),
           border: Border.all(color: selected ? TrackerColors.accentStartText : TrackerColors.border),
         ),
-        child: Text(label, style: AppType.body(size: 14, color: selected ? TrackerColors.accentStartText : TrackerColors.textPrimary)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) ...[icon!, const SizedBox(width: 8)],
+            Flexible(child: Text(label, style: AppType.body(size: 14, color: selected ? TrackerColors.accentStartText : TrackerColors.textPrimary))),
+          ],
+        ),
       ),
     );
   }

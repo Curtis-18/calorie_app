@@ -16,6 +16,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/glass.dart';
+import '../widgets/move_icons.dart';
 import '../widgets/pressable.dart';
 
 /// Opens the player full screen, over the tab bar.
@@ -485,7 +486,7 @@ class _Summary extends ConsumerWidget {
       child: Column(
         children: [
           const Spacer(),
-          Text(workout.card.slice.emoji, style: const TextStyle(fontSize: 64)),
+          MoveIcon.slice(workout.card.slice, size: 46, tile: true),
           const SizedBox(height: 14),
           Text(tr('Nice moving'), key: const ValueKey('summary_title'), style: AppType.title().copyWith(fontSize: 30), textAlign: TextAlign.center),
           const SizedBox(height: 6),
