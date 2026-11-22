@@ -19,6 +19,7 @@ jobs:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          THEMEALDB_KEY: ${{ secrets.THEMEALDB_KEY }}
         run: |
           if [ -z "$SUPABASE_ANON_KEY" ]; then
             echo "::error::SUPABASE_ANON_KEY secret is not set on this repo. A build without it still succeeds, it just ships a bundle that can only render the 'Supabase not configured' screen. Add it under Settings > Secrets and variables > Actions."
@@ -30,6 +31,9 @@ jobs:
           fi
           if [ -n "$SUPABASE_URL" ]; then
             args+=(--dart-define=SUPABASE_URL="$SUPABASE_URL")
+          fi
+          if [ -n "$THEMEALDB_KEY" ]; then
+            args+=(--dart-define=THEMEALDB_KEY="$THEMEALDB_KEY")
           fi
           flutter build web "${args[@]}"
           

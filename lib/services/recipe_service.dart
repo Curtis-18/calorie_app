@@ -3,15 +3,23 @@ import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 
 class RecipeService {
-  // ignore: prefer_initializing_formals
-  RecipeService({http.Client? client}) : _client = client;
+  RecipeService({http.Client? client, String? key})
+      // ignore: prefer_initializing_formals
+      : _client = client,
+        _key = key ?? apiKey;
+
+  final String _key;
 
   /// For tests; the app uses the default client.
   final http.Client? _client;
 
-  // Free TheMealDB test key, fine for development/personal use.
-  // Swap for a real supporter key before shipping to an app store.
-  static const _baseUrl = 'https://www.themealdb.com/api/json/v1/1';
+  /// TheMealDB's key, set at build time (`--dart-define=THEMEALDB_KEY=...`, from
+  /// the THEMEALDB_KEY secret in GitHub Actions) like the other keys, never
+  /// written in the code. Unset, it is the public test key "1", which is only
+  /// for development: a supporter key is required for an app-store release.
+  static const String apiKey = String.fromEnvironment('THEMEALDB_KEY', defaultValue: '1');
+
+  String get _baseUrl => 'https://www.themealdb.com/api/json/v1/$_key';
 
   Future<List<Map<String, dynamic>>> _getMeals(String path) async {
     final uri = Uri.parse('$_baseUrl/$path');

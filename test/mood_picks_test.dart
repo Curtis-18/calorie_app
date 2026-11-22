@@ -19,6 +19,8 @@ RecipeSummary r(String id, String name) => RecipeSummary(id: id, name: name, thu
 void main() {
   tearDown(() => AppStrings.active = 'en');
 
+  recipeKeyTests();
+
   group('what the picker can see in a dish', () {
     test('plain food words, whole words only', () {
       expect(featuresFromText(['Baked Salmon with Spinach']), containsAll([FoodFeature.oilyFish, FoodFeature.leafyGreens]));
@@ -279,4 +281,34 @@ Future<void> settle(WidgetTester tester) async {
   for (var i = 0; i < 10; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
+}
+
+void recipeKeyTests() {
+  group('TheMealDB key', () {
+    test('is the public test key until a real one is set at build time, and is never in the URL code', () async {
+      expect(RecipeService.apiKey, '1');
+      Uri? seen;
+      final svc = RecipeService(
+        client: MockClient((req) async {
+          seen = req.url;
+          return http.Response(jsonEncode({'meals': null}), 200);
+        }),
+      );
+      await svc.filterByIngredient('salmon');
+      expect(seen!.path, '/api/json/v1/1/filter.php');
+    });
+
+    test('a supplied key is what goes into the address', () async {
+      Uri? seen;
+      final svc = RecipeService(
+        key: 'abc123',
+        client: MockClient((req) async {
+          seen = req.url;
+          return http.Response(jsonEncode({'meals': null}), 200);
+        }),
+      );
+      await svc.dessertIds();
+      expect(seen!.path, '/api/json/v1/abc123/filter.php');
+    });
+  });
 }
