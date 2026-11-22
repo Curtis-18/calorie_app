@@ -6,6 +6,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_card.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/mood_picker.dart';
 import '../widgets/page_header.dart';
 import '../widgets/pressable.dart';
 import '../widgets/shimmer.dart';
@@ -14,14 +15,17 @@ import 'recipe_detail_screen.dart';
 import '../l10n/app_strings.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  const LibraryScreen({super.key, this.service});
+
+  /// Replaces the TheMealDB client; for tests.
+  final RecipeService? service;
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
-  final _service = RecipeService();
+  late final RecipeService _service = widget.service ?? RecipeService();
   final _controller = TextEditingController();
 
   List<RecipeSummary> _browseResults = [];
@@ -145,6 +149,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                 children: [
                   if (!showingSearch) ...[
+                    MoodPicker(service: _service, pool: _browseResults, onOpen: _openRecipe),
                     SectionHeader(
                       label: tr('Browse'),
                       trailing: isLoading || list.isEmpty

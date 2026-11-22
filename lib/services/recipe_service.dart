@@ -3,14 +3,19 @@ import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 
 class RecipeService {
+  // ignore: prefer_initializing_formals
+  RecipeService({http.Client? client}) : _client = client;
+
+  /// For tests; the app uses the default client.
+  final http.Client? _client;
+
   // Free TheMealDB test key, fine for development/personal use.
   // Swap for a real supporter key before shipping to an app store.
   static const _baseUrl = 'https://www.themealdb.com/api/json/v1/1';
 
   Future<List<Map<String, dynamic>>> _getMeals(String path) async {
-    final response = await http
-        .get(Uri.parse('$_baseUrl/$path'))
-        .timeout(const Duration(seconds: 15));
+    final uri = Uri.parse('$_baseUrl/$path');
+    final response = await (_client?.get(uri) ?? http.get(uri)).timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
       throw Exception('Recipe lookup failed: ${response.statusCode}');
@@ -42,6 +47,28 @@ class RecipeService {
       }
     }
     return results;
+  }
+
+  /// Recipes that use [ingredient] (TheMealDB's own names, underscores for
+  /// spaces, e.g. `brown_rice`). Remembered for this session so changing mood
+  /// back and forth costs nothing.
+  final Map<String, List<RecipeSummary>> _byIngredient = {};
+
+  Future<List<RecipeSummary>> filterByIngredient(String ingredient) async {
+    final cached = _byIngredient[ingredient];
+    if (cached != null) return cached;
+    final meals = await _getMeals('filter.php?i=${Uri.encodeQueryComponent(ingredient)}');
+    return _byIngredient[ingredient] = meals.map(RecipeSummary.fromJson).toList();
+  }
+
+  Set<String>? _dessertIds;
+
+  /// The ids the catalogue files under Dessert (one request, kept for the session).
+  Future<Set<String>> dessertIds() async {
+    final cached = _dessertIds;
+    if (cached != null) return cached;
+    final meals = await _getMeals('filter.php?c=Dessert');
+    return _dessertIds = meals.map((m) => m['idMeal'] as String).toSet();
   }
 
   Future<RecipeDetail?> getRandom() async {
