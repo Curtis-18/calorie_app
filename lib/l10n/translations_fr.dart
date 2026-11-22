@@ -1124,4 +1124,10 @@ const Map<String, String> french = {
   'Drop the recipe': 'Donne la recette',
   'Sent to {name}': 'Envoyé à {name}',
   'Make this a recipe': 'En faire une recette',
+  'High protein': 'Riche en protéines',
+  'Low carb': 'Faible en glucides',
+  'Under 600 kcal': 'Moins de 600 kcal',
+  'High protein: at least 25 g of protein a serving.': 'Riche en protéines : au moins 25 g de protéines par portion.',
+  'Low carb: 20 g of carbs or fewer a serving.': 'Faible en glucides : 20 g de glucides ou moins par portion.',
+  'Under 600 kcal: fewer than 600 kcal a serving.': 'Moins de 600 kcal : moins de 600 kcal par portion.',
 };

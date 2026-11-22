@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/house_recipe.dart';
 import '../models/recipe_goal.dart';
+import '../models/recipe_tags.dart';
 import '../providers/house_recipes_provider.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -29,6 +30,13 @@ class MyRecipesView extends ConsumerStatefulWidget {
 class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
   /// The goal filter. Not saved: it only narrows the list while you look.
   RecipeGoal? _goal;
+
+  /// The quick filters (all of the chosen ones must fit). Not saved either.
+  final Set<RecipeTag> _tags = {};
+
+  bool get _filtering => _goal != null || _tags.isNotEmpty;
+
+  bool _fits(HouseRecipe r) => (_goal == null || r.goals.contains(_goal)) && _tags.every(r.tags.contains);
 
   @override
   void initState() {
@@ -150,12 +158,17 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
           const SizedBox(height: AppSpacing.md),
           _GoalFilter(selected: _goal, onChanged: (g) => setState(() => _goal = g)),
           const SizedBox(height: AppSpacing.md),
-          for (final r in _goal == null ? state.recipes : state.recipes.where((r) => r.goals.contains(_goal)))
+          _TagFilter(
+            selected: _tags,
+            onToggle: (t) => setState(() => _tags.contains(t) ? _tags.remove(t) : _tags.add(t)),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (final r in _filtering ? state.recipes.where(_fits) : state.recipes)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _Row(recipe: r, onTap: () => showHouseRecipeSheet(context, r)),
             ),
-          if (_goal != null && !state.recipes.any((r) => r.goals.contains(_goal)))
+          if (_filtering && !state.recipes.any(_fits))
             Padding(
               key: const ValueKey('goal_none'),
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -196,6 +209,37 @@ class _GoalFilter extends StatelessWidget {
           const SizedBox(height: 2),
           Text(tr('Matched from each recipe’s calories and protein. A guide, not advice.'), style: AppType.caption(size: 11, color: TrackerColors.textTertiary)),
         ],
+      ],
+    );
+  }
+}
+
+/// High protein, Low carb, Under 600 kcal: any mix, and with a goal above too.
+/// The rule for each chosen chip is spelled out under the row.
+class _TagFilter extends StatelessWidget {
+  const _TagFilter({required this.selected, required this.onToggle});
+
+  final Set<RecipeTag> selected;
+  final ValueChanged<RecipeTag> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final t in RecipeTag.values)
+              _GoalChip(key: ValueKey('tag_${t.name}'), label: t.label, selected: selected.contains(t), onTap: () => onToggle(t)),
+          ],
+        ),
+        for (final t in RecipeTag.values)
+          if (selected.contains(t)) ...[
+            const SizedBox(height: 6),
+            Text(t.rule, key: ValueKey('tag_rule_${t.name}'), style: AppType.caption(size: 12)),
+          ],
       ],
     );
   }

@@ -1124,4 +1124,10 @@ const Map<String, String> italian = {
   'Drop the recipe': 'Passa la ricetta',
   'Sent to {name}': 'Inviato a {name}',
   'Make this a recipe': 'Trasforma in ricetta',
+  'High protein': 'Ricco di proteine',
+  'Low carb': 'Pochi carboidrati',
+  'Under 600 kcal': 'Meno di 600 kcal',
+  'High protein: at least 25 g of protein a serving.': 'Ricco di proteine: almeno 25 g di proteine a porzione.',
+  'Low carb: 20 g of carbs or fewer a serving.': 'Pochi carboidrati: 20 g di carboidrati o meno a porzione.',
+  'Under 600 kcal: fewer than 600 kcal a serving.': 'Meno di 600 kcal: meno di 600 kcal a porzione.',
 };
