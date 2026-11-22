@@ -8,6 +8,7 @@ import 'package:calorie_app/providers/workouts_provider.dart';
 import 'package:calorie_app/screens/workout_player_screen.dart';
 import 'package:calorie_app/screens/workouts_screen.dart';
 import 'package:calorie_app/services/workouts_service.dart';
+import 'package:calorie_app/services/screen_awake.dart';
 import 'package:calorie_app/theme/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -121,10 +122,20 @@ HouseRecipe own(String id, String title, int kcal, double protein) => HouseRecip
       id: id, title: title, servings: 1, calories: kcal, proteinG: protein, carbsG: 20, fatG: 10, estimated: false,
     );
 
-ProviderContainer containerFor(Server s, {List<HouseRecipe> recipes = const []}) {
+/// Records when the screen was asked to stay awake and when it was let go.
+class FakeAwake implements ScreenAwake {
+  final calls = <String>[];
+  @override
+  Future<void> keepOn() async => calls.add('on');
+  @override
+  Future<void> release() async => calls.add('off');
+}
+
+ProviderContainer containerFor(Server s, {List<HouseRecipe> recipes = const [], ScreenAwake? awake}) {
   final service = WorkoutsService(client: s.client, tokenProvider: () => 't', now: () => DateTime(2026, 11, 25, 9));
   final c = ProviderContainer(overrides: [
     workoutsServiceProvider.overrideWithValue(service),
+    screenAwakeProvider.overrideWithValue(awake ?? FakeAwake()),
     houseRecipesProvider.overrideWith((ref) => _FakeRecipes(recipes)),
     moveProvider.overrideWith((ref) => MoveNotifier(service: service, currentUserId: () => 'ann', userIdChanges: const Stream.empty())),
   ]);

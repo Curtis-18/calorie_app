@@ -10,6 +10,7 @@ import '../models/workouts.dart';
 import '../providers/house_recipes_provider.dart';
 import '../providers/workouts_provider.dart';
 import '../services/refuel_picks.dart';
+import '../services/screen_awake.dart';
 import '../widgets/house_recipe_sheet.dart';
 import '../services/player_engine.dart';
 import '../theme/app_typography.dart';
@@ -49,15 +50,29 @@ class _WorkoutPlayerScreenState extends ConsumerState<WorkoutPlayerScreen> {
   _Saving _saving = _Saving.idle;
   MovementEntry? _saved;
 
+  // Held for the whole session, so the phone does not dim or lock in the middle
+  // of a set while the person's hands are busy. Taken from the provider once:
+  // `ref` cannot be read after dispose.
+  late final ScreenAwake _awake = ref.read(screenAwakeProvider);
+  bool _awakeOn = false;
+
+  void _keepAwake(bool on) {
+    if (_awakeOn == on) return;
+    _awakeOn = on;
+    on ? _awake.keepOn() : _awake.release();
+  }
+
   @override
   void initState() {
     super.initState();
+    _keepAwake(true);
     _timer = Timer.periodic(widget.tickEvery, (_) => _handle(_engine.tick()));
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _keepAwake(false);
     super.dispose();
   }
 
@@ -70,6 +85,7 @@ class _WorkoutPlayerScreenState extends ConsumerState<WorkoutPlayerScreen> {
       case PlayerEvent.finished:
         HapticFeedback.heavyImpact();
         _timer?.cancel();
+        _keepAwake(false); // the summary needs no wake lock
         unawaited(_save());
       case PlayerEvent.none:
         break;
@@ -122,6 +138,7 @@ class _WorkoutPlayerScreenState extends ConsumerState<WorkoutPlayerScreen> {
     switch (choice) {
       case 'save':
         _timer?.cancel();
+        _keepAwake(false);
         setState(() => _engine.finished = true);
         await _save();
       case 'discard':
