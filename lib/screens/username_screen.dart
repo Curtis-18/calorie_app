@@ -155,7 +155,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   widget.changing
-                      ? '${tr("You're @{name} now. Friends keep you on their list and see the new name.", {'name': widget.current})} ${tr('You can change it once every 30 days.')}'
+                      ? '${tr("You're {name} now. Friends keep you on their list and see the new name.", {'name': widget.current})} ${tr('You can change it once every 30 days.')}'
                       : '${tr('This is how friends will find you and send you food bites.')} ${tr('You can change it once every 30 days.')}',
                   style: AppType.body(color: TrackerColors.textSecondary),
                 ),

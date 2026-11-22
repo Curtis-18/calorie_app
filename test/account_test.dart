@@ -201,7 +201,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await open(tester, profile: profile, username: 'river');
       expect(find.byKey(const ValueKey('change_username')), findsOneWidget);
-      expect(find.text('@river'), findsOneWidget);
+      expect(find.text('river'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('log out and blocked people live in settings', (tester) async {
@@ -222,7 +222,7 @@ void main() {
           onOpenSettings: () => opened++,
         ),
       ));
-      expect(find.text('@river'), findsOneWidget);
+      expect(find.text('river'), findsOneWidget);
       expect(find.text('2400'), findsOneWidget);
       expect(find.text('112g'), findsOneWidget);
       expect(find.text('1.75 m'), findsOneWidget); // was shown as "0.2 m"
@@ -268,7 +268,7 @@ void main() {
         return http.Response(jsonEncode({'username': jsonDecode(r.body)['username']}), 200);
       }));
       expect(find.text('Change your username'), findsOneWidget);
-      expect(find.textContaining("You're @river now"), findsOneWidget);
+      expect(find.textContaining("You're river now"), findsOneWidget);
       expect(find.text('Sign out'), findsNothing);
 
       await type(tester, 'river_song');

@@ -327,7 +327,7 @@ void main() {
     testWidgets('no tray when the server has no stories', (tester) async {
       await open(tester, _Server(friends: [_person('sam')], storiesStatus: 404));
       expect(find.text('Your story'), findsNothing);
-      expect(find.text('@sam'), findsOneWidget);
+      expect(find.text('sam'), findsOneWidget);
     }, variant: ios);
 
     testWidgets('an empty story opens the camera and posts to the story only', (tester) async {
@@ -393,18 +393,18 @@ void main() {
       final server = await open(tester);
       expect(find.text('Pick who gets it'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('story_choice')));
-      await tester.tap(find.text('@sam'));
+      await tester.tap(find.text('sam'));
       await settle(tester, 4);
       await tester.tap(find.text('Share to story and 1 friend'));
       await settle(tester);
       expect(server.calls.where((c) => c.startsWith('POST')), ['POST /stories', 'POST /snaps']);
-      expect(server.calls.last, 'done: Sent to @sam and added to your story.');
+      expect(server.calls.last, 'done: Sent to sam and added to your story.');
     }, variant: ios);
 
     test('the summary says where the photo went', () {
       const sam = SendOutcome(userId: 'u', username: 'sam', streak: 0, completedToday: false);
       expect(shareSummary(const ComposeResult(addedToStory: true)), 'Added to your story.');
-      expect(shareSummary(const ComposeResult(outcomes: [sam])), 'Sent to @sam.');
+      expect(shareSummary(const ComposeResult(outcomes: [sam])), 'Sent to sam.');
       expect(shareSummary(const ComposeResult(outcomes: [sam, sam])), 'Sent to 2 friends.');
     });
   });
@@ -454,7 +454,7 @@ void main() {
       await tester.pump(StoryViewerScreen.perStory);
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('photo c'), findsOneWidget);
-      expect(find.text('@bea'), findsOneWidget);
+      expect(find.text('bea'), findsOneWidget);
       await tester.pump(StoryViewerScreen.perStory);
       await settle(tester);
       expect(find.text('photo c'), findsNothing);
@@ -505,7 +505,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('story_seen_by')));
       await settle(tester, 6);
-      expect(find.text('@sam'), findsOneWidget);
+      expect(find.text('sam'), findsOneWidget);
       expect(find.text('😋'), findsOneWidget);
       await tester.tapAt(const Offset(200, 40)); // close the sheet
       await settle(tester, 6);

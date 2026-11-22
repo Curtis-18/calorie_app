@@ -70,7 +70,7 @@ class SettingsRow extends StatelessWidget {
   final String title;
   final String? subtitle;
 
-  /// Short current value shown before the chevron, e.g. "@river".
+  /// Short current value shown before the chevron, e.g. "river".
   final String? value;
 
   /// Tint of the icon tile. Defaults to the brand accent.

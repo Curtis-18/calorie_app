@@ -74,10 +74,10 @@ class _ProfileLinkContentState extends State<ProfileLinkContent> {
       setState(() {
         _stage = _Stage.done;
         _message = switch (result.outcome) {
-          RequestOutcome.accepted => tr('You and @{v1} are now friends!', {'v1': person.username}),
-          RequestOutcome.alreadyFriends => tr("You're already friends with @{v1}.", {'v1': person.username}),
-          RequestOutcome.alreadySent => tr('You already asked @{v1}. Waiting for them.', {'v1': person.username}),
-          RequestOutcome.sent => tr('Request sent to @{v1}.', {'v1': person.username}),
+          RequestOutcome.accepted => tr('You and {v1} are now friends!', {'v1': person.username}),
+          RequestOutcome.alreadyFriends => tr("You're already friends with {v1}.", {'v1': person.username}),
+          RequestOutcome.alreadySent => tr('You already asked {v1}. Waiting for them.', {'v1': person.username}),
+          RequestOutcome.sent => tr('Request sent to {v1}.', {'v1': person.username}),
         };
       });
     } on FriendsException catch (e) {
@@ -100,13 +100,13 @@ class _ProfileLinkContentState extends State<ProfileLinkContent> {
     switch (_stage) {
       case _Stage.looking:
         header = const CupertinoActivityIndicator();
-        line = tr('Finding @{name}…', {'name': name});
+        line = tr('Finding {name}…', {'name': name});
       case _Stage.self:
         header = Icon(CupertinoIcons.person_crop_circle, size: 56, color: TrackerColors.textTertiary);
         line = tr("That's your own link. Share it with friends so they can add you.");
       case _Stage.missing:
         header = Icon(CupertinoIcons.person_crop_circle_badge_xmark, size: 56, color: TrackerColors.textTertiary);
-        line = tr("We couldn't find @{name}. The link may be out of date, or they may have changed their username.", {'name': name});
+        line = tr("We couldn't find {name}. The link may be out of date, or they may have changed their username.", {'name': name});
       default:
         header = FriendAvatar(username: person?.username ?? name, size: 72, imageUrl: person?.avatarUrl);
         line = switch (_stage) {
@@ -131,7 +131,7 @@ class _ProfileLinkContentState extends State<ProfileLinkContent> {
         Center(child: header),
         const SizedBox(height: AppSpacing.md),
         if (_stage == _Stage.found || _stage == _Stage.sending || _stage == _Stage.done || _stage == _Stage.failed)
-          Text('@${person?.username ?? name}', style: AppType.title(), textAlign: TextAlign.center),
+          Text(person?.username ?? name, style: AppType.title(), textAlign: TextAlign.center),
         const SizedBox(height: 4),
         Text(
           line,

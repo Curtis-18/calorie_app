@@ -195,7 +195,7 @@ class _ConversationRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('@${c.username}', style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(c.username, style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 2),
                     Text(
                       c.lastMine ? tr('You: {v1}', {'v1': c.lastBody}) : c.lastBody,

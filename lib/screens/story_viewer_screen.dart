@@ -210,7 +210,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
         final choice = await showCupertinoModalPopup<String>(
           context: context,
           builder: (context) => CupertinoActionSheet(
-            title: Text(owner.isMine ? tr('Your story') : '@${owner.username}'),
+            title: Text(owner.isMine ? tr('Your story') : owner.username),
             actions: [
               CupertinoActionSheetAction(
                 isDestructiveAction: true,
@@ -230,7 +230,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
             await showAppDialog(
               context: context,
               title: tr('Thanks for telling us'),
-              message: tr("We'll take a look. You can also block @{v1} from the Friends tab.", {'v1': owner.username}),
+              message: tr("We'll take a look. You can also block {v1} from the Friends tab.", {'v1': owner.username}),
             );
           } else {
             await notifier.delete(story.id);
@@ -343,7 +343,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          owner.isMine ? tr('Your story') : '@${owner.username}',
+                          owner.isMine ? tr('Your story') : owner.username,
                           key: const ValueKey('story_owner'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -518,7 +518,7 @@ class _ViewersList extends StatelessWidget {
                     FriendAvatar(username: v.username, size: 38, imageUrl: v.avatarUrl),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
-                      child: Text('@${v.username}', style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      child: Text(v.username, style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     if (v.reaction != null) Text(v.reaction!, style: const TextStyle(fontSize: 22)),
                   ],

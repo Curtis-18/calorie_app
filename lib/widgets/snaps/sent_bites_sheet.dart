@@ -105,7 +105,7 @@ String sentStatus(SentSnap snap) {
   final total = snap.recipients.length;
   final seen = snap.recipients.where((r) => r.viewed).length;
   if (total == 1) {
-    final name = '@${snap.recipients.first.username}';
+    final name = snap.recipients.first.username;
     return seen == 1 ? tr('Seen by {name}', {'name': name}) : tr('Sent to {name} · not opened yet', {'name': name});
   }
   return seen == 0 ? tr('Sent to {total} friends · not opened yet', {'total': total}) : tr('Seen by {seen} of {total}', {'seen': seen, 'total': total});
@@ -170,7 +170,7 @@ class _SentRow extends StatelessWidget {
                               border: Border.all(color: TrackerColors.border),
                             ),
                             child: Text(
-                              '${r.reaction} @${r.username}',
+                              '${r.reaction} ${r.username}',
                               style: AppType.caption(color: TrackerColors.textSecondary, size: 11.5),
                             ),
                           ),

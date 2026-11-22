@@ -19,7 +19,7 @@ void main() {
 
   test('every language has them', () {
     for (final lang in ['es', 'fr', 'de', 'pt', 'it']) {
-      for (final k in ['Looks great', 'Save me a plate', 'Drop the recipe', 'Sent to @{name}']) {
+      for (final k in ['Looks great', 'Save me a plate', 'Drop the recipe', 'Sent to {name}']) {
         expect(translationTables[lang]!.containsKey(k), isTrue, reason: '$lang: $k');
       }
     }

@@ -316,7 +316,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final sure = await showAppDialog(
       context: context,
       title: tr('Report this message?'),
-      message: tr('Our team will read it. You can also block @{v1} from your friends list.', {'v1': widget.username}),
+      message: tr('Our team will read it. You can also block {v1} from your friends list.', {'v1': widget.username}),
       confirmLabel: tr('Report'),
       cancelLabel: tr('Cancel'),
       destructive: true,
@@ -388,7 +388,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         padding: const EdgeInsets.all(32),
         child: AppEmptyState(
           icon: CupertinoIcons.chat_bubble_text,
-          title: tr('Say hi to @{v1}', {'v1': widget.username}),
+          title: tr('Say hi to {v1}', {'v1': widget.username}),
           message: tr('Messages stay between the two of you.'),
         ),
       );
@@ -478,7 +478,7 @@ class _Header extends StatelessWidget {
               FriendAvatar(username: username, size: 36, imageUrl: avatarUrl),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Text('@$username', style: AppType.headline(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: Text(username, style: AppType.headline(), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ],
           ),
@@ -653,7 +653,7 @@ class _Composer extends StatelessWidget {
                       controller: controller,
                       focusNode: focusNode,
                       enabled: !disabled,
-                      placeholder: tr('Message @{username}', {'username': username}),
+                      placeholder: tr('Message {username}', {'username': username}),
                       minLines: 1,
                       maxLines: 5,
                       keyboardType: TextInputType.multiline,
@@ -751,7 +751,7 @@ class _QuoteBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ink = mine ? TrackerColors.onAccent : TrackerColors.textPrimary;
-    final who = quote.mine == true ? tr('You') : '@$otherName';
+    final who = quote.mine == true ? tr('You') : otherName;
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
@@ -792,7 +792,7 @@ class _ReplyBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = message.mine ? tr('You') : '@$username';
+    final name = message.mine ? tr('You') : username;
     return Container(
       key: const ValueKey('reply_bar'),
       margin: const EdgeInsets.only(bottom: 8),

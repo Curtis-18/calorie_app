@@ -290,11 +290,11 @@ void main() {
     testWidgets('shows my username, requests and friends', (tester) async {
       await open(tester, _Server(friends: ['Sam'], incoming: ['Bea'], outgoing: ['Cy']));
       expect(find.text('calorie-app-ug.vercel.app/u/River_Song'), findsNothing, reason: 'the link moved to the Profile tab');
-      expect(find.text('@Bea'), findsOneWidget);
+      expect(find.text('Bea'), findsOneWidget);
       expect(find.text('wants to be your friend'), findsOneWidget);
-      expect(find.text('@Cy'), findsOneWidget);
+      expect(find.text('Cy'), findsOneWidget);
       expect(find.text('request sent'), findsOneWidget);
-      expect(find.text('@Sam'), findsOneWidget);
+      expect(find.text('Sam'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('each friend has a message button, with a count when they have written', (tester) async {
@@ -323,7 +323,7 @@ void main() {
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      expect(find.text('Message @Sam'), findsOneWidget, reason: 'the conversation opened');
+      expect(find.text('Message Sam'), findsOneWidget, reason: 'the conversation opened');
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the header Messages button opens the list of conversations', (tester) async {
@@ -367,14 +367,14 @@ void main() {
 
       testWidgets('shows who it is and sends the request only when you tap Add', (tester) async {
         final server = await sheet(tester, _Server()..everyone = ['Sammy'], 'sammy');
-        expect(find.text('@Sammy'), findsOneWidget);
+        expect(find.text('Sammy'), findsOneWidget);
         expect(server.calls, isNot(contains('POST /friends/requests')));
         await tester.tap(find.byKey(const ValueKey('profile_link_add')));
         for (var i = 0; i < 6; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
         expect(server.calls, contains('POST /friends/requests'));
-        expect(find.text('Request sent to @Sammy.'), findsOneWidget);
+        expect(find.text('Request sent to Sammy.'), findsOneWidget);
       }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
       testWidgets('your own link says so and offers nothing to add', (tester) async {
@@ -386,7 +386,7 @@ void main() {
 
       testWidgets('someone who is not found, and someone already a friend, are explained', (tester) async {
         await sheet(tester, _Server(), 'ghosty');
-        expect(find.textContaining("couldn't find @ghosty"), findsOneWidget);
+        expect(find.textContaining("couldn't find ghosty"), findsOneWidget);
         expect(find.byKey(const ValueKey('profile_link_add')), findsNothing);
 
         await tester.pumpWidget(const SizedBox());
@@ -403,7 +403,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(find.text('wants to be your friend'), findsNothing);
-      expect(find.text('@Bea'), findsOneWidget);
+      expect(find.text('Bea'), findsOneWidget);
       expect(find.textContaining('friends since'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -435,8 +435,8 @@ void main() {
       expect(server.searches, ['sam']);
       await settle(tester);
       expect(server.searches, ['sam'], reason: 'the pending typing search was replaced, not repeated');
-      expect(find.text('@Sam'), findsOneWidget);
-      expect(find.text('@Sammy'), findsOneWidget);
+      expect(find.text('Sam'), findsOneWidget);
+      expect(find.text('Sammy'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets("the keyboard's search key does the same", (tester) async {
@@ -445,7 +445,7 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await settle(tester);
       expect(server.searches, ['sam']);
-      expect(find.text('@Sam'), findsOneWidget);
+      expect(find.text('Sam'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('an empty bar does nothing when the icon is tapped', (tester) async {
@@ -465,7 +465,7 @@ void main() {
       expect(server.calls, isNot(contains('POST /friends/requests')), reason: 'searching never sends a request');
       await tester.tap(find.descendant(of: find.byKey(const ValueKey('suggest_Sam_1')), matching: find.text('Add')));
       await settle(tester);
-      expect(find.text('Request sent to @Sam_1.'), findsOneWidget);
+      expect(find.text('Request sent to Sam_1.'), findsOneWidget);
       expect(server.calls, contains('POST /friends/requests'));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -509,7 +509,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('people_search_icon')));
       await settle(tester, 4);
       expect(server.searches, ['sam']);
-      expect(find.text('@Sam'), findsOneWidget);
+      expect(find.text('Sam'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('suggestions appear as you type and narrow at once, without asking the server again', (tester) async {
@@ -519,26 +519,26 @@ void main() {
       expect(find.byKey(const ValueKey('people_suggestions')), findsNothing);
 
       await type(tester, 'sa');
-      expect(find.text('@Sam'), findsOneWidget);
-      expect(find.text('@Sammy'), findsOneWidget);
-      expect(find.text('@Sara'), findsOneWidget);
-      expect(find.text('@Bea'), findsNothing);
+      expect(find.text('Sam'), findsOneWidget);
+      expect(find.text('Sammy'), findsOneWidget);
+      expect(find.text('Sara'), findsOneWidget);
+      expect(find.text('Bea'), findsNothing);
 
       // One more letter: narrowed on the very next frame, no waiting.
       await tester.enterText(find.byType(CupertinoTextField), 'sam');
       await tester.pump();
-      expect(find.text('@Sara'), findsNothing);
-      expect(find.text('@Sammy'), findsOneWidget);
+      expect(find.text('Sara'), findsNothing);
+      expect(find.text('Sammy'), findsOneWidget);
 
       await tester.enterText(find.byType(CupertinoTextField), 'sammy');
       await tester.pump();
-      expect(find.text('@Sam'), findsNothing);
-      expect(find.text('@Sammy'), findsOneWidget);
+      expect(find.text('Sam'), findsNothing);
+      expect(find.text('Sammy'), findsOneWidget);
 
       // Deleting letters brings the earlier list straight back.
       await tester.enterText(find.byType(CupertinoTextField), 'sa');
       await tester.pump();
-      expect(find.text('@Sara'), findsOneWidget);
+      expect(find.text('Sara'), findsOneWidget);
 
       await type(tester, '');
       expect(find.byKey(const ValueKey('people_suggestions')), findsNothing);
@@ -552,17 +552,17 @@ void main() {
       );
       server.searchLimit = 8;
       await type(tester, 'sa');
-      expect(find.text('@Sam0'), findsOneWidget);
-      expect(find.text('@Sara'), findsNothing, reason: 'cut off by the limit of 8');
+      expect(find.text('Sam0'), findsOneWidget);
+      expect(find.text('Sara'), findsNothing, reason: 'cut off by the limit of 8');
 
       await tester.enterText(find.byType(CupertinoTextField), 'sar');
       await tester.pump();
-      expect(find.text('@Sam0'), findsNothing, reason: 'narrowed at once');
+      expect(find.text('Sam0'), findsNothing, reason: 'narrowed at once');
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(server.searches, ['sa', 'sar']);
-      expect(find.text('@Sara'), findsOneWidget);
+      expect(find.text('Sara'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('tapping Add on a suggestion sends the request and the page refreshes by itself', (tester) async {
@@ -573,7 +573,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(server.calls, contains('POST /friends/requests'));
-      expect(find.text('Request sent to @Sammy.'), findsOneWidget);
+      expect(find.text('Request sent to Sammy.'), findsOneWidget);
       // No pull to refresh: they are already under "Waiting for a reply".
       expect(find.text('request sent'), findsOneWidget);
       expect(find.byKey(const ValueKey('people_suggestions')), findsNothing);
@@ -601,8 +601,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(server.searches, ['sa', 'sam']);
-      expect(find.text('@Sam'), findsOneWidget);
-      expect(find.text('@Sara'), findsNothing);
+      expect(find.text('Sam'), findsOneWidget);
+      expect(find.text('Sara'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the page refreshes itself while open, so a new request shows up without pulling', (tester) async {

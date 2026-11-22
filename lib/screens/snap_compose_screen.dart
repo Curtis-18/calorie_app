@@ -30,7 +30,7 @@ class ComposeResult {
 String shareSummary(ComposeResult r) {
   final n = r.outcomes.length;
   if (n == 0) return tr('Added to your story.');
-  final who = n == 1 ? '@${r.outcomes.first.username}' : tr('{n} friends', {'n': n});
+  final who = n == 1 ? r.outcomes.first.username : tr('{n} friends', {'n': n});
   return r.addedToStory ? tr('Sent to {who} and added to your story.', {'who': who}) : tr('Sent to {who}.', {'who': who});
 }
 
@@ -321,7 +321,7 @@ class _Choice extends StatelessWidget {
             children: [
               FriendAvatar(username: person.username, size: 36, imageUrl: person.avatarUrl),
               const SizedBox(width: AppSpacing.md),
-              Expanded(child: Text('@${person.username}', style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              Expanded(child: Text(person.username, style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis)),
               if (person.streak > 0) ...[
                 StreakBadge(count: person.streak, lit: person.sentToday && person.theySentToday),
                 const SizedBox(width: 10),

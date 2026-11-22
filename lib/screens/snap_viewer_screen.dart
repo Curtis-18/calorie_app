@@ -96,7 +96,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
     try {
       await ref.read(conversationsProvider.notifier).service.send(snap.senderId, id: id, body: reply.text);
       ref.read(conversationsProvider.notifier).load();
-      if (mounted) showBiteToast(context, tr('Sent to @{name}', {'name': snap.senderUsername}));
+      if (mounted) showBiteToast(context, tr('Sent to {name}', {'name': snap.senderUsername}));
     } on MessagesException catch (e) {
       if (!mounted) return;
       setState(() => _sentReplies.remove(key));
@@ -118,7 +118,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
     final choice = await showCupertinoModalPopup<String>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: Text('@${snap.senderUsername}'),
+        title: Text(snap.senderUsername),
         actions: [
           CupertinoActionSheetAction(
             isDestructiveAction: true,
@@ -136,7 +136,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
       await showAppDialog(
         context: context,
         title: tr('Thanks for telling us'),
-        message: tr("We'll take a look. You can also block @{v1} from the Friends tab.", {'v1': snap.senderUsername}),
+        message: tr("We'll take a look. You can also block {v1} from the Friends tab.", {'v1': snap.senderUsername}),
       );
     } on SnapsException catch (e) {
       if (mounted) await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
@@ -211,7 +211,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '@${snap.senderUsername}',
+                        snap.senderUsername,
                         style: AppType.headline(color: const Color(0xFFFFFFFF)),
                       ),
                       Text(

@@ -335,7 +335,7 @@ void main() {
       await open(tester, server);
       expect(find.text('lunch?'), findsOneWidget);
       expect(find.text('yes!'), findsOneWidget);
-      expect(find.text('@sam'), findsOneWidget);
+      expect(find.text('sam'), findsOneWidget);
       expect(find.text('Seen'), findsOneWidget);
       expect(server.calls, contains('POST /messages/with/u-sam/read'));
     }, variant: ios);
@@ -353,7 +353,7 @@ void main() {
 
     testWidgets('an empty conversation invites you to say hi', (tester) async {
       await open(tester, _Server());
-      expect(find.text('Say hi to @sam'), findsOneWidget);
+      expect(find.text('Say hi to sam'), findsOneWidget);
     }, variant: ios);
 
     testWidgets('sending shows the message at once and saves it with an id', (tester) async {
@@ -386,7 +386,7 @@ void main() {
         expect(find.byKey(const ValueKey('reply_bar')), findsNothing);
         await replyTo(tester, 'Dinner at 7?');
         expect(find.byKey(const ValueKey('reply_bar')), findsOneWidget);
-        expect(find.text('Replying to @sam'), findsOneWidget);
+        expect(find.text('Replying to sam'), findsOneWidget);
         // Their line now appears twice: in the list and in the bar.
         expect(find.text('Dinner at 7?'), findsNWidgets(2));
       }, variant: ios);
@@ -412,7 +412,7 @@ void main() {
         expect(server.sentBodies.single['body'], 'Yes!');
         // The saved reply still carries its quote: the quoted line is in the list and in the quote.
         expect(find.text('Dinner at 7?'), findsNWidgets(2));
-        expect(find.text('@sam'), findsNWidgets(2), reason: 'the header and the quote label');
+        expect(find.text('sam'), findsNWidgets(2), reason: 'the header and the quote label');
       }, variant: ios);
 
       testWidgets('cancelling the reply sends a plain message', (tester) async {
@@ -444,7 +444,7 @@ void main() {
         ]);
         await open(tester, server);
         expect(find.text('Dinner at 7?'), findsOneWidget);
-        expect(find.text('@sam'), findsNWidgets(2));
+        expect(find.text('sam'), findsNWidgets(2));
         expect(find.text('Original message deleted'), findsOneWidget);
         expect(find.text('Count me in'), findsOneWidget);
       }, variant: ios);
@@ -621,7 +621,7 @@ void main() {
           _conv('sam', mine: true, last: 'see you there'),
         ]),
       );
-      expect(find.text('@bea'), findsOneWidget);
+      expect(find.text('bea'), findsOneWidget);
       expect(find.text('lunch?'), findsOneWidget);
       expect(find.text('You: see you there'), findsOneWidget);
       expect(find.byKey(const ValueKey('unread_u-bea')), findsOneWidget);
@@ -637,7 +637,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('conversation_u-bea')));
       await settle(tester);
       expect(find.byKey(const ValueKey('chat_input')), findsOneWidget);
-      expect(find.text('Message @bea'), findsOneWidget);
+      expect(find.text('Message bea'), findsOneWidget);
     }, variant: ios);
 
     testWidgets('no conversations yet says how to start one', (tester) async {

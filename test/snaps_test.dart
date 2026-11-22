@@ -295,7 +295,7 @@ void main() {
       expect(find.text('5'), findsOneWidget); // streak badge
       expect(find.text('sent you a bite today. Send one back!'), findsOneWidget);
       // Both friends have a Bite button (the second is a scroll away).
-      await tester.scrollUntilVisible(find.text('@bea'), 120, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(find.text('bea'), 120, scrollable: find.byType(Scrollable).first);
       expect(find.text('Bite', skipOffstage: false), findsNWidgets(2));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -311,8 +311,8 @@ void main() {
       expect(find.text('Send to 1 friend'), findsOneWidget);
 
       // The story row sits above the friends, so the second one is a scroll away.
-      await tester.scrollUntilVisible(find.text('@bea'), 120, scrollable: find.byType(Scrollable).first);
-      await tester.tap(find.text('@bea'));
+      await tester.scrollUntilVisible(find.text('bea'), 120, scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.text('bea'));
       await settle(tester);
       expect(find.text('Send to 2 friends'), findsOneWidget);
 
@@ -502,8 +502,8 @@ void main() {
       await tester.tap(find.text('Share your meal'));
       await settle(tester);
       expect(find.text('Send a bite'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('@sam'), 120, scrollable: find.byType(Scrollable).first);
-      await tester.tap(find.text('@sam'));
+      await tester.scrollUntilVisible(find.text('sam'), 120, scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.text('sam'));
       await settle(tester);
       await tester.tap(find.text('Send to 1 friend'));
       await settle(tester);

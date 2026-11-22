@@ -146,13 +146,13 @@ void main() {
       expect(find.text('Send a bite'), findsOneWidget);
       expect(find.text('Pick who gets it'), findsOneWidget);
       final list = find.descendant(of: find.byType(SnapComposeScreen), matching: find.byType(Scrollable)).first;
-      for (final name in ['@sam', '@mia', '@leo']) {
+      for (final name in ['sam', 'mia', 'leo']) {
         await tester.scrollUntilVisible(find.text(name), 120, scrollable: list);
         expect(find.text(name), findsOneWidget, reason: '$name is offered');
       }
-      await tester.tap(find.text('@leo'));
-      await tester.scrollUntilVisible(find.text('@sam'), -120, scrollable: list);
-      await tester.tap(find.text('@sam'));
+      await tester.tap(find.text('leo'));
+      await tester.scrollUntilVisible(find.text('sam'), -120, scrollable: list);
+      await tester.tap(find.text('sam'));
       await tester.pump();
       expect(find.text('Send to 2 friends'), findsOneWidget, reason: 'several friends at once, not one');
     }, variant: ios);

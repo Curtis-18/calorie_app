@@ -382,8 +382,8 @@ void main() {
       await openRecipe(tester);
       await tester.tap(find.byKey(const ValueKey('shared_with')));
       await settle(tester);
-      expect(find.text('@sam'), findsOneWidget);
-      expect(find.text('@bea'), findsOneWidget);
+      expect(find.text('sam'), findsOneWidget);
+      expect(find.text('bea'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('take_back_f1')));
       await settle(tester);
       expect(find.text("They'll no longer be able to open it. The message stays in chat."), findsOneWidget);
@@ -395,8 +395,8 @@ void main() {
       await tester.tap(find.text('Take back').last);
       await settle(tester);
       expect(service.calls, ['unshare:f1']);
-      expect(find.text('@sam'), findsNothing);
-      expect(find.text('@bea'), findsOneWidget);
+      expect(find.text('sam'), findsNothing);
+      expect(find.text('bea'), findsOneWidget);
     });
 
     screenTest('Shared with: nobody yet, and a failed load', (tester) async {
@@ -420,7 +420,7 @@ void main() {
       await pump(tester, CupertinoPageScaffold(child: Builder(builder: (c) => CupertinoButton(child: const Text('go'), onPressed: () => showFriendRecipes(c, friendId: 'f1', username: 'sam')))), svc: svc);
       await tester.tap(find.text('go'));
       await settle(tester);
-      expect(find.text('@sam’s recipes'), findsOneWidget);
+      expect(find.text('sam’s recipes'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('friend_recipe_$rid')));
       await settle(tester);
       expect(find.byKey(const ValueKey('recipe_title')), findsOneWidget); // the recipe sheet opened

@@ -49,7 +49,7 @@ class _SharedWithSheetState extends ConsumerState<SharedWithSheet> {
   Future<void> _takeBack(RecipeSharee person) async {
     final ok = await showAppDialog(
       context: context,
-      title: tr('Take it back from @{v1}?', {'v1': person.username}),
+      title: tr('Take it back from {v1}?', {'v1': person.username}),
       message: tr("They'll no longer be able to open it. The message stays in chat."),
       confirmLabel: tr('Take back'),
       cancelLabel: tr('Cancel'),
@@ -96,7 +96,7 @@ class _SharedWithSheetState extends ConsumerState<SharedWithSheet> {
                   children: [
                     FriendAvatar(username: p.username, imageUrl: p.avatarUrl, size: 36),
                     const SizedBox(width: 12),
-                    Expanded(child: Text('@${p.username}', style: AppType.body(size: 15))),
+                    Expanded(child: Text(p.username, style: AppType.body(size: 15))),
                     CupertinoButton(
                       key: ValueKey('take_back_${p.friendId}'),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -153,7 +153,7 @@ class _FriendRecipesSheetState extends ConsumerState<FriendRecipesSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tr('@{name}’s recipes', {'name': widget.username}), style: AppType.title()),
+          Text(tr('{name}’s recipes', {'name': widget.username}), style: AppType.title()),
           const SizedBox(height: 10),
           if (_failed)
             Text(tr("Couldn't load this. Check your connection and try again."), key: const ValueKey('friend_recipes_failed'), style: AppType.body(size: 14, color: TrackerColors.textSecondary))
@@ -161,7 +161,7 @@ class _FriendRecipesSheetState extends ConsumerState<FriendRecipesSheet> {
             const Padding(padding: EdgeInsets.all(12), child: Center(child: CupertinoActivityIndicator()))
           else if (recipes.isEmpty)
             Text(
-              tr('@{name} hasn’t pinned any recipes for friends yet.', {'name': widget.username}),
+              tr('{name} hasn’t pinned any recipes for friends yet.', {'name': widget.username}),
               key: const ValueKey('friend_recipes_empty'),
               style: AppType.body(size: 14, color: TrackerColors.textSecondary),
             )

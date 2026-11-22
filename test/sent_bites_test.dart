@@ -38,8 +38,8 @@ Future<void> settle(WidgetTester tester) async {
 void main() {
   test('status line', () {
     SentSnap s(List<Map<String, dynamic>> r) => SentSnap.fromJson(_snap('a', r));
-    expect(sentStatus(s([_to('sam')])), 'Sent to @sam · not opened yet');
-    expect(sentStatus(s([_to('sam', viewed: true)])), 'Seen by @sam');
+    expect(sentStatus(s([_to('sam')])), 'Sent to sam · not opened yet');
+    expect(sentStatus(s([_to('sam', viewed: true)])), 'Seen by sam');
     expect(sentStatus(s([_to('sam'), _to('bea')])), 'Sent to 2 friends · not opened yet');
     expect(sentStatus(s([_to('sam', viewed: true), _to('bea'), _to('kai', viewed: true)])), 'Seen by 2 of 3');
   });
@@ -80,8 +80,8 @@ void main() {
       }));
       expect(find.text('Seen by 1 of 2'), findsOneWidget);
       expect(find.text('Sunday roast'), findsOneWidget);
-      expect(find.text('🔥 @sam'), findsOneWidget);
-      expect(find.text('Sent to @kai · not opened yet'), findsOneWidget);
+      expect(find.text('🔥 sam'), findsOneWidget);
+      expect(find.text('Sent to kai · not opened yet'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('taking a bite back asks first, then removes it', (tester) async {
@@ -106,8 +106,8 @@ void main() {
       await tester.tap(find.text('Take back'));
       await settle(tester);
       expect(deleted, ['/snaps/a']);
-      expect(find.text('Sent to @sam · not opened yet'), findsNothing);
-      expect(find.text('Sent to @kai · not opened yet'), findsOneWidget);
+      expect(find.text('Sent to sam · not opened yet'), findsNothing);
+      expect(find.text('Sent to kai · not opened yet'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('nothing sent, and a failed load, each say so', (tester) async {

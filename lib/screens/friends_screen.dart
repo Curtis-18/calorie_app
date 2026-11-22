@@ -252,10 +252,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       _controller.clear();
       _clearSearch();
       _say(switch (result.outcome) {
-        RequestOutcome.sent => tr('Request sent to @{v1}.', {'v1': result.username}),
-        RequestOutcome.accepted => tr('You and @{v1} are now friends!', {'v1': result.username}),
-        RequestOutcome.alreadyFriends => tr("You're already friends with @{v1}.", {'v1': result.username}),
-        RequestOutcome.alreadySent => tr('You already asked @{v1}. Waiting for them.', {'v1': result.username}),
+        RequestOutcome.sent => tr('Request sent to {v1}.', {'v1': result.username}),
+        RequestOutcome.accepted => tr('You and {v1} are now friends!', {'v1': result.username}),
+        RequestOutcome.alreadyFriends => tr("You're already friends with {v1}.", {'v1': result.username}),
+        RequestOutcome.alreadySent => tr('You already asked {v1}. Waiting for them.', {'v1': result.username}),
       });
     } on FriendsException catch (e) {
       if (mounted) _say(e.message, error: true);
@@ -322,7 +322,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final choice = await showCupertinoModalPopup<String>(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: Text('@${person.username}'),
+        title: Text(person.username),
         actions: [
           if (isFriend)
             CupertinoActionSheetAction(
@@ -362,14 +362,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         await showAppDialog(
           context: context,
           title: tr('Thanks for telling us'),
-          message: tr("We'll take a look. You can also block @{v1} from the same menu.", {'v1': person.username}),
+          message: tr("We'll take a look. You can also block {v1} from the same menu.", {'v1': person.username}),
         );
       });
     } else if (choice == 'remove') {
       final sure = isFriend
           ? await showAppDialog(
               context: context,
-              title: tr('Remove @{v1}?', {'v1': person.username}),
+              title: tr('Remove {v1}?', {'v1': person.username}),
               message: tr("You'll stop being friends. You can add each other again later."),
               confirmLabel: tr('Remove'),
               cancelLabel: tr('Cancel'),
@@ -380,7 +380,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     } else {
       final sure = await showAppDialog(
         context: context,
-        title: tr('Block @{v1}?', {'v1': person.username}),
+        title: tr('Block {v1}?', {'v1': person.username}),
         message: tr("They won't be able to find you or send you anything, and you won't see them. They aren't told. You can unblock them any time."),
         confirmLabel: tr('Block'),
         cancelLabel: tr('Cancel'),
@@ -836,7 +836,7 @@ class _PersonRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('@${person.username}', style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(person.username, style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                   // On its own line: beside the name there is no room next to the buttons on a phone.
                   if (news != null) ...[
                     const SizedBox(height: 3),
@@ -879,7 +879,7 @@ class _SuggestionRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
-              '@${person.username}',
+              person.username,
               style: AppType.body(size: 15),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

@@ -226,7 +226,7 @@ class ProfileView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name != null ? '@$name' : (p != null ? tr('{age} years old', {'age': p.age}) : tr('Your profile')),
+                  name ?? (p != null ? tr('{age} years old', {'age': p.age}) : tr('Your profile')),
                   style: AppType.title(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

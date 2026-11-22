@@ -395,7 +395,7 @@ class _StreakCelebrationState extends State<_StreakCelebration> with SingleTicke
                       ),
                     ),
                     Text(
-                      tr('day streak with @{name}', {'name': widget.username}),
+                      tr('day streak with {name}', {'name': widget.username}),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

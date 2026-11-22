@@ -222,7 +222,7 @@ class SettingsView extends ConsumerWidget {
                             key: const ValueKey('change_username'),
                             icon: CupertinoIcons.at,
                             title: context.tr('Username'),
-                            value: '@$username',
+                            value: username,
                             onTap: () => _push(
                               context,
                               (routeContext) => UsernameScreen(
