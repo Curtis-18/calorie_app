@@ -15,6 +15,7 @@ import '../widgets/glass.dart';
 import '../widgets/pressable.dart';
 import 'friends_screen.dart' show FriendAvatar;
 import '../l10n/app_strings.dart';
+import '../widgets/snaps/photo_caption.dart';
 
 /// One photo as the viewer plays it, whoever it belongs to.
 class StoryItem {
@@ -389,6 +390,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
                   ),
                 ),
               ),
+            positionedCaption(context, story.caption),
             Positioned(
               left: 16,
               right: 16,
@@ -396,13 +398,6 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (story.caption != null && story.caption!.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(14)),
-                      child: Text(story.caption!, textAlign: TextAlign.center, style: AppType.body(color: white)),
-                    ),
                   if (owner.isMine)
                     Wrap(
                       alignment: WrapAlignment.center,

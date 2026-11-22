@@ -12,6 +12,7 @@ import '../services/snaps_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_typography.dart';
 import '../widgets/app_dialog.dart';
+import '../widgets/snaps/photo_caption.dart';
 import 'bite_flow.dart';
 import '../widgets/pressable.dart';
 import '../l10n/app_strings.dart';
@@ -253,6 +254,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                   ),
                 ),
               ),
+            positionedCaption(context, snap.caption),
             Positioned(
               left: 16,
               right: 16,
@@ -260,20 +262,6 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (snap.caption != null && snap.caption!.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0x99000000),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text(
-                        snap.caption!,
-                        textAlign: TextAlign.center,
-                        style: AppType.body(color: const Color(0xFFFFFFFF)),
-                      ),
-                    ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Pressable(

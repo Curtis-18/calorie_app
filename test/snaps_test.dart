@@ -361,6 +361,16 @@ void main() {
       await settle(tester);
     }
 
+    testWidgets('a bite caption is drawn as a band across the photo, not a pill at the bottom', (tester) async {
+      await openViewer(tester, posted: <Map<String, dynamic>>[]);
+      expect(find.byKey(const ValueKey('caption_band')), findsOneWidget);
+      expect(find.text('lunch'), findsOneWidget);
+      final band = tester.getRect(find.byKey(const ValueKey('caption_band')));
+      final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+      expect(band.width, screen.width, reason: 'edge to edge, like Snapchat');
+      expect(band.top, closeTo(screen.height * 0.58, 1));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('a quick reply goes to the sender as an ordinary chat message, once', (tester) async {
       final posted = <Map<String, dynamic>>[];
       await openViewer(tester, posted: posted);

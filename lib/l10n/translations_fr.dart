@@ -756,7 +756,6 @@ const Map<String, String> french = {
   'Pick who gets it': 'Choisissez qui le reçoit',
   'Send to {friends}': 'Envoyer à {friends}',
   'Send a bite': 'Envoyer une bouchée',
-  'Add a caption…': 'Ajouter une légende…',
   'Share to': 'Partager avec',
   'Send as a bite': 'Envoyer comme bouchée',
   'Add a friend first, then you can send them bites.': 'Ajoutez d’abord un ami, puis vous pourrez lui envoyer des bouchées.',
@@ -1130,4 +1129,6 @@ const Map<String, String> french = {
   'High protein: at least 25 g of protein a serving.': 'Riche en protéines : au moins 25 g de protéines par portion.',
   'Low carb: 20 g of carbs or fewer a serving.': 'Faible en glucides : 20 g de glucides ou moins par portion.',
   'Under 600 kcal: fewer than 600 kcal a serving.': 'Moins de 600 kcal : moins de 600 kcal par portion.',
+  'Type a caption': 'Écris une légende',
+  'Tap to add a caption': 'Touche pour ajouter une légende',
 };

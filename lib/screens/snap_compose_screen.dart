@@ -13,6 +13,7 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/pressable.dart';
+import '../widgets/snaps/photo_caption.dart';
 import '../widgets/snaps/flame.dart';
 import 'friends_screen.dart' show FriendAvatar;
 import '../l10n/app_strings.dart';
@@ -155,24 +156,11 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                       borderRadius: BorderRadius.circular(24),
                       child: AspectRatio(
                         aspectRatio: 4 / 5,
-                        child: Image.memory(widget.image, fit: BoxFit.cover, gaplessPlayback: true),
+                        child: CaptionedPhoto(
+                          controller: _caption,
+                          image: Image.memory(widget.image, fit: BoxFit.cover, gaplessPlayback: true),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  CupertinoTextField(
-                    controller: _caption,
-                    placeholder: tr('Add a caption…'),
-                    maxLength: 120,
-                    maxLines: 2,
-                    minLines: 1,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    style: AppType.body(),
-                    placeholderStyle: AppType.body(color: TrackerColors.textTertiary),
-                    decoration: BoxDecoration(
-                      color: TrackerColors.surfaceElevated,
-                      borderRadius: AppRadii.buttonAll,
-                      border: Border.all(color: TrackerColors.border),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),

@@ -389,6 +389,41 @@ void main() {
       return server;
     }
 
+    testWidgets('a caption is typed straight onto the photo, then sent with it', (tester) async {
+      final server = await open(tester, toStory: true);
+      expect(find.byKey(const ValueKey('caption_hint')), findsOneWidget);
+      expect(find.text('Tap to add a caption'), findsOneWidget);
+      expect(find.byKey(const ValueKey('caption_field')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('caption_hint')));
+      await settle(tester, 4);
+      expect(find.byKey(const ValueKey('caption_field')), findsOneWidget);
+      await tester.enterText(find.byKey(const ValueKey('caption_field')), 'Sunday roast');
+      await tester.tap(find.byKey(const ValueKey('caption_done')));
+      await settle(tester, 4);
+      expect(find.byKey(const ValueKey('caption_field')), findsNothing);
+      expect(find.byKey(const ValueKey('caption_band')), findsOneWidget);
+      expect(find.text('Sunday roast'), findsOneWidget);
+      expect(find.byKey(const ValueKey('caption_hint')), findsNothing);
+
+      await tester.tap(find.text('Add to your story'));
+      await settle(tester);
+      expect(server.bodies['POST /stories']!['caption'], 'Sunday roast');
+    }, variant: ios);
+
+    testWidgets('a caption can be edited again by tapping it, and is capped at 120 characters', (tester) async {
+      await open(tester, toStory: true);
+      await tester.tap(find.byKey(const ValueKey('caption_hint')));
+      await settle(tester, 4);
+      await tester.enterText(find.byKey(const ValueKey('caption_field')), 'x' * 200);
+      await tester.tap(find.byKey(const ValueKey('caption_done')));
+      await settle(tester, 4);
+      expect((tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('caption_band')), matching: find.byType(Text))).data ?? '').length, 120);
+      await tester.tap(find.byKey(const ValueKey('caption_band')));
+      await settle(tester, 4);
+      expect(find.byKey(const ValueKey('caption_field')), findsOneWidget);
+    }, variant: ios);
+
     testWidgets('story and a friend together make one share', (tester) async {
       final server = await open(tester);
       expect(find.text('Pick who gets it'), findsOneWidget);
