@@ -116,8 +116,8 @@ class _Settings extends ConsumerWidget {
             _SwitchRow(
               keyName: 'friend_snaps',
               emoji: '📸',
-              title: tr('Friend bites'),
-              subtitle: tr('When a friend sends you a bite'),
+              title: tr('Friends'),
+              subtitle: tr('Bites, messages and friend requests'),
               value: prefs.friendSnaps,
               onChanged: (v) => _set(prefs.copyWith(friendSnaps: v), {'friend_snaps': v}),
             ),

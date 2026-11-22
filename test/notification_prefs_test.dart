@@ -173,7 +173,7 @@ void main() {
       expect(find.textContaining('At most 3 a day'), findsOneWidget);
       expect(find.textContaining('never about your weight or calories'), findsOneWidget);
       expect(find.byKey(const ValueKey('push_not_live')), findsOneWidget);
-      expect(find.text('Friend bites'), findsOneWidget);
+      expect(find.text('Friends'), findsOneWidget);
       expect(find.byKey(const ValueKey('quiet_summary')), findsOneWidget);
       expect(find.textContaining('between 10 PM and 8 AM'), findsOneWidget);
     }, variant: ios);
