@@ -722,7 +722,20 @@ class _RecipeCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(CupertinoIcons.book_fill, size: 20, color: ink),
+          if (card.photoUrl != null)
+            ClipRRect(
+              key: const ValueKey('recipe_card_photo'),
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                card.photoUrl!,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Icon(CupertinoIcons.book_fill, size: 20, color: ink),
+              ),
+            )
+          else
+            Icon(CupertinoIcons.book_fill, size: 20, color: ink),
           const SizedBox(width: 10),
           Flexible(
             child: Column(

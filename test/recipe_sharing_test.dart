@@ -109,6 +109,14 @@ void main() {
       expect(MessageAttachment.fromJson(null), isNull);
     });
 
+    test('a card reads its cover link when the server gives one, and treats empty as none', () {
+      final base = {'kind': 'recipe', 'id': rid, 'title': 'Stew', 'calories': 450};
+      expect(MessageAttachment.fromJson({...base, 'photo_url': 'https://files/c.jpg'})!.photoUrl, 'https://files/c.jpg');
+      expect(MessageAttachment.fromJson(base)!.photoUrl, isNull);
+      expect(MessageAttachment.fromJson({...base, 'photo_url': ''})!.photoUrl, isNull);
+      expect(MessageAttachment.fromJson({...base, 'photo_url': 5})!.photoUrl, isNull);
+    });
+
     test('a message carries its card, and still works without one', () {
       final base = {'id': 'm', 'mine': false, 'body': 'Sent you a recipe: Stew', 'created_at': '2026-11-19T10:00:00Z'};
       expect(ChatMessage.fromJson({...base, 'attachment': {'kind': 'recipe', 'id': rid, 'title': 'Stew', 'calories': 1}}).attachment, isNotNull);
@@ -463,6 +471,16 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('recipe_card_m1')));
       await settle(tester);
       expect(find.text('From sam'), findsOneWidget);
+    });
+
+    screenTestChat('a card shows the recipe photo only when the server sent one', (tester) async {
+      await open(tester, [
+        message(id: 'a', attachment: {'kind': 'recipe', 'id': rid, 'title': 'Sam stew', 'calories': 450, 'photo_url': 'https://files/c.jpg'}),
+        message(id: 'b', attachment: {'kind': 'recipe', 'id': rid, 'title': 'Sam soup', 'calories': 300}),
+      ]);
+      expect(find.byKey(const ValueKey('recipe_card_photo')), findsOneWidget);
+      expect(find.text('Sam stew'), findsOneWidget);
+      expect(find.text('Sam soup'), findsOneWidget);
     });
 
     screenTestChat('a card for a recipe that is no longer shared says so', (tester) async {

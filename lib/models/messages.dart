@@ -8,18 +8,28 @@ const int maxMessageChars = 1000;
 /// A card under a message's text. Only recipes exist so far; anything else the
 /// server might add later is ignored, and the text still shows.
 class MessageAttachment {
-  const MessageAttachment({required this.recipeId, required this.title, required this.calories});
+  const MessageAttachment({required this.recipeId, required this.title, required this.calories, this.photoUrl});
 
   final String recipeId;
   final String title;
   final int calories;
+
+  /// The recipe's cover, when it has one (a link that expires, so it is only
+  /// ever read fresh from the server).
+  final String? photoUrl;
 
   static MessageAttachment? fromJson(Object? raw) {
     if (raw is! Map<String, dynamic> || raw['kind'] != 'recipe') return null;
     final id = raw['id'];
     final title = raw['title'];
     if (id is! String || title is! String) return null;
-    return MessageAttachment(recipeId: id, title: title, calories: ((raw['calories'] as num?) ?? 0).toInt());
+    final photo = raw['photo_url'];
+    return MessageAttachment(
+      recipeId: id,
+      title: title,
+      calories: ((raw['calories'] as num?) ?? 0).toInt(),
+      photoUrl: photo is String && photo.isNotEmpty ? photo : null,
+    );
   }
 }
 
