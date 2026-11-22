@@ -15,6 +15,7 @@ class AppButton extends StatelessWidget {
     required this.label,
     this.onPressed,
     this.icon,
+    this.leading,
     this.style = AppButtonStyle.primary,
     this.expand = true,
     this.height = 52,
@@ -26,6 +27,7 @@ class AppButton extends StatelessWidget {
     required this.label,
     this.onPressed,
     this.icon,
+    this.leading,
     this.expand = true,
     this.height = 52,
     this.loading = false,
@@ -34,6 +36,10 @@ class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+
+  /// A ready-made widget shown where the icon would be (a brand logo such as
+  /// Google's G, which must keep its own colours). Wins over [icon].
+  final Widget? leading;
   final AppButtonStyle style;
   final bool expand;
   final double height;
@@ -86,6 +92,9 @@ class AppButton extends StatelessWidget {
         children: [
           if (loading) ...[
             CupertinoActivityIndicator(radius: 9, color: foreground),
+            const SizedBox(width: AppSpacing.sm),
+          ] else if (leading != null) ...[
+            leading!,
             const SizedBox(width: AppSpacing.sm),
           ] else if (icon != null) ...[
             Icon(icon, size: 18, color: foreground),

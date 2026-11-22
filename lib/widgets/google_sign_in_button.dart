@@ -9,6 +9,9 @@ import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_button.dart';
 
+/// Google's own "G", in its own colours (brand rule: never recoloured).
+const googleLogoAsset = 'assets/icons/google_g.png';
+
 /// "Continue with Google", with a quiet "or" above it. Shown on the log-in and
 /// sign-up screens, which are the same thing for Google (a new person simply
 /// goes on to the usual onboarding).
@@ -100,7 +103,14 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
           key: const ValueKey('google_sign_in'),
           label: context.tr('Continue with Google'),
           style: AppButtonStyle.glass,
-          icon: CupertinoIcons.person_crop_circle,
+          leading: Image.asset(
+            googleLogoAsset,
+            key: const ValueKey('google_logo'),
+            width: 20,
+            height: 20,
+            filterQuality: FilterQuality.medium,
+            excludeFromSemantics: true,
+          ),
           loading: _busy,
           onPressed: _busy ? null : _go,
         ),

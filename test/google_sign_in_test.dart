@@ -51,6 +51,9 @@ void main() {
       await _show(tester, GoogleSignInButton(available: true, signedIn: const Stream.empty(), start: () async => started++));
       expect(find.text('or'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
+      // The Google "G" is shown, not a generic person icon.
+      expect(find.byKey(const ValueKey('google_logo')), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.person_crop_circle), findsNothing);
       await tester.tap(find.byKey(const ValueKey('google_sign_in')));
       await tester.pump();
       expect(started, 1);
