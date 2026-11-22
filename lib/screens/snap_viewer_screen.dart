@@ -279,9 +279,13 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                           children: [
                             const Icon(CupertinoIcons.camera_fill, size: 16, color: Color(0xFFFFFFFF)),
                             const SizedBox(width: 8),
-                            Text(
-                              tr('Bite back'),
-                              style: AppType.body(color: const Color(0xFFFFFFFF)).copyWith(fontWeight: FontWeight.w700),
+                            Flexible(
+                              child: Text(
+                                tr('Bite back'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppType.body(color: const Color(0xFFFFFFFF)).copyWith(fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ],
                         ),

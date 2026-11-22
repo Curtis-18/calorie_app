@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:calorie_app/l10n/app_strings.dart';
 import 'package:calorie_app/models/snaps.dart';
 import 'package:calorie_app/screens/snap_viewer_screen.dart';
 import 'package:calorie_app/providers/friends_provider.dart';
@@ -389,6 +390,37 @@ void main() {
       final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
       expect(band.width, screen.width, reason: 'edge to edge, like Snapchat');
       expect(band.center.dy, closeTo(screen.height * 0.62, 1), reason: 'the default spot when none was chosen');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a caption is shown exactly as typed, never translated, even if it matches a word the app translates', (tester) async {
+      AppStrings.active = 'es';
+      addTearDown(() => AppStrings.active = 'en');
+      tester.view.physicalSize = const Size(1179, 2556);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final client = MockClient((r) async => http.Response(jsonEncode([]), 200));
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          conversationsProvider.overrideWith((ref) => ConversationsNotifier(
+                service: MessagesService(client: client, tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+          snapInboxProvider.overrideWith((ref) => SnapInboxNotifier(
+                service: SnapsService(client: client, tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+        ],
+        child: CupertinoApp(
+          theme: AppTheme.cupertino,
+          home: SnapViewerScreen(snaps: [InboxSnap.fromJson({..._inbox('a', 'sam'), 'caption': 'Lunch'})]),
+        ),
+      ));
+      await settle(tester);
+      // 'Lunch' is a word the app translates ('Almuerzo'); a friend's own words are left alone.
+      expect(find.text('Lunch'), findsOneWidget);
+      expect(find.text('Almuerzo'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a bite whose sender placed the caption high shows it high', (tester) async {

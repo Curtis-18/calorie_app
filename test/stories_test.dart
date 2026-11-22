@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:calorie_app/models/friends.dart';
 import 'package:calorie_app/models/snaps.dart';
+import 'package:calorie_app/l10n/app_strings.dart';
 import 'package:calorie_app/models/stories.dart';
 import 'package:calorie_app/providers/friends_provider.dart';
 import 'package:calorie_app/providers/snaps_provider.dart';
@@ -466,6 +467,22 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('caption_strip')));
       await settle(tester, 4);
       expect(find.byKey(const ValueKey('caption_field')), findsOneWidget);
+    }, variant: ios);
+
+    testWidgets('what is typed on the photo is sent and shown exactly as typed, whatever the app language', (tester) async {
+      AppStrings.active = 'es';
+      addTearDown(() => AppStrings.active = 'en');
+      final server = await open(tester, toStory: true);
+      await tester.tap(find.byKey(const ValueKey('caption_t_button')));
+      await settle(tester, 4);
+      await tester.enterText(find.byKey(const ValueKey('caption_field')), 'Lunch');
+      await tester.tap(find.byKey(const ValueKey('caption_done')));
+      await settle(tester, 4);
+      expect(find.text('Lunch'), findsOneWidget);
+      expect(find.text('Almuerzo'), findsNothing);
+      await tester.tap(find.text('Añadir a tu historia'));
+      await settle(tester);
+      expect(server.bodies['POST /stories']!['caption'], 'Lunch');
     }, variant: ios);
 
     testWidgets('no caption means no position is sent', (tester) async {
