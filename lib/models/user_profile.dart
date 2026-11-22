@@ -83,10 +83,10 @@ class UserProfile {
   String get bmiCategory {
     final b = bmi;
     if (b == null) return tr('Unknown');
-    if (b < 18.5) return tr('Underweight');
-    if (b < 25) return tr('Normal weight');
-    if (b < 30) return tr('Overweight');
-    return tr('Obese');
+    if (b < 18.5) return tr('Below range');
+    if (b < 25) return tr('In range');
+    if (b < 30) return tr('Above range');
+    return tr('Well above range');
   }
 
   UserProfile copyWithTargets({

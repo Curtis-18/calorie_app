@@ -491,7 +491,7 @@ class _Metric extends StatelessWidget {
         if (sub != null)
           Text(
             sub!,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppType.caption(color: TrackerColors.textTertiary, size: 11),
           ),
