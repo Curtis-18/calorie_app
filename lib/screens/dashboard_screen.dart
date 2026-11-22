@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../services/day_target.dart';
 import '../services/save_entries.dart';
 import '../services/scan_photo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -508,10 +509,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final entries = _isToday ? foodLog : _pastEntries;
     // The flexible weekly allowance replaces the daily target on today only,
     // and only for someone who turned it on.
-    final baseTarget = (_isToday && budget.weekly ? budget.week!.allowanceToday : null) ?? profile?.calorieTarget ?? 2000;
     // Only if the person chose to add some of today's movement to the plan (off by default).
     final movementExtra = _isToday ? ref.watch(moveProvider.select((m) => m.week.eatBackKcal)) : 0;
-    final target = baseTarget + movementExtra;
+    final target = dayCalorieTarget(
+      isToday: _isToday,
+      weeklyAllowanceToday: budget.weekly ? budget.week!.allowanceToday : null,
+      profileTarget: profile?.calorieTarget,
+      movementExtra: movementExtra,
+    );
     final consumed = entries.totalCalories;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 

@@ -11,6 +11,7 @@ import '../providers/activity_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/messages_provider.dart';
 import '../services/profile_link.dart';
+import '../widgets/move_icons.dart';
 import '../widgets/profile_link_sheet.dart';
 import '../providers/shell_provider.dart';
 import '../providers/workouts_provider.dart';
@@ -53,11 +54,12 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   // In ShellTab order.
   static final _tabs = [
-    (icon: CupertinoIcons.square_list, label: tr('Today'), key: null),
-    (icon: CupertinoIcons.bolt, label: tr('Workouts'), key: MainShell.workoutsTabKey),
-    (icon: CupertinoIcons.person_2, label: tr('Friends'), key: MainShell.friendsTabKey),
-    (icon: CupertinoIcons.book, label: tr('Recipes'), key: null),
-    (icon: CupertinoIcons.person_crop_circle, label: tr('Profile'), key: MainShell.profileTabKey),
+    (icon: CupertinoIcons.square_list, glyph: null, label: tr('Today'), key: null),
+    // Our own dumbbell, the same one Workouts uses for strength.
+    (icon: CupertinoIcons.bolt, glyph: MoveGlyph.strength, label: tr('Workouts'), key: MainShell.workoutsTabKey),
+    (icon: CupertinoIcons.person_2, glyph: null, label: tr('Friends'), key: MainShell.friendsTabKey),
+    (icon: CupertinoIcons.book, glyph: null, label: tr('Recipes'), key: null),
+    (icon: CupertinoIcons.person_crop_circle, glyph: null, label: tr('Profile'), key: MainShell.profileTabKey),
   ];
 
   @override
@@ -173,6 +175,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               icon: TabIcon(
                 key: _tabs[i].key,
                 icon: _tabs[i].icon,
+                glyph: _tabs[i].glyph,
                 active: i == index,
                 badge: i == ShellTab.friends.index && waiting > 0,
               ),
@@ -193,9 +196,13 @@ class TabIcon extends StatelessWidget {
     required this.icon,
     required this.active,
     this.badge = false,
+    this.glyph,
   });
 
   final IconData icon;
+
+  /// One of our own drawn icons, used instead of [icon] when given.
+  final MoveGlyph? glyph;
   final bool active;
 
   /// A small dot: something is waiting for the user on this tab.
@@ -215,11 +222,14 @@ class TabIcon extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: active ? TrackerColors.accentStartText : TrackerColors.textTertiary,
-          ),
+          if (glyph != null)
+            MoveIcon(glyph!, size: 22, color: active ? TrackerColors.accentStartText : TrackerColors.textTertiary)
+          else
+            Icon(
+              icon,
+              size: 20,
+              color: active ? TrackerColors.accentStartText : TrackerColors.textTertiary,
+            ),
           if (badge)
             Positioned(
               top: -2,
