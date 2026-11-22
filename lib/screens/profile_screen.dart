@@ -414,7 +414,8 @@ class _Macro extends StatelessWidget {
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
-            Text(label, style: AppType.caption(size: 12)),
+            // A long word in another language (Kohlenhydrate) must shrink, not overflow.
+            Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.caption(size: 12))),
           ],
         ),
         const SizedBox(height: 4),
@@ -458,7 +459,7 @@ class _BodyCard extends StatelessWidget {
                 child: _Metric(label: tr('At rest'), value: p.bmr?.round().toString() ?? '—', sub: tr('calories burned')),
               ),
               Expanded(
-                child: _Metric(label: tr('Per day'), value: p.tdee?.round().toString() ?? '—', sub: 'calories burned'),
+                child: _Metric(label: tr('Per day'), value: p.tdee?.round().toString() ?? '—', sub: tr('calories burned')),
               ),
               const Expanded(child: SizedBox()),
             ],
