@@ -254,7 +254,7 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                   ),
                 ),
               ),
-            positionedCaption(context, snap.caption),
+            positionedCaption(context, snap.caption, snap.captionY),
             Positioned(
               left: 16,
               right: 16,

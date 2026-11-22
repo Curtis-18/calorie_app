@@ -8,6 +8,7 @@ import 'package:calorie_app/providers/friends_provider.dart';
 import 'package:calorie_app/providers/snaps_provider.dart';
 import 'package:calorie_app/screens/friends_screen.dart';
 import 'package:calorie_app/screens/snap_compose_screen.dart';
+import 'package:calorie_app/widgets/snaps/photo_caption.dart';
 import 'package:calorie_app/screens/story_viewer_screen.dart';
 import 'package:calorie_app/services/avatar_service.dart';
 import 'package:calorie_app/services/friends_service.dart';
@@ -389,39 +390,91 @@ void main() {
       return server;
     }
 
-    testWidgets('a caption is typed straight onto the photo, then sent with it', (tester) async {
+    testWidgets('tap the T, a white strip comes up, type in it, tap Done: it is sent with the photo', (tester) async {
       final server = await open(tester, toStory: true);
-      expect(find.byKey(const ValueKey('caption_hint')), findsOneWidget);
-      expect(find.text('Tap to add a caption'), findsOneWidget);
-      expect(find.byKey(const ValueKey('caption_field')), findsNothing);
+      expect(find.byKey(const ValueKey('caption_t_button')), findsOneWidget);
+      expect(find.byKey(const ValueKey('caption_strip')), findsNothing, reason: 'no strip until the T is tapped');
 
-      await tester.tap(find.byKey(const ValueKey('caption_hint')));
+      await tester.tap(find.byKey(const ValueKey('caption_t_button')));
       await settle(tester, 4);
       expect(find.byKey(const ValueKey('caption_field')), findsOneWidget);
       await tester.enterText(find.byKey(const ValueKey('caption_field')), 'Sunday roast');
       await tester.tap(find.byKey(const ValueKey('caption_done')));
       await settle(tester, 4);
       expect(find.byKey(const ValueKey('caption_field')), findsNothing);
-      expect(find.byKey(const ValueKey('caption_band')), findsOneWidget);
       expect(find.text('Sunday roast'), findsOneWidget);
-      expect(find.byKey(const ValueKey('caption_hint')), findsNothing);
+      // The strip is white and as wide as the photo.
+      final strip = tester.getSize(find.byKey(const ValueKey('caption_strip')));
+      expect(strip.width, tester.getSize(find.byType(CaptionedPhoto)).width);
 
       await tester.tap(find.text('Add to your story'));
       await settle(tester);
-      expect(server.bodies['POST /stories']!['caption'], 'Sunday roast');
+      final sent = server.bodies['POST /stories']!;
+      expect(sent['caption'], 'Sunday roast');
+      expect(sent['caption_y'], closeTo(0.62, 0.001), reason: 'where it was left');
     }, variant: ios);
 
-    testWidgets('a caption can be edited again by tapping it, and is capped at 120 characters', (tester) async {
+    testWidgets('the strip can be dragged up and down, and where it ends up is sent', (tester) async {
+      final server = await open(tester, toStory: true);
+      await tester.tap(find.byKey(const ValueKey('caption_t_button')));
+      await settle(tester, 4);
+      await tester.enterText(find.byKey(const ValueKey('caption_field')), 'higher');
+      await tester.tap(find.byKey(const ValueKey('caption_done')));
+      await settle(tester, 4);
+
+      final photo = tester.getSize(find.byType(CaptionedPhoto)).height;
+      final before = tester.getCenter(find.byKey(const ValueKey('caption_strip'))).dy;
+      await tester.drag(find.byKey(const ValueKey('caption_strip')), const Offset(0, -100));
+      await settle(tester, 3);
+      final after = tester.getCenter(find.byKey(const ValueKey('caption_strip'))).dy;
+      final moved = before - after;
+      expect(moved, inInclusiveRange(70, 100), reason: 'up by about the drag (Flutter keeps the first few pixels as touch slop)');
+
+      await tester.tap(find.text('Add to your story'));
+      await settle(tester);
+      expect(server.bodies['POST /stories']!['caption_y'], closeTo(0.62 - moved / photo, 0.01));
+    }, variant: ios);
+
+    testWidgets('the strip stays on the photo however far it is dragged', (tester) async {
       await open(tester, toStory: true);
-      await tester.tap(find.byKey(const ValueKey('caption_hint')));
+      await tester.tap(find.byKey(const ValueKey('caption_t_button')));
+      await settle(tester, 4);
+      await tester.enterText(find.byKey(const ValueKey('caption_field')), 'x');
+      await tester.tap(find.byKey(const ValueKey('caption_done')));
+      await settle(tester, 4);
+      final photo = tester.getRect(find.byType(CaptionedPhoto));
+      await tester.drag(find.byKey(const ValueKey('caption_strip')), const Offset(0, -2000), warnIfMissed: false);
+      await settle(tester, 3);
+      expect(tester.getCenter(find.byKey(const ValueKey('caption_strip'))).dy, greaterThanOrEqualTo(photo.top));
+      expect(tester.getCenter(find.byKey(const ValueKey('caption_strip'))).dy, lessThan(photo.top + photo.height * 0.2));
+    }, variant: ios);
+
+    testWidgets('a strip left empty goes away, and tapping a finished strip edits it again, capped at 120', (tester) async {
+      await open(tester, toStory: true);
+      await tester.tap(find.byKey(const ValueKey('caption_t_button')));
+      await settle(tester, 4);
+      await tester.tap(find.byKey(const ValueKey('caption_done')));
+      await settle(tester, 4);
+      expect(find.byKey(const ValueKey('caption_strip')), findsNothing, reason: 'nothing typed, nothing left behind');
+
+      await tester.tap(find.byKey(const ValueKey('caption_t_button')));
       await settle(tester, 4);
       await tester.enterText(find.byKey(const ValueKey('caption_field')), 'x' * 200);
       await tester.tap(find.byKey(const ValueKey('caption_done')));
       await settle(tester, 4);
-      expect((tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('caption_band')), matching: find.byType(Text))).data ?? '').length, 120);
-      await tester.tap(find.byKey(const ValueKey('caption_band')));
+      expect(tester.widget<Text>(find.byKey(const ValueKey('caption_text'))).data!.length, 120);
+      await tester.tap(find.byKey(const ValueKey('caption_strip')));
       await settle(tester, 4);
       expect(find.byKey(const ValueKey('caption_field')), findsOneWidget);
+    }, variant: ios);
+
+    testWidgets('no caption means no position is sent', (tester) async {
+      final server = await open(tester, toStory: true);
+      await tester.tap(find.text('Add to your story'));
+      await settle(tester);
+      final sent = server.bodies['POST /stories']!;
+      expect(sent.containsKey('caption'), isFalse);
+      expect(sent.containsKey('caption_y'), isFalse);
     }, variant: ios);
 
     testWidgets('story and a friend together make one share', (tester) async {

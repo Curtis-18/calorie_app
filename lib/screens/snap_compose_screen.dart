@@ -58,6 +58,8 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
   static const maxRecipients = 20;
 
   final _caption = TextEditingController();
+  // Where the caption strip was dragged to, as a fraction of the photo's height.
+  final _captionY = ValueNotifier<double>(defaultCaptionY);
   late final SnapsService _service = widget.service ?? ref.read(snapInboxProvider.notifier).service;
   // One id per compose session: tapping Send again after a flaky network
   // can't deliver the same snap twice.
@@ -73,6 +75,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
   @override
   void dispose() {
     _caption.dispose();
+    _captionY.dispose();
     super.dispose();
   }
 
@@ -98,7 +101,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
     });
     try {
       if (_story && !_storyPosted) {
-        await _service.postStory(id: _storyId, image: widget.image, caption: _caption.text);
+        await _service.postStory(id: _storyId, image: widget.image, caption: _caption.text, captionY: _captionY.value);
         _storyPosted = true;
       }
       final results = _selected.isEmpty
@@ -108,6 +111,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
               image: widget.image,
               recipientIds: _selected.toList(),
               caption: _caption.text,
+              captionY: _captionY.value,
             );
       if (!mounted) return;
       HapticFeedback.mediumImpact();
@@ -158,6 +162,7 @@ class _SnapComposeScreenState extends ConsumerState<SnapComposeScreen> {
                         aspectRatio: 4 / 5,
                         child: CaptionedPhoto(
                           controller: _caption,
+                          position: _captionY,
                           image: Image.memory(widget.image, fit: BoxFit.cover, gaplessPlayback: true),
                         ),
                       ),

@@ -88,6 +88,26 @@ void main() {
       );
     });
 
+    test('a position on the caption is read, and an older server without one means the default spot', () {
+      expect(InboxSnap.fromJson({..._inbox('a', 'sam'), 'caption_y': 0.3}).captionY, 0.3);
+      expect(InboxSnap.fromJson({..._inbox('a', 'sam'), 'caption_y': 1}).captionY, 1.0);
+      expect(InboxSnap.fromJson(_inbox('a', 'sam')).captionY, isNull);
+    });
+
+    test('send carries the caption position only with a caption', () async {
+      final bodies = <Map<String, dynamic>>[];
+      final service = _service(MockClient((r) async {
+        bodies.add(jsonDecode(r.body) as Map<String, dynamic>);
+        return http.Response(jsonEncode({'recipients': []}), 200);
+      }));
+      await service.send(id: 'a', image: Uint8List(1), recipientIds: ['x'], caption: 'yum', captionY: 0.31234567);
+      await service.send(id: 'b', image: Uint8List(1), recipientIds: ['x'], caption: '  ', captionY: 0.5);
+      await service.send(id: 'c', image: Uint8List(1), recipientIds: ['x'], caption: 'yum');
+      expect(bodies[0]['caption_y'], 0.3123);
+      expect(bodies[1].containsKey('caption_y'), isFalse);
+      expect(bodies[2].containsKey('caption_y'), isFalse);
+    });
+
     test('inbox and sent parse', () async {
       final inbox = await _service(MockClient((_) async => http.Response(jsonEncode([_inbox('a', 'sam')]), 200))).inbox();
       expect(inbox.single.senderUsername, 'sam');
@@ -323,7 +343,7 @@ void main() {
       expect(find.text('Sent to 2 friends.'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-    Future<void> openViewer(WidgetTester tester, {required List<Map<String, dynamic>> posted, int failWith = 0}) async {
+    Future<void> openViewer(WidgetTester tester, {required List<Map<String, dynamic>> posted, int failWith = 0, double? captionY}) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -355,20 +375,27 @@ void main() {
         ],
         child: CupertinoApp(
           theme: AppTheme.cupertino,
-          home: SnapViewerScreen(snaps: [InboxSnap.fromJson(_inbox('a', 'sam'))]),
+          home: SnapViewerScreen(snaps: [InboxSnap.fromJson({..._inbox('a', 'sam'), 'caption_y': captionY})]),
         ),
       ));
       await settle(tester);
     }
 
-    testWidgets('a bite caption is drawn as a band across the photo, not a pill at the bottom', (tester) async {
+    testWidgets('a bite caption is a white strip across the photo, at the spot its sender dragged it to', (tester) async {
       await openViewer(tester, posted: <Map<String, dynamic>>[]);
       expect(find.byKey(const ValueKey('caption_band')), findsOneWidget);
       expect(find.text('lunch'), findsOneWidget);
       final band = tester.getRect(find.byKey(const ValueKey('caption_band')));
       final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
       expect(band.width, screen.width, reason: 'edge to edge, like Snapchat');
-      expect(band.top, closeTo(screen.height * 0.58, 1));
+      expect(band.center.dy, closeTo(screen.height * 0.62, 1), reason: 'the default spot when none was chosen');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a bite whose sender placed the caption high shows it high', (tester) async {
+      await openViewer(tester, posted: <Map<String, dynamic>>[], captionY: 0.2);
+      final band = tester.getRect(find.byKey(const ValueKey('caption_band')));
+      final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+      expect(band.center.dy, closeTo(screen.height * 0.2, 1));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a quick reply goes to the sender as an ordinary chat message, once', (tester) async {

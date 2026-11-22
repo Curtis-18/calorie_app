@@ -1130,5 +1130,5 @@ const Map<String, String> german = {
   'Low carb: 20 g of carbs or fewer a serving.': 'Wenig Kohlenhydrate: 20 g Kohlenhydrate oder weniger pro Portion.',
   'Under 600 kcal: fewer than 600 kcal a serving.': 'Unter 600 kcal: weniger als 600 kcal pro Portion.',
   'Type a caption': 'Bildunterschrift eingeben',
-  'Tap to add a caption': 'Tippen, um eine Bildunterschrift hinzuzufügen',
+  'Add a caption': 'Bildunterschrift hinzufügen',
 };

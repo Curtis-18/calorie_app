@@ -8,10 +8,14 @@ class Story {
     required this.imageUrl,
     this.viewed = false,
     this.reaction,
+    this.captionY,
   });
 
   final String id;
   final String? caption;
+
+  /// Where the caption sits on the photo (0 top .. 1 bottom); null = the default spot.
+  final double? captionY;
   final DateTime createdAt;
   final DateTime expiresAt;
   final String? imageUrl;
@@ -28,11 +32,13 @@ class Story {
         imageUrl: json['image_url'] as String?,
         viewed: json['viewed'] as bool? ?? false,
         reaction: json['reaction'] as String?,
+        captionY: (json['caption_y'] as num?)?.toDouble(),
       );
 
   Story copyWith({bool? viewed, String? reaction}) => Story(
         id: id,
         caption: caption,
+        captionY: captionY,
         createdAt: createdAt,
         expiresAt: expiresAt,
         imageUrl: imageUrl,
@@ -67,10 +73,12 @@ class MyStory {
     required this.expiresAt,
     required this.imageUrl,
     required this.viewers,
+    this.captionY,
   });
 
   final String id;
   final String? caption;
+  final double? captionY;
   final DateTime createdAt;
   final DateTime expiresAt;
   final String? imageUrl;
@@ -82,6 +90,7 @@ class MyStory {
         createdAt: DateTime.parse(json['created_at'] as String),
         expiresAt: DateTime.parse(json['expires_at'] as String),
         imageUrl: json['image_url'] as String?,
+        captionY: (json['caption_y'] as num?)?.toDouble(),
         viewers: ((json['viewers'] as List?) ?? const [])
             .map((e) => StoryViewer.fromJson(e as Map<String, dynamic>))
             .toList(),

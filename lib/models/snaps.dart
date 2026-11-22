@@ -27,6 +27,7 @@ class InboxSnap {
     required this.viewed,
     required this.reaction,
     required this.imageUrl,
+    this.captionY,
   });
 
   final String id;
@@ -39,6 +40,9 @@ class InboxSnap {
   final String? reaction;
   final String? imageUrl;
 
+  /// Where the caption sits on the photo (0 top .. 1 bottom); null = the default spot.
+  final double? captionY;
+
   factory InboxSnap.fromJson(Map<String, dynamic> json) => InboxSnap(
         id: json['snap_id'] as String,
         senderId: json['sender_id'] as String,
@@ -49,6 +53,7 @@ class InboxSnap {
         viewed: json['viewed'] as bool? ?? false,
         reaction: json['reaction'] as String?,
         imageUrl: json['image_url'] as String?,
+        captionY: (json['caption_y'] as num?)?.toDouble(),
       );
 
   InboxSnap copyWith({bool? viewed, String? reaction}) => InboxSnap(
@@ -61,6 +66,7 @@ class InboxSnap {
         viewed: viewed ?? this.viewed,
         reaction: reaction ?? this.reaction,
         imageUrl: imageUrl,
+        captionY: captionY,
       );
 }
 

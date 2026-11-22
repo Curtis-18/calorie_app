@@ -1130,5 +1130,5 @@ const Map<String, String> portuguese = {
   'Low carb: 20 g of carbs or fewer a serving.': 'Baixo em carboidratos: 20 g de carboidratos ou menos por porção.',
   'Under 600 kcal: fewer than 600 kcal a serving.': 'Menos de 600 kcal: menos de 600 kcal por porção.',
   'Type a caption': 'Escreva uma legenda',
-  'Tap to add a caption': 'Toque para adicionar uma legenda',
+  'Add a caption': 'Adicionar uma legenda',
 };

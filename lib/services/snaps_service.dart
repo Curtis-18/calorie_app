@@ -74,6 +74,7 @@ class SnapsService {
     required Uint8List image,
     required List<String> recipientIds,
     String? caption,
+    double? captionY,
   }) async {
     final trimmed = caption?.trim();
     final r = await _send(
@@ -84,6 +85,8 @@ class SnapsService {
           'id': id,
           'image': base64Encode(image),
           if (trimmed != null && trimmed.isNotEmpty) 'caption': trimmed,
+          // Where the caption strip sits (0 top .. 1 bottom); only meaningful with a caption.
+          if (trimmed != null && trimmed.isNotEmpty && captionY != null) 'caption_y': double.parse(captionY.toStringAsFixed(4)),
           'recipient_ids': recipientIds,
           'date': DateTime.now().toIso8601String().substring(0, 10),
         }),
@@ -134,7 +137,7 @@ class SnapsService {
   // --- Stories: a photo every friend can see for 24 hours -----------------
 
   /// Add [image] to your story. Safe to repeat with the same [id].
-  Future<void> postStory({required String id, required Uint8List image, String? caption}) async {
+  Future<void> postStory({required String id, required Uint8List image, String? caption, double? captionY}) async {
     final trimmed = caption?.trim();
     final r = await _send(
       (c, h) => c.post(
@@ -144,6 +147,7 @@ class SnapsService {
           'id': id,
           'image': base64Encode(image),
           if (trimmed != null && trimmed.isNotEmpty) 'caption': trimmed,
+          if (trimmed != null && trimmed.isNotEmpty && captionY != null) 'caption_y': double.parse(captionY.toStringAsFixed(4)),
         }),
       ),
       timeout: const Duration(seconds: 90),

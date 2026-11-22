@@ -26,11 +26,15 @@ class StoryItem {
     required this.createdAt,
     this.reaction,
     this.viewers = const [],
+    this.captionY,
   });
 
   final String id;
   final String? imageUrl;
   final String? caption;
+
+  /// Where the caption sits on the photo (0 top .. 1 bottom); null = the default spot.
+  final double? captionY;
   final DateTime createdAt;
   final String? reaction;
 
@@ -60,7 +64,7 @@ class StoryReel {
         startAt: g.firstUnseen,
         items: [
           for (final s in g.stories)
-            StoryItem(id: s.id, imageUrl: s.imageUrl, caption: s.caption, createdAt: s.createdAt, reaction: s.reaction),
+            StoryItem(id: s.id, imageUrl: s.imageUrl, caption: s.caption, captionY: s.captionY, createdAt: s.createdAt, reaction: s.reaction),
         ],
       );
 
@@ -70,7 +74,7 @@ class StoryReel {
         isMine: true,
         items: [
           for (final s in stories)
-            StoryItem(id: s.id, imageUrl: s.imageUrl, caption: s.caption, createdAt: s.createdAt, viewers: s.viewers),
+            StoryItem(id: s.id, imageUrl: s.imageUrl, caption: s.caption, captionY: s.captionY, createdAt: s.createdAt, viewers: s.viewers),
         ],
       );
 }
@@ -390,7 +394,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
                   ),
                 ),
               ),
-            positionedCaption(context, story.caption),
+            positionedCaption(context, story.caption, story.captionY),
             Positioned(
               left: 16,
               right: 16,
