@@ -27,6 +27,7 @@ class TourStep {
     this.shape = TourShape.roundedRect,
     this.radius = AppRadii.container,
     this.padding = 8,
+    this.scrollIntoView = false,
   });
 
   /// Key on the widget to spotlight. Steps whose target is not on screen
@@ -42,6 +43,11 @@ class TourStep {
 
   /// Breathing room between the target and the cutout edge.
   final double padding;
+
+  /// Scroll the page so the target is comfortably on screen before it is
+  /// spotlighted. For a target inside a scrolling page that is already built
+  /// (a lazily built list may not have built it yet).
+  final bool scrollIntoView;
 }
 
 /// A guided spotlight tour built from the app's own design system.
@@ -132,7 +138,31 @@ class _TourOverlayState extends State<_TourOverlay> with TickerProviderStateMixi
       WidgetsBinding.instance.addPostFrameCallback((_) => _close(TourResult.finished));
     } else {
       _move.value = 1;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(_step));
     }
+  }
+
+  /// Brings a step's target into the middle of the visible page, when it asks
+  /// for that and is not already clear of the top bar and the tab bar. The
+  /// spotlight follows the target while the page scrolls.
+  Future<void> _reveal(TourStep step) async {
+    if (!step.scrollIntoView || !mounted) return;
+    final context = step.targetKey.currentContext;
+    final rect = _targetRect(step);
+    if (context == null || rect == null) return;
+    final media = MediaQuery.of(this.context);
+    final tall = rect.height > media.size.height * 0.35;
+    final topClear = rect.top >= media.padding.top + 110;
+    // A tall target only needs its top in view: the card sits over its lower part.
+    final comfortable = topClear && (tall ? rect.top < media.size.height * 0.4 : rect.bottom <= media.size.height - media.padding.bottom - 150);
+    if (comfortable) return;
+    await Scrollable.ensureVisible(
+      context,
+      alignment: tall ? 0.02 : 0.3,
+      duration: MediaQuery.disableAnimationsOf(this.context) ? Duration.zero : AppMotion.medium,
+      curve: AppMotion.standard,
+    );
+    if (mounted) setState(() {});
   }
 
   @override
@@ -196,6 +226,7 @@ class _TourOverlayState extends State<_TourOverlay> with TickerProviderStateMixi
     } else {
       _move.forward(from: 0);
     }
+    _reveal(_step);
   }
 
   void _close(TourResult result) {
@@ -252,6 +283,11 @@ class _TourOverlayState extends State<_TourOverlay> with TickerProviderStateMixi
     final spaceAbove = target.rect.top - gap - top;
     final spaceBelow = bottom - (target.rect.bottom + gap);
     final below = spaceBelow >= spaceAbove;
+    // Neither side has room for the card (a tall target on a short phone): put
+    // the card at the bottom, over the lower part of the target, rather than
+    // letting it run off the screen with its buttons out of reach.
+    const roomNeeded = 250.0;
+    final overlay = math.max(spaceAbove, spaceBelow) < roomNeeded;
 
     final card = ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 420),
@@ -294,6 +330,15 @@ class _TourOverlayState extends State<_TourOverlay> with TickerProviderStateMixi
         ),
       ),
     );
+
+    if (overlay) {
+      return Positioned(
+        left: side,
+        right: side,
+        bottom: media.padding.bottom + 12,
+        child: Align(alignment: Alignment.bottomCenter, child: card),
+      );
+    }
 
     return Positioned(
       left: side,

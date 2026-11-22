@@ -13,12 +13,15 @@ import 'app_card.dart';
 /// of the Move plate and strength days. A rest day is just an empty dot: it
 /// never counts against anyone (roadmap R2.3 and R9).
 class MoveWeekCard extends StatelessWidget {
-  const MoveWeekCard({super.key, required this.week, this.nudge});
+  const MoveWeekCard({super.key, required this.week, this.nudge, this.plateKey});
 
   final MoveWeek week;
 
   /// A slice nothing was done in yet, offered as a friendly idea (or null).
   final MoveSlice? nudge;
+
+  /// Lets the Workouts tour point at the four slices.
+  final GlobalKey? plateKey;
 
   /// Monday first, in the language on screen.
   static List<String> dayInitials([String? lang]) =>
@@ -102,13 +105,16 @@ class MoveWeekCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(tr('Your move plate'), style: AppType.sectionLabel()),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              for (final s in MoveSlice.values) ...[
-                Expanded(child: _SliceTile(slice: s, total: week.slice(s), suggested: nudge == s)),
-                if (s != MoveSlice.values.last) const SizedBox(width: 8),
+          KeyedSubtree(
+            key: plateKey,
+            child: Row(
+              children: [
+                for (final s in MoveSlice.values) ...[
+                  Expanded(child: _SliceTile(slice: s, total: week.slice(s), suggested: nudge == s)),
+                  if (s != MoveSlice.values.last) const SizedBox(width: 8),
+                ],
               ],
-            ],
+            ),
           ),
           if (nudge != null) ...[
             const SizedBox(height: 10),
