@@ -21,7 +21,7 @@ import '../widgets/pressable.dart';
 import '../widgets/profile_link_chip.dart';
 import '../widgets/profile_photo.dart';
 import '../widgets/settings_list.dart';
-import '../providers/whats_new_provider.dart';
+import '../providers/activity_provider.dart';
 import 'notifications_screen.dart';
 import 'onboarding_screen.dart';
 import 'settings_screen.dart';
@@ -42,7 +42,7 @@ class ProfileScreen extends ConsumerWidget {
       username: friends?.myUsername,
       avatarUrl: friends?.myAvatarUrl,
       onPhotoChanged: () => ref.read(friendsProvider.notifier).load(),
-      hasUnreadNotifications: ref.watch(whatsNewProvider),
+      hasUnreadNotifications: ref.watch(bellDotProvider),
     );
   }
 }

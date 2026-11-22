@@ -11,7 +11,6 @@ import 'package:image_picker/image_picker.dart';
 import '../models/food_entry.dart';
 import '../models/nutrients.dart';
 import '../providers/budget_provider.dart';
-import '../providers/whats_new_provider.dart';
 import 'notifications_screen.dart';
 import '../providers/display_prefs_provider.dart';
 import '../widgets/week_budget_widgets.dart';
@@ -25,6 +24,7 @@ import '../widgets/scan_note_sheet.dart';
 import '../providers/shell_provider.dart';
 import '../models/progress.dart';
 import '../providers/user_provider.dart';
+import '../providers/activity_provider.dart';
 import '../services/day_log_service.dart';
 import '../services/log_cache_reader.dart';
 import '../services/server_handshake.dart';
@@ -511,7 +511,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   progress: progress,
                   dateLabel: _dateLabel,
                   canGoNext: !_isToday,
-                  hasUnreadNotifications: ref.watch(whatsNewProvider),
+                  hasUnreadNotifications: ref.watch(bellDotProvider),
                   onOpenNotifications: () => Navigator.of(context, rootNavigator: true)
                       .push(CupertinoPageRoute<void>(builder: (_) => const NotificationsScreen())),
                   onPreviousDay: () => _selectDay(_viewDay.subtract(const Duration(days: 1))),

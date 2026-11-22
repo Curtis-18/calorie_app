@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import '../services/app_shortcut.dart';
 import 'conversations_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/activity_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/messages_provider.dart';
 import '../services/profile_link.dart';
@@ -117,7 +118,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _refreshMessages() {
-    if (mounted) ref.read(conversationsProvider.notifier).load();
+    if (!mounted) return;
+    ref.read(conversationsProvider.notifier).load();
+    // The bell's dot (bites and reactions) is kept fresh on the same beat.
+    ref.read(activityProvider.notifier).load();
   }
 
   void _onTabChanged() {

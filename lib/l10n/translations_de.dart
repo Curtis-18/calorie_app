@@ -1008,4 +1008,9 @@ const Map<String, String> german = {
   'If a low mood lasts, it can help to talk to someone you trust or a doctor.': 'Wenn eine gedrückte Stimmung anhält, kann es helfen, mit einer vertrauten Person oder einer Ärztin bzw. einem Arzt zu sprechen.',
   'From your recipes': 'Aus deinen Rezepten',
   'Bites, messages and friend requests': 'Bissen, Nachrichten und Freundschaftsanfragen',
+  '{name} sent you a bite': '{name} hat dir einen Bissen geschickt',
+  '{name} reacted to your bite': '{name} hat auf deinen Bissen reagiert',
+  'From friends': 'Von Freunden',
+  'Bites and reactions from friends show up here.': 'Bissen und Reaktionen von Freunden erscheinen hier.',
+  'now': 'jetzt',
 };

@@ -1008,4 +1008,9 @@ const Map<String, String> italian = {
   'If a low mood lasts, it can help to talk to someone you trust or a doctor.': 'Se un umore basso dura, può aiutare parlare con una persona di fiducia o con un medico.',
   'From your recipes': 'Dalle tue ricette',
   'Bites, messages and friend requests': 'Morsi, messaggi e richieste di amicizia',
+  '{name} sent you a bite': '{name} ti ha inviato un boccone',
+  '{name} reacted to your bite': '{name} ha reagito al tuo boccone',
+  'From friends': 'Dagli amici',
+  'Bites and reactions from friends show up here.': 'I bocconi e le reazioni degli amici compaiono qui.',
+  'now': 'ora',
 };

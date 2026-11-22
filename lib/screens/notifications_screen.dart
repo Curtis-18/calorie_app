@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/whats_new.dart';
+import '../providers/shell_provider.dart';
+import '../models/activity.dart';
+import '../providers/activity_provider.dart';
 import '../providers/whats_new_provider.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -24,12 +27,29 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// Whether it was unread when opened, so this visit can still mark it "New".
   late final bool _wasUnread = ref.read(whatsNewProvider);
 
+  /// The lines that were unseen when this visit began, so they can still be
+  /// marked "new" even though opening the list counts them as seen.
+  Set<String> _newIds = {};
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(whatsNewProvider.notifier).markSeen();
+    _newIds = {for (final i in ref.read(activityProvider).items) if (!i.seen) i.id};
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      ref.read(whatsNewProvider.notifier).markSeen();
+      final notifier = ref.read(activityProvider.notifier);
+      await notifier.load(); // the latest, in case something arrived since the last refresh
+      if (!mounted) return;
+      setState(() => _newIds = {..._newIds, for (final i in ref.read(activityProvider).items) if (!i.seen) i.id});
+      notifier.markSeen();
     });
+  }
+
+  void _openFriends() {
+    // Back to the tabs, on Friends, where the bites are.
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    ref.read(shellTabProvider.notifier).state = ShellTab.friends;
   }
 
   @override
@@ -51,11 +71,78 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           children: [
+            _FromFriends(items: ref.watch(activityProvider).items, newIds: _newIds, onOpen: _openFriends),
             for (final release in whatsNewReleases) ...[
               _ReleaseCard(release: release, isNew: _wasUnread && release.id == latestWhatsNew.id),
               const SizedBox(height: AppSpacing.lg),
             ],
             Center(child: Text(tr('That’s everything for now.'), style: AppType.caption(size: 12))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bites and reactions from friends, newest first. Messages and friend
+/// requests are never listed here.
+class _FromFriends extends StatelessWidget {
+  const _FromFriends({required this.items, required this.newIds, required this.onOpen});
+
+  final List<ActivityItem> items;
+  final Set<String> newIds;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: AppCard(
+        key: const ValueKey('from_friends'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 4),
+              child: Text(tr('From friends').toUpperCase(), style: AppType.sectionLabel()),
+            ),
+            if (items.isEmpty)
+              Padding(
+                key: const ValueKey('from_friends_empty'),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(tr('Bites and reactions from friends show up here.'), style: AppType.callout(size: 13)),
+              ),
+            for (final item in items)
+              CupertinoButton(
+                key: ValueKey('activity_${item.id}'),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                minimumSize: const Size(0, 44),
+                onPressed: onOpen,
+                child: Row(
+                  children: [
+                    Text(item.kind == ActivityKind.bite ? '🍜' : (item.emoji ?? '🔥'), style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item.kind == ActivityKind.bite
+                            ? tr('{name} sent you a bite', {'name': item.username})
+                            : tr('{name} reacted to your bite', {'name': item.username}),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.body(size: 15),
+                      ),
+                    ),
+                    if (newIds.contains(item.id))
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Container(key: ValueKey('activity_new_${item.id}'), width: 8, height: 8, decoration: BoxDecoration(color: TrackerColors.accentStart, shape: BoxShape.circle)),
+                      ),
+                    Text(shortAgo(now, item.createdAt, justNow: tr('now')), style: AppType.caption(size: 12)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
