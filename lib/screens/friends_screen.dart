@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/friends.dart';
+import '../models/friend_news.dart';
 import '../models/snaps.dart';
 import '../models/stories.dart';
 import 'bite_flow.dart';
@@ -685,6 +686,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         for (final p in data.friends)
           _PersonRow(
             person: p,
+            news: friendNews(p.userId, ref.watch(snapInboxProvider).valueOrNull ?? const [], ref.watch(storiesProvider).valueOrNull),
             subtitle: _friendSubtitle(p),
             actions: [
               if (p.streak > 0) StreakBadge(count: p.streak, lit: p.sentToday && p.theySentToday),
@@ -785,10 +787,37 @@ class FriendAvatar extends StatelessWidget {
   }
 }
 
+/// "New bite · 2h ago": a quiet accent mark, only while something is unseen.
+class _NewMark extends StatelessWidget {
+  const _NewMark({super.key, required this.news});
+
+  final FriendNews news;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: TrackerColors.alpha(TrackerColors.accentStart, 0.16),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Text(
+        '${news.label} · ${agoLabel(news.at)}',
+        style: AppType.caption(size: 10.5, color: TrackerColors.accentStartText),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
 class _PersonRow extends StatelessWidget {
-  const _PersonRow({required this.person, required this.subtitle, required this.actions});
+  const _PersonRow({required this.person, required this.subtitle, required this.actions, this.news});
 
   final Person person;
+
+  /// Something unseen from this friend, shown as a small mark by the name.
+  final FriendNews? news;
   final String subtitle;
   final List<Widget> actions;
 
@@ -808,6 +837,11 @@ class _PersonRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('@${person.username}', style: AppType.body(size: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  // On its own line: beside the name there is no room next to the buttons on a phone.
+                  if (news != null) ...[
+                    const SizedBox(height: 3),
+                    Align(alignment: Alignment.centerLeft, child: _NewMark(news: news!, key: ValueKey('new_${person.userId}'))),
+                  ],
                   const SizedBox(height: 2),
                   Text(subtitle, style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5)),
                 ],

@@ -262,6 +262,30 @@ void main() {
       }
     }
 
+    testWidgets('a friend with an unseen bite gets a "New bite" mark with how long ago; others get none', (tester) async {
+      final now = DateTime.now().toUtc();
+      final fresh = {
+        ..._inbox('a', 'sam'),
+        'created_at': now.subtract(const Duration(hours: 2, minutes: 5)).toIso8601String(),
+        'expires_at': now.add(const Duration(hours: 22)).toIso8601String(),
+      };
+      await open(tester, backend(inbox: [fresh]));
+      expect(find.text('New bite · 2h ago'), findsOneWidget);
+      expect(find.byKey(const ValueKey('new_u-sam')), findsOneWidget);
+      expect(find.byKey(const ValueKey('new_u-bea')), findsNothing);
+    });
+
+    testWidgets('once the bite has been viewed the mark goes away', (tester) async {
+      final now = DateTime.now().toUtc();
+      final seen = {
+        ..._inbox('a', 'sam', viewed: true),
+        'created_at': now.subtract(const Duration(hours: 1)).toIso8601String(),
+        'expires_at': now.add(const Duration(hours: 23)).toIso8601String(),
+      };
+      await open(tester, backend(inbox: [seen]));
+      expect(find.byKey(const ValueKey('new_u-sam')), findsNothing);
+    });
+
     testWidgets('friend rows show the streak and who owes a bite; unseen bites show up', (tester) async {
       await open(tester, backend(inbox: [_inbox('a', 'sam')]));
       expect(find.text('Share your meal'), findsNothing, reason: 'they already swap bites, so no tip');

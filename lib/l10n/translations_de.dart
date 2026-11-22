@@ -1113,4 +1113,10 @@ const Map<String, String> german = {
   'Count some of your movement toward today’s calories. Off by default. The numbers are only rough guesses, so a smaller share is the safer choice.': 'Rechne einen Teil deiner Bewegung auf die heutigen Kalorien an. Standardmäßig aus. Die Zahlen sind nur grobe Schätzungen, ein kleinerer Anteil ist daher die sicherere Wahl.',
   'Your daily calories stay exactly the same, whatever you do.': 'Deine täglichen Kalorien bleiben genau gleich, egal was du tust.',
   'Example: a 30-minute walk is roughly 90 kcal, so about {n} kcal would be added to that day. Never more than 500 kcal a day.': 'Beispiel: Ein 30-minütiger Spaziergang sind etwa 90 kcal, also würden etwa {n} kcal zu diesem Tag hinzukommen. Nie mehr als 500 kcal pro Tag.',
+  'New bite': 'Neuer Bissen',
+  'New story': 'Neue Story',
+  'New bite and story': 'Neuer Bissen und Story',
+  'just now': 'gerade eben',
+  '{n} min ago': 'vor {n} Min.',
+  '{n}h ago': 'vor {n} Std.',
 };
