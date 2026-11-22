@@ -22,6 +22,7 @@ import '../models/pending_scan.dart';
 import '../widgets/pending_scan_card.dart';
 import '../widgets/scan_note_sheet.dart';
 import '../providers/shell_provider.dart';
+import '../providers/workouts_provider.dart';
 import '../models/progress.dart';
 import '../providers/user_provider.dart';
 import '../providers/activity_provider.dart';
@@ -54,6 +55,7 @@ import 'food_search_screen.dart';
 import 'main_shell.dart';
 import 'photo_review_screen.dart';
 import '../widgets/insights_row.dart';
+import '../widgets/moved_row.dart';
 import 'insights_screen.dart' show openInsights;
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -591,6 +593,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ],
                             if (_isToday) ...[
                               SizedBox(height: display.showMacros || display.showNutrients ? 10 : 14),
+                              if (ref.watch(moveProvider.select((m) => m.week.todayMinutes)) case final moved when moved > 0) ...[
+                                MovedRow(
+                                  minutes: moved,
+                                  onTap: () => ref.read(shellTabProvider.notifier).state = ShellTab.workouts,
+                                ),
+                                const SizedBox(height: 10),
+                              ],
                               InsightsRow(onTap: () => openInsights(context)),
                             ],
                             const SizedBox(height: 24),

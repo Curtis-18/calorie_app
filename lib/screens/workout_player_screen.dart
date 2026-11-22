@@ -7,7 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/workouts.dart';
+import '../providers/house_recipes_provider.dart';
 import '../providers/workouts_provider.dart';
+import '../services/refuel_picks.dart';
+import '../widgets/house_recipe_sheet.dart';
 import '../services/player_engine.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -456,7 +459,7 @@ class _RoundButton extends StatelessWidget {
 /// The finish screen. Plain and warm: what was done, that it is saved, and, only
 /// when the weight is known, a rough estimate that is never added to the day's
 /// calories (roadmap R2.3: movement is never a payment for food).
-class _Summary extends StatelessWidget {
+class _Summary extends ConsumerWidget {
   const _Summary({
     required this.workout,
     required this.minutes,
@@ -474,8 +477,9 @@ class _Summary extends StatelessWidget {
   final VoidCallback onDone;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final kcal = saved?.estKcal;
+    final ideas = refuelIdeas(ref.watch(houseRecipesProvider).recipes);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
       child: Column(
@@ -517,6 +521,27 @@ class _Summary extends StatelessWidget {
             _Saving.saving => const CupertinoActivityIndicator(),
             _Saving.idle => const SizedBox.shrink(),
           },
+          if (ideas.isNotEmpty) ...[
+            const SizedBox(height: 22),
+            Align(alignment: Alignment.centerLeft, child: Text(tr('Ideas for your next meal'), style: AppType.sectionLabel())),
+            const SizedBox(height: 2),
+            Align(alignment: Alignment.centerLeft, child: Text(tr('From your recipes, higher in protein.'), style: AppType.caption(size: 12.5))),
+            const SizedBox(height: 8),
+            for (final r in ideas)
+              Pressable(
+                key: ValueKey('refuel_${r.id}'),
+                onTap: () => showHouseRecipeSheet(context, r),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.body(size: 14.5, color: TrackerColors.textPrimary))),
+                      Text(tr('{p} g protein', {'p': '${r.proteinG.round()}'}), style: AppType.body(size: 13, color: TrackerColors.textSecondary)),
+                    ],
+                  ),
+                ),
+              ),
+          ],
           const Spacer(),
           AppButton(key: const ValueKey('summary_done'), label: tr('Done'), onPressed: onDone),
         ],

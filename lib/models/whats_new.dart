@@ -23,6 +23,27 @@ class WhatsNewRelease {
 /// Newest first.
 const whatsNewReleases = <WhatsNewRelease>[
   WhatsNewRelease(
+    id: 'nov-26-2026-workouts',
+    title: 'What’s new: Workouts, and Insights moved',
+    items: [
+      WhatsNewItem(
+        icon: CupertinoIcons.bolt_fill,
+        title: 'A Workouts tab',
+        body: 'Short Move bites from 2 minutes, sessions up to 30, and a full-screen player that counts you through each move with rests in between. Pick by length or kind, or by how you feel.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.calendar,
+        title: 'Your move plate',
+        body: 'See your week: minutes, the days you moved and four kinds of movement. Rest days never count against you. Log a walk, a swim or a game too, anything counts.',
+      ),
+      WhatsNewItem(
+        icon: CupertinoIcons.chart_bar_alt_fill,
+        title: 'Insights has a new home',
+        body: 'Find it on a slim row under your calorie ring on Today, and in Profile. The Tips card is gone to keep things simple.',
+      ),
+    ],
+  ),
+  WhatsNewRelease(
     id: 'nov-21-2026-bites-home',
     title: 'What’s new: bites on Today, Home Screen and more',
     items: [

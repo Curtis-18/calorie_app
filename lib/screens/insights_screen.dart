@@ -157,6 +157,16 @@ class InsightsScreen extends ConsumerWidget {
                           SectionHeader(label: tr('This week')),
                           const SizedBox(height: AppSpacing.lg),
                           WeeklyTrendChart(data: insights.weeklyTrend, target: target),
+                          if (insights.movementMinutes > 0) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              insights.movementDays == 1
+                                  ? context.tr('You moved {n} min on 1 day this week.', {'n': '${insights.movementMinutes}'})
+                                  : context.tr('You moved {n} min on {d} days this week.', {'n': '${insights.movementMinutes}', 'd': '${insights.movementDays}'}),
+                              key: const ValueKey('movement_note'),
+                              style: AppType.caption(color: TrackerColors.textSecondary, size: 12.5),
+                            ),
+                          ],
                           if (insights.estimatedEntries > 0) ...[
                             const SizedBox(height: AppSpacing.md),
                             Text(

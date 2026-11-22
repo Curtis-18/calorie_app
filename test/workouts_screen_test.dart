@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:calorie_app/l10n/app_strings.dart';
+import 'package:calorie_app/models/house_recipe.dart';
 import 'package:calorie_app/models/workouts.dart';
+import 'package:calorie_app/providers/house_recipes_provider.dart';
 import 'package:calorie_app/providers/workouts_provider.dart';
 import 'package:calorie_app/screens/workout_player_screen.dart';
 import 'package:calorie_app/screens/workouts_screen.dart';
@@ -100,10 +102,21 @@ class Server {
       });
 }
 
-ProviderContainer containerFor(Server s) {
+class _FakeRecipes extends HouseRecipesNotifier {
+  _FakeRecipes(List<HouseRecipe> recipes) : super(currentUserId: () => null, userIdChanges: const Stream.empty()) {
+    state = HouseRecipesState(recipes: recipes, loading: false);
+  }
+}
+
+HouseRecipe own(String id, String title, int kcal, double protein) => HouseRecipe(
+      id: id, title: title, servings: 1, calories: kcal, proteinG: protein, carbsG: 20, fatG: 10, estimated: false,
+    );
+
+ProviderContainer containerFor(Server s, {List<HouseRecipe> recipes = const []}) {
   final service = WorkoutsService(client: s.client, tokenProvider: () => 't', now: () => DateTime(2026, 11, 25, 9));
   final c = ProviderContainer(overrides: [
     workoutsServiceProvider.overrideWithValue(service),
+    houseRecipesProvider.overrideWith((ref) => _FakeRecipes(recipes)),
     moveProvider.overrideWith((ref) => MoveNotifier(service: service, currentUserId: () => 'ann', userIdChanges: const Stream.empty())),
   ]);
   addTearDown(c.dispose);
@@ -431,6 +444,29 @@ void main() {
       for (final banned in ['burn', 'earn', 'cheat', 'punish', 'make up for']) {
         expect(words.contains(banned), isFalse, reason: banned);
       }
+    });
+
+    testWidgets('the summary offers the highest-protein own recipes as ideas for the next meal, not sized to the workout', (tester) async {
+      ignoreOverflow();
+      final c = containerFor(Server(), recipes: [own('a', 'Chicken bowl', 520, 42), own('b', 'Toast', 150, 4), own('c', 'Tuna salad', 300, 31)]);
+      await tester.pumpWidget(app(c, WorkoutPlayerScreen(workout: detail([step('timed', 'Walk', seconds: 60)]))));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 60));
+      await settle(tester, 5);
+      expect(find.text('Ideas for your next meal'), findsOneWidget);
+      expect(find.byKey(const ValueKey('refuel_a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('refuel_c')), findsOneWidget);
+      expect(find.byKey(const ValueKey('refuel_b')), findsNothing);
+      expect(find.text('42 g protein'), findsOneWidget);
+    });
+
+    testWidgets('no recipes, no ideas section', (tester) async {
+      ignoreOverflow();
+      await tester.pumpWidget(app(containerFor(Server()), WorkoutPlayerScreen(workout: detail([step('timed', 'Walk', seconds: 60)]))));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 60));
+      await settle(tester, 5);
+      expect(find.text('Ideas for your next meal'), findsNothing);
     });
 
     testWidgets('if saving fails, the summary offers to try again and a retry saves it once', (tester) async {
