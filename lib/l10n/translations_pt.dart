@@ -1013,4 +1013,12 @@ const Map<String, String> portuguese = {
   'From friends': 'De amigos',
   'Bites and reactions from friends show up here.': 'As mordidas e reações dos amigos aparecem aqui.',
   'now': 'agora',
+  'Weight loss': 'Perder peso',
+  'Maintain': 'Manter',
+  'Weight gain': 'Ganhar peso',
+  'Up to 500 kcal a serving, with at least a fifth of the calories from protein.': 'Até 500 kcal por porção, com pelo menos um quinto das calorias vindo de proteína.',
+  'Between 350 and 650 kcal a serving.': 'Entre 350 e 650 kcal por porção.',
+  '600 kcal or more a serving.': '600 kcal ou mais por porção.',
+  'Matched from each recipe’s calories and protein. A guide, not advice.': 'Definido pelas calorias e proteínas de cada receita. Uma referência, não um conselho.',
+  'None of your recipes match this yet.': 'Nenhuma das suas receitas se encaixa ainda.',
 };

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/house_recipe.dart';
+import '../models/recipe_goal.dart';
 import '../providers/house_recipes_provider.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -26,6 +27,9 @@ class MyRecipesView extends ConsumerStatefulWidget {
 }
 
 class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
+  /// The goal filter. Not saved: it only narrows the list while you look.
+  RecipeGoal? _goal;
+
   @override
   void initState() {
     super.initState();
@@ -144,14 +148,81 @@ class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
           ],
           SectionHeader(label: tr('All recipes')),
           const SizedBox(height: AppSpacing.md),
-          for (final r in state.recipes)
+          _GoalFilter(selected: _goal, onChanged: (g) => setState(() => _goal = g)),
+          const SizedBox(height: AppSpacing.md),
+          for (final r in _goal == null ? state.recipes : state.recipes.where((r) => r.goals.contains(_goal)))
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _Row(recipe: r, onTap: () => showHouseRecipeSheet(context, r)),
             ),
+          if (_goal != null && !state.recipes.any((r) => r.goals.contains(_goal)))
+            Padding(
+              key: const ValueKey('goal_none'),
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Text(tr('None of your recipes match this yet.'), style: AppType.callout(size: 13)),
+            ),
         ],
         SizedBox(height: AppSpacing.tabBarClearance + bottomInset),
       ],
+    );
+  }
+}
+
+/// All, then one chip per goal. A recipe is matched from its own calories and
+/// protein; the rule is spelled out under the chips while one is on.
+class _GoalFilter extends StatelessWidget {
+  const _GoalFilter({required this.selected, required this.onChanged});
+
+  final RecipeGoal? selected;
+  final ValueChanged<RecipeGoal?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _GoalChip(key: const ValueKey('goal_all'), label: tr('All'), selected: selected == null, onTap: () => onChanged(null)),
+            for (final g in RecipeGoal.values)
+              _GoalChip(key: ValueKey('goal_${g.name}'), label: g.label, selected: selected == g, onTap: () => onChanged(selected == g ? null : g)),
+          ],
+        ),
+        if (selected != null) ...[
+          const SizedBox(height: 8),
+          Text(selected!.rule, key: const ValueKey('goal_rule'), style: AppType.caption(size: 12)),
+          const SizedBox(height: 2),
+          Text(tr('Matched from each recipe’s calories and protein. A guide, not advice.'), style: AppType.caption(size: 11, color: TrackerColors.textTertiary)),
+        ],
+      ],
+    );
+  }
+}
+
+class _GoalChip extends StatelessWidget {
+  const _GoalChip({super.key, required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      haptics: true,
+      borderRadius: BorderRadius.circular(AppRadii.pill),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? TrackerColors.alpha(TrackerColors.accentStart, 0.18) : TrackerColors.alpha(TrackerColors.textPrimary, 0.06),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          border: Border.all(color: selected ? TrackerColors.accentStart : TrackerColors.border),
+        ),
+        child: Text(label, style: AppType.body(size: 14).copyWith(fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+      ),
     );
   }
 }

@@ -1013,4 +1013,12 @@ const Map<String, String> italian = {
   'From friends': 'Dagli amici',
   'Bites and reactions from friends show up here.': 'I bocconi e le reazioni degli amici compaiono qui.',
   'now': 'ora',
+  'Weight loss': 'Perdere peso',
+  'Maintain': 'Mantenere',
+  'Weight gain': 'Aumentare peso',
+  'Up to 500 kcal a serving, with at least a fifth of the calories from protein.': 'Fino a 500 kcal a porzione, con almeno un quinto delle calorie dalle proteine.',
+  'Between 350 and 650 kcal a serving.': 'Tra 350 e 650 kcal a porzione.',
+  '600 kcal or more a serving.': '600 kcal o più a porzione.',
+  'Matched from each recipe’s calories and protein. A guide, not advice.': 'Assegnata in base a calorie e proteine di ogni ricetta. Una guida, non un consiglio.',
+  'None of your recipes match this yet.': 'Nessuna delle tue ricette corrisponde ancora.',
 };
