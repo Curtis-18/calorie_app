@@ -27,6 +27,7 @@ import '../widgets/appearance_picker.dart';
 import '../widgets/delete_account.dart';
 import '../widgets/log_out.dart';
 import '../widgets/settings_list.dart';
+import '../services/legal_links.dart';
 import 'friends_screen.dart' show showBlockedPeopleSheet;
 import 'notification_settings_screen.dart';
 import 'onboarding_screen.dart';
@@ -59,6 +60,7 @@ class SettingsView extends ConsumerWidget {
     this.onBlockedPeople,
     this.onLogOut,
     this.onDeleteAccount,
+    this.onOpenLink,
   });
 
   final UserProfile? profile;
@@ -71,6 +73,9 @@ class SettingsView extends ConsumerWidget {
   /// Replace the log-out and delete-account flows; for tests.
   final Future<void> Function(BuildContext context)? onLogOut;
   final Future<void> Function(BuildContext context)? onDeleteAccount;
+
+  /// Replace opening a web page (Privacy Policy, Terms); for tests.
+  final Future<bool> Function(Uri url)? onOpenLink;
 
   void _push(BuildContext context, WidgetBuilder builder) =>
       Navigator.of(context).push(CupertinoPageRoute<void>(builder: builder));
@@ -426,6 +431,25 @@ class SettingsView extends ConsumerWidget {
                           title: context.tr('Replay the tutorial'),
                           subtitle: context.tr('A quick walk through the app'),
                           onTap: () => _replayTour(context, ref),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    SettingsGroup(
+                      label: context.tr('About'),
+                      footer: context.tr('Some barcode data comes from Open Food Facts, available under the Open Database Licence.'),
+                      children: [
+                        SettingsRow(
+                          key: const ValueKey('open_privacy'),
+                          icon: CupertinoIcons.lock_shield,
+                          title: context.tr('Privacy Policy'),
+                          onTap: () => LegalLinks.open(LegalLinks.privacy(), launcher: onOpenLink),
+                        ),
+                        SettingsRow(
+                          key: const ValueKey('open_terms'),
+                          icon: CupertinoIcons.doc_text,
+                          title: context.tr('Terms of Service'),
+                          onTap: () => LegalLinks.open(LegalLinks.terms(), launcher: onOpenLink),
                         ),
                       ],
                     ),

@@ -971,4 +971,9 @@ const Map<String, String> french = {
   'Turn on': 'Activer',
   'Part of your meal wasn\'t saved': 'Une partie de ton repas n’a pas été enregistrée',
   'The rest is saved. These were not added: {items}. You can add them again from search.': 'Le reste est enregistré. Ceux-ci n’ont pas été ajoutés : {items}. Tu peux les ajouter à nouveau depuis la recherche.',
+  'By continuing you agree to our': 'En continuant, tu acceptes nos',
+  'Terms of Service': 'Conditions d’utilisation',
+  'Privacy Policy': 'Politique de confidentialité',
+  'About': 'À propos',
+  'Some barcode data comes from Open Food Facts, available under the Open Database Licence.': 'Certaines données de codes-barres proviennent d’Open Food Facts, disponibles sous la licence Open Database.',
 };

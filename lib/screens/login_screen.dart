@@ -8,6 +8,7 @@ import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_field.dart';
 import '../widgets/google_sign_in_button.dart';
+import '../widgets/legal_note.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 
@@ -117,6 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _isLoading ? null : _logIn,
                   ),
                   const GoogleSignInButton(),
+                  const LegalNote(),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
                     label: context.tr('Forgot password?'),
