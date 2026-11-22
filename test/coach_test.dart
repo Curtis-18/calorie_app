@@ -6,6 +6,7 @@ import 'package:calorie_app/providers/messages_provider.dart';
 import 'package:calorie_app/screens/coach_screen.dart';
 import 'package:calorie_app/screens/conversations_screen.dart';
 import 'package:calorie_app/services/coach_service.dart';
+import 'package:calorie_app/services/workouts_service.dart';
 import 'package:calorie_app/services/language_client.dart';
 import 'package:calorie_app/services/messages_service.dart';
 import 'package:calorie_app/services/voice_note.dart';
@@ -15,6 +16,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+
+import 'workouts_screen_test.dart' show card, detailFor, step;
 
 final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 
@@ -123,6 +126,7 @@ Map<String, dynamic> _walk() => {
       'safety': 'Stop if anything hurts or you feel dizzy.',
     };
 
+
 void main() {
   tearDown(() => AppStrings.active = 'en');
 
@@ -209,13 +213,13 @@ void main() {
 
   group('the coach screen', () {
     Future<void> open(WidgetTester tester, _Server server,
-        {VoiceRecognizer? voice, Future<void> Function(BuildContext, String)? openRecipe}) async {
+        {VoiceRecognizer? voice, Future<void> Function(BuildContext, String)? openRecipe, WorkoutsService? workoutsService}) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(CupertinoApp(
         theme: AppTheme.cupertino,
-        home: CoachScreen(service: _service(server), recognizer: voice ?? _Voice(ok: false), openRecipe: openRecipe),
+        home: CoachScreen(service: _service(server), recognizer: voice ?? _Voice(ok: false), openRecipe: openRecipe, workoutsService: workoutsService),
       ));
       await _settle(tester);
     }
@@ -274,6 +278,43 @@ void main() {
       await open(tester, server);
       expect(find.text('Your lentil stew fits well tonight.'), findsOneWidget);
       expect(find.byKey(const ValueKey('coach_recipe_r-1')), findsNothing);
+    }, variant: ios);
+
+    testWidgets('when the full routine can be fetched, the coach card opens the Workouts sheet with Start', (tester) async {
+      final server = _Server()..workouts = [_walk()];
+      final fetched = <String>[];
+      final workouts = WorkoutsService(
+        tokenProvider: () => 't',
+        client: MockClient((r) async {
+          fetched.add(r.url.path);
+          return http.Response.bytes(
+            utf8.encode(jsonEncode(detailFor(card('walk_15', '15-minute walk', 15, 'cardio'), [step('timed', 'Walk', seconds: 60)]))),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      );
+      await open(tester, server, workoutsService: workouts);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('coach_workout_walk_15')));
+      await _settle(tester);
+      expect(fetched, ['/workouts/walk_15']);
+      expect(find.byKey(const ValueKey('detail_name')), findsOneWidget);
+      expect(find.byKey(const ValueKey('detail_start')), findsOneWidget);
+      expect(find.byKey(const ValueKey('workout_name')), findsNothing, reason: 'not the old read-only sheet');
+    }, variant: ios);
+
+    testWidgets('if the routine cannot be fetched, the words the coach sent are shown as before', (tester) async {
+      final server = _Server()..workouts = [_walk()];
+      final workouts = WorkoutsService(tokenProvider: () => 't', client: MockClient((_) async => http.Response('no', 503)));
+      await open(tester, server, workoutsService: workouts);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('coach_workout_walk_15')));
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('workout_name')), findsOneWidget);
+      expect(find.byKey(const ValueKey('detail_start')), findsNothing);
     }, variant: ios);
 
     testWidgets('a routine the coach names is a card that opens the moves and the safety line; a reload has none', (tester) async {

@@ -7,6 +7,8 @@ import '../models/messages.dart';
 import '../providers/house_recipes_provider.dart';
 import '../services/coach_service.dart';
 import '../services/voice_note.dart';
+import '../services/workouts_service.dart';
+import '../models/workouts.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -14,6 +16,7 @@ import '../widgets/app_dialog.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/glass.dart';
 import '../widgets/house_recipe_sheet.dart';
+import '../widgets/workout_detail_sheet.dart';
 import '../widgets/workout_sheet.dart';
 import '../widgets/pressable.dart';
 
@@ -30,9 +33,13 @@ Future<void> openCoach(BuildContext context) {
 /// words on the phone; audio never leaves it). The coach is not a friend: no
 /// read receipts, nothing to unsend, and the thread can be cleared.
 class CoachScreen extends StatefulWidget {
-  const CoachScreen({super.key, this.service, this.recognizer, this.openRecipe});
+  const CoachScreen({super.key, this.service, this.recognizer, this.openRecipe, this.workoutsService});
 
   final CoachService? service;
+
+  /// Where a routine the coach named is fetched in full, so it opens the same
+  /// sheet as the Workouts tab, with Start. Tests replace it.
+  final WorkoutsService? workoutsService;
   final VoiceRecognizer? recognizer;
 
   /// Opens a recipe the coach named (its sheet has the servings and "Log this").
@@ -159,6 +166,23 @@ class _CoachScreenState extends State<CoachScreen> {
     final open = widget.openRecipe;
     if (open != null) return open(context, id);
     return openRecipeById(context, ProviderScope.containerOf(context).read(houseRecipesProvider.notifier), id);
+  }
+
+  /// A routine the coach named opens the same sheet as the Workouts tab (the
+  /// moves, the safety line and Start). If the full routine cannot be fetched
+  /// (offline, an older server) the words the coach already sent are shown, as
+  /// before.
+  Future<void> _openWorkout(CoachWorkout workout) async {
+    WorkoutDetail? full;
+    try {
+      full = await (widget.workoutsService ?? WorkoutsService()).detail(workout.id);
+    } catch (_) {
+      full = null;
+    }
+    if (!mounted) return;
+    final detail = full;
+    if (detail == null) return showWorkoutSheet(context, workout);
+    return showWorkoutDetail(context, detail.card, loader: (_) async => detail);
   }
 
   void _replace(ChatMessage next) {
@@ -310,7 +334,7 @@ class _CoachScreenState extends State<CoachScreen> {
                       style: AppType.caption(color: TrackerColors.textTertiary, size: 11.5)),
                 ),
               ),
-            _Bubble(message: message, onRetry: () => _deliver(message), onOpenRecipe: _openRecipe),
+            _Bubble(message: message, onRetry: () => _deliver(message), onOpenRecipe: _openRecipe, onOpenWorkout: _openWorkout),
           ],
         );
       },
@@ -425,11 +449,12 @@ class _Greeting extends StatelessWidget {
 }
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.onRetry, required this.onOpenRecipe});
+  const _Bubble({required this.message, required this.onRetry, required this.onOpenRecipe, required this.onOpenWorkout});
 
   final ChatMessage message;
   final VoidCallback onRetry;
   final void Function(String recipeId) onOpenRecipe;
+  final void Function(CoachWorkout workout) onOpenWorkout;
 
   @override
   Widget build(BuildContext context) {
@@ -475,7 +500,7 @@ class _Bubble extends StatelessWidget {
           for (final workout in message.workouts)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: _WorkoutCard(workout: workout, onTap: () => showWorkoutSheet(context, workout)),
+              child: _WorkoutCard(workout: workout, onTap: () => onOpenWorkout(workout)),
             ),
           if (failed)
             Padding(
