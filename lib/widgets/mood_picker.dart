@@ -10,6 +10,7 @@ import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
 import 'app_card.dart';
+import 'move_icons.dart';
 import 'pressable.dart';
 import 'shimmer.dart';
 
@@ -224,9 +225,16 @@ class _MoodChip extends StatelessWidget {
             color: selected ? TrackerColors.accentStart : TrackerColors.border,
           ),
         ),
-        child: Text(
-          '${mood.emoji}  ${mood.label}',
-          style: AppType.body(size: 14).copyWith(fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MoveIcon.mood(mood, size: 17),
+            const SizedBox(width: 8),
+            Text(
+              mood.label,
+              style: AppType.body(size: 14).copyWith(fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+            ),
+          ],
         ),
       ),
     );

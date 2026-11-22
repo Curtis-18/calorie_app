@@ -3,14 +3,11 @@ import '../l10n/app_strings.dart';
 /// How a person says they feel, to get meal ideas. Chosen on the Recipes
 /// page, never saved, never sent anywhere, never shown to friends.
 enum Mood {
-  tired('😴'),
-  stressed('😬'),
-  low('🌧️'),
-  good('😊'),
-  comfort('🫶');
-
-  const Mood(this.emoji);
-  final String emoji;
+  tired,
+  stressed,
+  low,
+  good,
+  comfort;
 
   String get label => switch (this) {
         Mood.tired => tr('Tired'),
