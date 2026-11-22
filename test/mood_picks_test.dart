@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:calorie_app/l10n/app_strings.dart';
 import 'package:calorie_app/models/mood.dart';
+import 'package:calorie_app/models/house_recipe.dart';
 import 'package:calorie_app/models/recipe.dart';
+import 'package:calorie_app/providers/house_recipes_provider.dart';
 import 'package:calorie_app/screens/library_screen.dart';
 import 'package:calorie_app/services/mood_picks.dart';
 import 'package:calorie_app/services/recipe_service.dart';
@@ -13,6 +15,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+HouseRecipe own(String id, String title, List<String> ingredients, {bool mine = true}) => HouseRecipe(
+      id: id,
+      title: title,
+      servings: 2,
+      calories: 500,
+      proteinG: 20,
+      carbsG: 50,
+      fatG: 10,
+      estimated: false,
+      mine: mine,
+      ingredients: [for (final n in ingredients) HouseIngredient(name: n, grams: 100)],
+    );
+
+class _Recipes extends HouseRecipesNotifier {
+  _Recipes(List<HouseRecipe> recipes) : super(currentUserId: () => null, userIdChanges: const Stream.empty()) {
+    state = HouseRecipesState(recipes: recipes, loading: false);
+  }
+}
 
 RecipeSummary r(String id, String name) => RecipeSummary(id: id, name: name, thumbnailUrl: 'https://img.test/$id.jpg');
 
@@ -146,6 +167,26 @@ void main() {
     });
   });
 
+  group('ranking my own recipes', () {
+    test('judged by the title and the ingredient names, best first, friends\' recipes and sweet ones left out', () {
+      final ranked = rankMineForMood(Mood.tired, [
+        own('1', 'Weeknight dinner', ['chickpeas', 'oats', 'onion']),
+        own('2', 'Lentil soup', ['lentils']),
+        own('3', 'Chocolate cake', ['lentils']),
+        own('4', 'Fried chicken', ['chicken']),
+        own('5', 'Friend lentil stew', ['lentils'], mine: false),
+      ]);
+      expect(ranked.map((p) => p.recipe.id), ['1', '2']);
+      expect(ranked.first.reasons, [FoodFeature.wholeGrains, FoodFeature.legumes]);
+    });
+
+    test('at most five, and nothing for no recipes', () {
+      final many = [for (var i = 0; i < 9; i++) own('$i', 'Bean stew $i', ['beans'])];
+      expect(rankMineForMood(Mood.comfort, many).length, 5);
+      expect(rankMineForMood(Mood.comfort, const []), isEmpty);
+    });
+  });
+
   group('wording', () {
     // The same spirit as the notification word list: food is not a reward or a punishment,
     // and no claim about brain chemistry or treating anything.
@@ -155,6 +196,7 @@ void main() {
           for (final m in Mood.values) ...[m.label, m.blurb],
           for (final f in FoodFeature.values) if (f.reason != null) f.reason!,
           tr('How are you feeling?'),
+          tr('From your recipes'),
           tr('Pick one for meal ideas. Nothing is saved.'),
           tr('Could not load ideas. Try again.'),
           tr('No matches right now. Try another feeling.'),
@@ -198,7 +240,7 @@ void main() {
       });
     }
 
-    Future<void> show(WidgetTester tester, MockClient client) async {
+    Future<void> show(WidgetTester tester, MockClient client, {List<HouseRecipe> mine = const []}) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -210,6 +252,7 @@ void main() {
       };
       addTearDown(() => FlutterError.onError = original);
       await tester.pumpWidget(ProviderScope(
+        overrides: [houseRecipesProvider.overrideWith((ref) => _Recipes(mine))],
         child: CupertinoApp(theme: AppTheme.cupertino, home: LibraryScreen(service: RecipeService(client: client))),
       ));
       await settle(tester);
@@ -266,6 +309,39 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('mood_comfort'), skipOffstage: false));
       await settle(tester);
       expect(find.byKey(const ValueKey('mood_pick_900'), skipOffstage: false), findsOneWidget, reason: 'Chicken Noodle Soup is warm');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the person\'s own recipes are ranked too and shown first, with reasons', (tester) async {
+      await show(
+        tester,
+        backend(),
+        mine: [
+          own('a', "Mum's lentil and spinach stew", ['red lentils', 'spinach', 'onion']),
+          own('b', 'Chocolate brownies', ['flour', 'cocoa']),
+          own('c', 'Beef burger', ['beef', 'bun']),
+          own('d', 'Sam\'s oat porridge', ['oats', 'milk'], mine: false),
+        ],
+      );
+      await tester.tap(find.byKey(const ValueKey('mood_tired'), skipOffstage: false));
+      await settle(tester);
+      expect(find.byKey(const ValueKey('mood_mine_a'), skipOffstage: false), findsOneWidget);
+      expect(find.byKey(const ValueKey('mood_mine_b'), skipOffstage: false), findsNothing, reason: 'sweet');
+      expect(find.byKey(const ValueKey('mood_mine_c'), skipOffstage: false), findsNothing, reason: 'no fit');
+      expect(find.byKey(const ValueKey('mood_mine_d'), skipOffstage: false), findsNothing, reason: 'a friend\'s, not mine');
+      final reasons = tester.widget<Text>(find.byKey(const ValueKey('mood_mine_reasons_a'), skipOffstage: false)).data!;
+      expect(reasons, contains('Beans and lentils'));
+      expect(find.text('FROM YOUR RECIPES', skipOffstage: false), findsOneWidget);
+      // Clearing removes them too.
+      await tester.tap(find.byKey(const ValueKey('mood_clear'), skipOffstage: false));
+      await settle(tester);
+      expect(find.byKey(const ValueKey('mood_mine_a'), skipOffstage: false), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('no recipes of my own: no "From your recipes" heading', (tester) async {
+      await show(tester, backend());
+      await tester.tap(find.byKey(const ValueKey('mood_tired'), skipOffstage: false));
+      await settle(tester);
+      expect(find.text('FROM YOUR RECIPES', skipOffstage: false), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('no connection: a plain message, and the page still works', (tester) async {

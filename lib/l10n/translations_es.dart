@@ -1006,4 +1006,5 @@ const Map<String, String> spanish = {
   'No matches right now. Try another feeling.': 'Sin resultados por ahora. Prueba con otro estado.',
   'General ideas, not medical advice.': 'Ideas generales, no consejo médico.',
   'If a low mood lasts, it can help to talk to someone you trust or a doctor.': 'Si un ánimo bajo se alarga, puede ayudar hablar con alguien de confianza o con un médico.',
+  'From your recipes': 'De tus recetas',
 };

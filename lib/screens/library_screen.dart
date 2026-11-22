@@ -1,4 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/house_recipes_provider.dart';
+import '../widgets/house_recipe_sheet.dart' show openRecipeById;
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import '../theme/app_shapes.dart';
@@ -149,7 +152,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                 children: [
                   if (!showingSearch) ...[
-                    MoodPicker(service: _service, pool: _browseResults, onOpen: _openRecipe),
+                    Consumer(
+                      builder: (context, ref, _) => MoodPicker(
+                        service: _service,
+                        pool: _browseResults,
+                        onOpen: _openRecipe,
+                        mine: ref.watch(houseRecipesProvider).recipes,
+                        onOpenMine: (id) => openRecipeById(context, ref.read(houseRecipesProvider.notifier), id),
+                      ),
+                    ),
                     SectionHeader(
                       label: tr('Browse'),
                       trailing: isLoading || list.isEmpty

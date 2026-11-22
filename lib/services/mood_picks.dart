@@ -1,3 +1,4 @@
+import '../models/house_recipe.dart';
 import '../models/mood.dart';
 import '../models/recipe.dart';
 
@@ -160,6 +161,41 @@ List<MoodPick<RecipeSummary>> rankForMood(
       if (byMix != 0) return byMix;
     }
     return a.recipe.name.toLowerCase().compareTo(b.recipe.name.toLowerCase());
+  });
+  return picks.take(limit).toList();
+}
+
+
+/// Ranks the person's OWN recipes for [mood], with the same table and the same
+/// rules as [rankForMood]. Their ingredient names are known, so a dish like
+/// "Mum's stew" is judged by what is in it. Recipes a friend shared with them
+/// are left out: this list is "from your recipes".
+List<MoodPick<HouseRecipe>> rankMineForMood(
+  Mood mood,
+  Iterable<HouseRecipe> recipes, {
+  int seed = 0,
+  int limit = 5,
+  int minScore = 2,
+}) {
+  final picks = <MoodPick<HouseRecipe>>[];
+  for (final r in recipes) {
+    if (!r.mine) continue;
+    final features = featuresFromText([r.title, ...r.ingredients.map((i) => i.name)]);
+    if (features.any(neverSuggested.contains)) continue;
+    final score = scoreFor(mood, features);
+    if (score < minScore) continue;
+    picks.add(MoodPick(recipe: r, score: score, reasons: reasonsFor(mood, features)));
+  }
+  picks.sort((a, b) {
+    final byScore = b.score.compareTo(a.score);
+    if (byScore != 0) return byScore;
+    final byReasons = b.reasons.length.compareTo(a.reasons.length);
+    if (byReasons != 0) return byReasons;
+    if (seed != 0) {
+      final byMix = _mix(a.recipe.id, seed).compareTo(_mix(b.recipe.id, seed));
+      if (byMix != 0) return byMix;
+    }
+    return a.recipe.title.toLowerCase().compareTo(b.recipe.title.toLowerCase());
   });
   return picks.take(limit).toList();
 }

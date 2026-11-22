@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/house_recipe.dart';
 import '../models/mood.dart';
 import '../models/recipe.dart';
 import '../services/mood_picks.dart';
@@ -17,13 +18,24 @@ import 'shimmer.dart';
 /// The choice lives only in this widget. It is not saved, not sent to the
 /// server and not shared; leaving the page forgets it.
 class MoodPicker extends StatefulWidget {
-  const MoodPicker({super.key, required this.service, required this.pool, required this.onOpen});
+  const MoodPicker({
+    super.key,
+    required this.service,
+    required this.pool,
+    required this.onOpen,
+    this.mine = const [],
+    this.onOpenMine,
+  });
 
   final RecipeService service;
 
   /// The recipes already on screen (judged by their names too).
   final List<RecipeSummary> pool;
   final void Function(String recipeId) onOpen;
+
+  /// The person's own recipes, ranked on the spot (no request needed).
+  final List<HouseRecipe> mine;
+  final void Function(String recipeId)? onOpenMine;
 
   @override
   State<MoodPicker> createState() => _MoodPickerState();
@@ -92,6 +104,8 @@ class _MoodPickerState extends State<MoodPicker> {
   @override
   Widget build(BuildContext context) {
     final mood = _mood;
+    final day = DateTime.now().difference(DateTime(2026)).inDays + 1;
+    final minePicks = mood == null ? const <MoodPick<HouseRecipe>>[] : rankMineForMood(mood, widget.mine, seed: day);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -128,6 +142,25 @@ class _MoodPickerState extends State<MoodPicker> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          if (minePicks.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: AppSpacing.sm),
+              child: Text(tr('From your recipes').toUpperCase(), style: AppType.sectionLabel()),
+            ),
+            for (final pick in minePicks)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _PickRow(
+                  key: ValueKey('mood_mine_${pick.recipe.id}'),
+                  title: pick.recipe.title,
+                  imageUrl: pick.recipe.coverUrl,
+                  reasons: pick.reasons,
+                  reasonsKey: ValueKey('mood_mine_reasons_${pick.recipe.id}'),
+                  onTap: () => widget.onOpenMine?.call(pick.recipe.id),
+                ),
+              ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           if (_loading)
             const SkeletonRows(count: 3)
           else if (_failed)
@@ -138,7 +171,14 @@ class _MoodPickerState extends State<MoodPicker> {
             for (final pick in _picks)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _PickRow(pick: pick, onTap: () => widget.onOpen(pick.recipe.id)),
+                child: _PickRow(
+                  key: ValueKey('mood_pick_${pick.recipe.id}'),
+                  title: pick.recipe.name,
+                  imageUrl: pick.recipe.thumbnailUrl,
+                  reasons: pick.reasons,
+                  reasonsKey: ValueKey('mood_reasons_${pick.recipe.id}'),
+                  onTap: () => widget.onOpen(pick.recipe.id),
+                ),
               ),
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -194,16 +234,33 @@ class _MoodChip extends StatelessWidget {
 }
 
 class _PickRow extends StatelessWidget {
-  const _PickRow({required this.pick, required this.onTap});
+  const _PickRow({
+    super.key,
+    required this.title,
+    required this.imageUrl,
+    required this.reasons,
+    required this.reasonsKey,
+    required this.onTap,
+  });
 
-  final MoodPick<RecipeSummary> pick;
+  final String title;
+  final String? imageUrl;
+  final List<FoodFeature> reasons;
+  final Key reasonsKey;
   final VoidCallback onTap;
+
+  Widget _placeholder() => Container(
+        width: 56,
+        height: 56,
+        color: TrackerColors.surfaceElevated,
+        alignment: Alignment.center,
+        child: Icon(CupertinoIcons.photo, size: 18, color: TrackerColors.textTertiary),
+      );
 
   @override
   Widget build(BuildContext context) {
-    final recipe = pick.recipe;
+    final url = imageUrl;
     return Pressable(
-      key: ValueKey('mood_pick_${recipe.id}'),
       onTap: onTap,
       haptics: true,
       borderRadius: AppRadii.containerAll,
@@ -214,31 +271,21 @@ class _PickRow extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadii.button),
-              child: Image.network(
-                recipe.thumbnailUrl,
-                width: 56,
-                height: 56,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stack) => Container(
-                  width: 56,
-                  height: 56,
-                  color: TrackerColors.surfaceElevated,
-                  alignment: Alignment.center,
-                  child: Icon(CupertinoIcons.photo, size: 18, color: TrackerColors.textTertiary),
-                ),
-              ),
+              child: url == null || url.isEmpty
+                  ? _placeholder()
+                  : Image.network(url, width: 56, height: 56, fit: BoxFit.cover, errorBuilder: (context, error, stack) => _placeholder()),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(recipe.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 14)),
-                  if (pick.reasons.isNotEmpty) ...[
+                  Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.body(size: 14)),
+                  if (reasons.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      pick.reasons.map((f) => f.reason!).join(' · '),
-                      key: ValueKey('mood_reasons_${recipe.id}'),
+                      reasons.map((f) => f.reason!).join(' · '),
+                      key: reasonsKey,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppType.caption(color: TrackerColors.accentStartText, size: 11),
