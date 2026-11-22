@@ -13,6 +13,7 @@ import '../providers/messages_provider.dart';
 import '../services/profile_link.dart';
 import '../widgets/profile_link_sheet.dart';
 import '../providers/shell_provider.dart';
+import '../providers/workouts_provider.dart';
 import '../providers/snaps_provider.dart';
 import '../theme/app_motion.dart';
 import '../theme/tracker_colors.dart';
@@ -65,7 +66,11 @@ class _MainShellState extends ConsumerState<MainShell> {
     _controller.addListener(_onTabChanged);
     // New messages show on the Friends tab wherever you are in the app.
     _messageTimer = Timer.periodic(const Duration(seconds: 30), (_) => _refreshMessages());
-    _lifecycle = AppLifecycleListener(onResume: _refreshMessages);
+    _lifecycle = AppLifecycleListener(onResume: () {
+      _refreshMessages();
+      // A new day may have started while the app was in the background.
+      if (mounted) ref.read(moveProvider.notifier).load();
+    });
     ProfileLink.pending.addListener(_showLinkedProfile);
     WidgetsBinding.instance.addPostFrameCallback((_) => _showLinkedProfile());
     // A fresh shell (after signing in again) starts on Today.

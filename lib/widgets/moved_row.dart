@@ -8,9 +8,12 @@ import 'app_card.dart';
 /// "Moved today" on Today: shown only once something was logged, so an empty
 /// day is never marked with a blank or a nag. Opens the Workouts tab.
 class MovedRow extends StatelessWidget {
-  const MovedRow({super.key, required this.minutes, required this.onTap});
+  const MovedRow({super.key, required this.minutes, required this.onTap, this.addedKcal = 0});
 
   final int minutes;
+
+  /// kcal added to today's plan because the person chose to (0 when off).
+  final int addedKcal;
   final VoidCallback onTap;
 
   @override
@@ -37,7 +40,18 @@ class MovedRow extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(tr('Moved today'), style: AppType.body(size: 15.5).copyWith(fontWeight: FontWeight.w600)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(tr('Moved today'), style: AppType.body(size: 15.5).copyWith(fontWeight: FontWeight.w600)),
+                  if (addedKcal > 0)
+                    Text(
+                      tr('+{n} kcal added to today’s plan', {'n': '$addedKcal'}),
+                      key: const ValueKey('moved_added'),
+                      style: AppType.caption(color: TrackerColors.textSecondary),
+                    ),
+                ],
+              ),
             ),
             Text(tr('{n} min', {'n': '$minutes'}), key: const ValueKey('moved_minutes'), style: AppType.body(size: 14.5, color: TrackerColors.textSecondary)),
             const SizedBox(width: 8),

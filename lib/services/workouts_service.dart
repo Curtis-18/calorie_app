@@ -102,6 +102,14 @@ class WorkoutsService {
     return e;
   }
 
+  /// How much of today's movement is added to the calorie plan (0 = off).
+  Future<int> setEatBack(int percent) async {
+    final body = jsonEncode({'eat_back_percent': percent});
+    final r = await _send((c, h) => c.post(_uri('/movement/prefs'), headers: h, body: body));
+    if (r.statusCode != 200) throw StateError('prefs ${r.statusCode}');
+    return ((_json(r) as Map<String, dynamic>)['eat_back_percent'] as num?)?.toInt() ?? percent;
+  }
+
   Future<void> delete(String id) async {
     final r = await _send((c, h) => c.delete(_uri('/movement/${Uri.encodeComponent(id)}'), headers: h));
     if (r.statusCode != 204 && r.statusCode != 404) throw StateError('delete ${r.statusCode}');

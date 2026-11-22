@@ -499,7 +499,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final entries = _isToday ? foodLog : _pastEntries;
     // The flexible weekly allowance replaces the daily target on today only,
     // and only for someone who turned it on.
-    final target = (_isToday && budget.weekly ? budget.week!.allowanceToday : null) ?? profile?.calorieTarget ?? 2000;
+    final baseTarget = (_isToday && budget.weekly ? budget.week!.allowanceToday : null) ?? profile?.calorieTarget ?? 2000;
+    // Only if the person chose to add some of today's movement to the plan (off by default).
+    final movementExtra = _isToday ? ref.watch(moveProvider.select((m) => m.week.eatBackKcal)) : 0;
+    final target = baseTarget + movementExtra;
     final consumed = entries.totalCalories;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
@@ -596,6 +599,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               if (ref.watch(moveProvider.select((m) => m.week.todayMinutes)) case final moved when moved > 0) ...[
                                 MovedRow(
                                   minutes: moved,
+                                  addedKcal: movementExtra,
                                   onTap: () => ref.read(shellTabProvider.notifier).state = ShellTab.workouts,
                                 ),
                                 const SizedBox(height: 10),

@@ -58,6 +58,9 @@ class Server {
   ];
   List<Map<String, dynamic>> play = [step('timed', 'Jumping on the spot', seconds: 2)];
   int? estKcal = 90;
+  int eatBackPercent = 0;
+  int eatBackKcal = 0;
+  bool failPrefs = false;
   final posts = <Map<String, dynamic>>[];
   final deletes = <String>[];
   bool failLibrary = false;
@@ -73,7 +76,13 @@ class Server {
           final id = path.split('/').last;
           return ok(detailFor(cards.firstWhere((c) => c['id'] == id), play));
         }
-        if (req.method == 'GET' && path == '/movement/week') return ok(week);
+        if (req.method == 'POST' && path == '/movement/prefs') {
+          if (failPrefs) return http.Response('no', 503);
+          eatBackPercent = (jsonDecode(req.body) as Map<String, dynamic>)['eat_back_percent'] as int;
+          eatBackKcal = eatBackPercent == 0 ? 0 : 30;
+          return ok({'eat_back_percent': eatBackPercent});
+        }
+        if (req.method == 'GET' && path == '/movement/week') return ok({...week, 'eat_back_percent': eatBackPercent, 'eat_back_kcal': eatBackKcal});
         if (req.method == 'GET' && path == '/movement/choices') {
           return ok({'activities': [
             {'key': 'walk', 'label': 'Walk', 'slice': 'cardio'},
@@ -287,6 +296,71 @@ void main() {
       await settle(tester);
       expect(find.text('80 de 150 min'), findsOneWidget);
       expect(find.text('Bocados de movimiento'), findsOneWidget);
+    });
+  });
+
+  group('adding movement to the calorie plan', () {
+    testWidgets('it is off by default, says so plainly, and choosing a share saves it', (tester) async {
+      ignoreOverflow();
+      tester.view.physicalSize = const Size(900, 3600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final s = Server();
+      await tester.pumpWidget(app(containerFor(s), const WorkoutsScreen()));
+      await settle(tester);
+      expect(find.byKey(const ValueKey('plan_choice')), findsOneWidget);
+      expect(find.textContaining('Off by default'), findsOneWidget);
+      expect(find.textContaining('At most 500 kcal a day'), findsOneWidget);
+      expect(find.byKey(const ValueKey('plan_added')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('eat_back_25')));
+      await settle(tester);
+      expect(s.eatBackPercent, 25);
+      expect(find.text('+30 kcal added to today’s plan'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('eat_back_0')));
+      await settle(tester);
+      expect(s.eatBackPercent, 0);
+      expect(find.byKey(const ValueKey('plan_added')), findsNothing);
+    });
+
+    testWidgets('a choice that cannot be saved says so', (tester) async {
+      ignoreOverflow();
+      tester.view.physicalSize = const Size(900, 3600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final s = Server()..failPrefs = true;
+      await tester.pumpWidget(app(containerFor(s), const WorkoutsScreen()));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('eat_back_50')));
+      await settle(tester);
+      expect(find.byKey(const ValueKey('plan_failed')), findsOneWidget);
+    });
+
+    testWidgets('the finish summary says whether the estimate is added, following the choice', (tester) async {
+      ignoreOverflow();
+      final s = Server()
+        ..eatBackPercent = 25
+        ..eatBackKcal = 30;
+      final c = containerFor(s);
+      c.read(moveProvider.notifier); // loads the week with the choice on
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpWidget(app(c, WorkoutPlayerScreen(workout: WorkoutDetail.fromJson(detailFor(card('walk_10', '10-minute walk', 10, 'cardio'), [step('timed', 'Walk', seconds: 60)]))!)));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 60));
+      await settle(tester, 5);
+      expect(find.text('Part of this is added to today’s plan, as you chose.'), findsOneWidget);
+      expect(find.text("This isn't added to your daily calories."), findsNothing);
+    });
+
+    test('the week reads the choice and the extra, and an older server means off', () {
+      final w = MoveWeek.fromJson({'eat_back_percent': 25, 'eat_back_kcal': 120});
+      expect((w.eatBackPercent, w.eatBackKcal), (25, 120));
+      final old = MoveWeek.fromJson({'minutes': 10});
+      expect((old.eatBackPercent, old.eatBackKcal), (0, 0));
+      // Never trust a number outside what the server allows.
+      final odd = MoveWeek.fromJson({'eat_back_percent': 90, 'eat_back_kcal': 9000});
+      expect((odd.eatBackPercent, odd.eatBackKcal), (50, 500));
     });
   });
 

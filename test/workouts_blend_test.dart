@@ -51,6 +51,19 @@ void main() {
       expect(taps, 1);
     });
 
+    testWidgets('says how much was added to today’s plan, only when something was', (tester) async {
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: CupertinoPageScaffold(child: Center(child: MovedRow(minutes: 25, addedKcal: 60, onTap: () {}))),
+      ));
+      expect(find.text('+60 kcal added to today’s plan'), findsOneWidget);
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: CupertinoPageScaffold(child: Center(child: MovedRow(minutes: 25, onTap: () {}))),
+      ));
+      expect(find.byKey(const ValueKey('moved_added')), findsNothing);
+    });
+
     test('the providers can be created without a signed-in person and start empty', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);

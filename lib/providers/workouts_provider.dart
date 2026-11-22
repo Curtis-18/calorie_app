@@ -97,6 +97,18 @@ class MoveNotifier extends StateNotifier<MoveState> {
     }
   }
 
+  /// Choose how much of today's movement is added to the calorie plan (0 turns it off).
+  Future<bool> setEatBack(int percent) async {
+    if (_userId == null) return false;
+    try {
+      await _service.setEatBack(percent);
+      await load();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> delete(String id) async {
     final before = state;
     state = MoveState(week: before.week, entries: [for (final e in before.entries) if (e.id != id) e], loaded: before.loaded);

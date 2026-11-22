@@ -502,7 +502,9 @@ class _Summary extends ConsumerWidget {
             Text(tr('About {n} kcal (a rough estimate)', {'n': '$kcal'}), key: const ValueKey('summary_kcal'), style: AppType.body(size: 14)),
             const SizedBox(height: 4),
             Text(
-              tr("This isn't added to your daily calories."),
+              ref.watch(moveProvider.select((m) => m.week.eatBackPercent)) > 0
+                  ? tr('Part of this is added to today’s plan, as you chose.')
+                  : tr("This isn't added to your daily calories."),
               key: const ValueKey('summary_kcal_note'),
               style: AppType.caption(size: 12.5),
               textAlign: TextAlign.center,

@@ -1091,4 +1091,8 @@ const Map<String, String> portuguese = {
   'See your week: minutes, the days you moved and four kinds of movement. Rest days never count against you. Log a walk, a swim or a game too, anything counts.': 'Veja sua semana: minutos, os dias em que você se moveu e quatro tipos de movimento. Dias de descanso nunca contam contra você. Registre também uma caminhada, um nado ou um jogo: tudo conta.',
   'Insights has a new home': 'O Insights tem um novo lugar',
   'Find it on a slim row under your calorie ring on Today, and in Profile. The Tips card is gone to keep things simple.': 'Encontre numa linha fina abaixo do seu anel de calorias em Hoje, e no Perfil. O cartão de Dicas saiu para simplificar.',
+  'Add movement to my calorie plan': 'Adicionar o movimento ao meu plano de calorias',
+  'Off by default. Your plan already allows for your activity level. If you turn this on, a share of the rough estimate for what you log is added to today’s calories. Estimates are rough, so a smaller share is the safer choice. At most 500 kcal a day.': 'Desligado por padrão. Seu plano já considera seu nível de atividade. Se você ligar, uma parte da estimativa aproximada do que você registra é somada às calorias de hoje. As estimativas são aproximadas, então uma parte menor é mais segura. No máximo 500 kcal por dia.',
+  '+{n} kcal added to today’s plan': '+{n} kcal adicionadas ao plano de hoje',
+  'Part of this is added to today’s plan, as you chose.': 'Uma parte é somada ao plano de hoje, como você escolheu.',
 };

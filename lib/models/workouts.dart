@@ -230,6 +230,8 @@ class MoveWeek {
     this.strengthDaysGoal = 2,
     this.weekMoved = false,
     this.streak = 0,
+    this.eatBackPercent = 0,
+    this.eatBackKcal = 0,
   });
 
   final int minutes;
@@ -245,6 +247,10 @@ class MoveWeek {
   final int strengthDaysGoal;
   final bool weekMoved;
   final int streak;
+
+  /// The opt-in share of today's rough estimates added to today's calorie plan (0 = off), and the kcal that is today.
+  final int eatBackPercent;
+  final int eatBackKcal;
 
   SliceTotal slice(MoveSlice s) => bySlice[s] ?? const SliceTotal();
 
@@ -275,6 +281,8 @@ class MoveWeek {
       strengthDaysGoal: _int(json['strength_days_goal'], 2),
       weekMoved: json['week_moved'] == true,
       streak: _int(json['streak']),
+      eatBackPercent: _int(json['eat_back_percent']).clamp(0, 50),
+      eatBackKcal: _int(json['eat_back_kcal']).clamp(0, 500),
     );
   }
 }

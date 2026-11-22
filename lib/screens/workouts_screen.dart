@@ -88,6 +88,8 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                         ..._library(library),
                         const SizedBox(height: 22),
                         _logRow(),
+                        const SizedBox(height: 22),
+                        _PlanChoice(percent: move.week.eatBackPercent, addedKcal: move.week.eatBackKcal),
                         if (move.entries.isNotEmpty) ...[
                           const SizedBox(height: 22),
                           ..._recent(move.entries),
@@ -346,6 +348,83 @@ class _Skeleton extends StatelessWidget {
     return Shimmer(
       borderRadius: BorderRadius.circular(AppRadii.container),
       child: SizedBox(height: height, width: double.infinity),
+    );
+  }
+}
+
+/// "Add movement to my calorie plan": off until the person turns it on. Plainly
+/// worded, because the numbers behind it are rough (roadmap D11).
+class _PlanChoice extends ConsumerStatefulWidget {
+  const _PlanChoice({required this.percent, required this.addedKcal});
+
+  final int percent;
+  final int addedKcal;
+
+  @override
+  ConsumerState<_PlanChoice> createState() => _PlanChoiceState();
+}
+
+class _PlanChoiceState extends ConsumerState<_PlanChoice> {
+  bool _failed = false;
+  bool _busy = false;
+
+  static const options = [0, 25, 50];
+
+  Future<void> _choose(int percent) async {
+    if (_busy || percent == widget.percent) return;
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
+    final ok = await ref.read(moveProvider.notifier).setEatBack(percent);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _failed = !ok;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      key: const ValueKey('plan_choice'),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(tr('Add movement to my calorie plan'), style: AppType.body(size: 15, color: TrackerColors.textPrimary)),
+          const SizedBox(height: 4),
+          Text(
+            tr('Off by default. Your plan already allows for your activity level. If you turn this on, a share of the rough estimate for what you log is added to today’s calories. Estimates are rough, so a smaller share is the safer choice. At most 500 kcal a day.'),
+            key: const ValueKey('plan_choice_text'),
+            style: AppType.caption(size: 12.5),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final p in options) ...[
+                Expanded(
+                  child: FilterChipButton(
+                    key: ValueKey('eat_back_$p'),
+                    label: p == 0 ? tr('Off') : '$p%',
+                    selected: widget.percent == p,
+                    onTap: () => _choose(p),
+                  ),
+                ),
+                if (p != options.last) const SizedBox(width: 8),
+              ],
+            ],
+          ),
+          if (widget.addedKcal > 0) ...[
+            const SizedBox(height: 10),
+            Text(tr('+{n} kcal added to today’s plan', {'n': '${widget.addedKcal}'}), key: const ValueKey('plan_added'), style: AppType.body(size: 13.5, color: TrackerColors.accentStartText)),
+          ],
+          if (_failed) ...[
+            const SizedBox(height: 10),
+            Text(tr("Couldn't save. Try again"), key: const ValueKey('plan_failed'), style: AppType.body(size: 13.5, color: TrackerColors.error)),
+          ],
+        ],
+      ),
     );
   }
 }
