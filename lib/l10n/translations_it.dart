@@ -1123,4 +1123,5 @@ const Map<String, String> italian = {
   'Save me a plate': 'Tienimi un piatto',
   'Drop the recipe': 'Passa la ricetta',
   'Sent to {name}': 'Inviato a {name}',
+  'Make this a recipe': 'Trasforma in ricetta',
 };

@@ -244,6 +244,45 @@ void main() {
       expect(saved.nutrients, isNull, reason: "the old food's nutrients must not stick to the new one");
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+    Future<void> openWith(WidgetTester tester, FoodEntry entry, {void Function(FoodEntry)? onMake}) async {
+      tester.view.physicalSize = const Size(1179, 2556);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: Builder(
+          builder: (context) => CupertinoPageScaffold(
+            child: Center(
+              child: CupertinoButton(
+                child: const Text('open'),
+                onPressed: () => showEditEntrySheet(context, entry, onMakeRecipe: onMake),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await settle(tester);
+    }
+
+    testWidgets('"Make this a recipe" is only offered when the screen can act on it', (tester) async {
+      await openWith(tester, _rice());
+      expect(find.byKey(const ValueKey('edit_make_recipe')), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('"Make this a recipe" closes the sheet and hands over the entry as logged', (tester) async {
+      final made = <FoodEntry>[];
+      await openWith(tester, _rice(), onMake: made.add);
+      // Edits not saved are not carried over: the recipe is made from what was logged.
+      await tester.enterText(find.byKey(const ValueKey('edit_grams')), '300');
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('edit_make_recipe')));
+      await settle(tester);
+      expect(made.single.id, 'entry-1');
+      expect(made.single.calories, 195);
+      expect(find.byKey(const ValueKey('edit_save')), findsNothing, reason: 'the sheet closed');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('cancel changes nothing', (tester) async {
       final results = await open(tester, _rice());
       await tester.enterText(find.byKey(const ValueKey('edit_grams')), '500');

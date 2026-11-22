@@ -433,6 +433,17 @@ void main() {
       expect(sent['ingredients'], isEmpty);
     });
 
+    screenTest('one logged food made into a recipe is a private one-serving estimate of that food', (tester) async {
+      final one = FoodEntry(id: 'a', name: 'Chicken curry', calories: 400, proteinG: 30, carbsG: 20, fatG: 22, mealType: MealType.dinner, source: FoodSource.photo, timestamp: DateTime(2026, 11, 18, 19));
+      await pump(tester, NewRecipeScreen(fromMeal: [one], initialTitle: 'Chicken curry', makeId: () => 'id'));
+      expect(find.textContaining('400 kcal in total'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('save_recipe')));
+      await settle(tester);
+      final sent = service.created.single;
+      expect(sent['title'], 'Chicken curry');
+      expect(sent['per_serving'], {'calories': 400, 'protein_g': 30.0, 'carbs_g': 20.0, 'fat_g': 22.0});
+    });
+
     screenTest('the meal section offers Save as recipe only for a meal with foods', (tester) async {
       Future<void> show(List<FoodEntry> entries, {VoidCallback? onSave}) => tester.pumpWidget(CupertinoApp(
             theme: AppTheme.cupertino,

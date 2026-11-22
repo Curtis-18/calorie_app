@@ -29,17 +29,22 @@ String nameWithGrams(String name, double grams) =>
 
 /// Correct a saved entry: its name, its meal, how much was eaten, or the food
 /// itself. Returns the corrected entry (same id), or null if cancelled.
-Future<FoodEntry?> showEditEntrySheet(BuildContext context, FoodEntry entry) {
+/// [onMakeRecipe], when given, adds "Make this a recipe": the sheet closes and
+/// the callback gets the entry as it is logged.
+Future<FoodEntry?> showEditEntrySheet(BuildContext context, FoodEntry entry, {void Function(FoodEntry entry)? onMakeRecipe}) {
   return showAppSheet<FoodEntry>(
     context: context,
-    builder: (_) => AppSheet(child: EditEntrySheet(entry: entry)),
+    builder: (_) => AppSheet(child: EditEntrySheet(entry: entry, onMakeRecipe: onMakeRecipe)),
   );
 }
 
 class EditEntrySheet extends StatefulWidget {
-  const EditEntrySheet({super.key, required this.entry, this.pickFood});
+  const EditEntrySheet({super.key, required this.entry, this.pickFood, this.onMakeRecipe});
 
   final FoodEntry entry;
+
+  /// Shows a "Make this a recipe" button when given.
+  final void Function(FoodEntry entry)? onMakeRecipe;
 
   /// Replaces the food search; for tests.
   final Future<FoodEntry?> Function(BuildContext context, MealType meal)? pickFood;
@@ -181,6 +186,19 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
           height: 48,
           onPressed: _changeFood,
         ),
+        if (widget.onMakeRecipe != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          AppButton.glass(
+            key: const ValueKey('edit_make_recipe'),
+            label: tr('Make this a recipe'),
+            icon: CupertinoIcons.book,
+            height: 48,
+            onPressed: () {
+              Navigator.of(context).pop();
+              widget.onMakeRecipe!(widget.entry);
+            },
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         Row(
           children: [

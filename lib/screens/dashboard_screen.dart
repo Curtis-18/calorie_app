@@ -448,7 +448,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// Correct an entry in today's log. The change shows at once; if the
   /// server can't save it the old entry comes back and we say so.
   Future<void> _editEntry(BuildContext context, FoodEntry entry) async {
-    final updated = await showEditEntrySheet(context, entry);
+    final updated = await showEditEntrySheet(
+      context,
+      entry,
+      // One logged food becomes a private recipe (a one-serving estimate from
+      // what was logged); nothing is shared unless the person chooses later.
+      onMakeRecipe: (e) => Navigator.push(
+        context,
+        CupertinoPageRoute<void>(builder: (_) => NewRecipeScreen(fromMeal: [e], initialTitle: e.name.trim())),
+      ),
+    );
     if (updated == null) return;
     try {
       await ref.read(foodLogProvider.notifier).updateEntry(updated);
