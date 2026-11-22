@@ -10,6 +10,9 @@ class TourService {
   /// The first-run dashboard spotlight tour.
   static const dashboard = 'dashboard';
 
+  /// The fun walk through the Workouts tab, shown the first time it is opened.
+  static const workouts = 'workouts_walkthrough';
+
   /// The "Share your meal" tip at the top of the Friends tab.
   static const shareTip = 'friends_share_tip';
 

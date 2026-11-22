@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_strings.dart';
 import '../models/mood.dart';
 import '../models/workouts.dart';
+import '../providers/shell_provider.dart';
 import '../providers/workouts_provider.dart';
+import '../services/tour_service.dart';
+import 'workouts_walkthrough.dart';
 import '../services/workout_picks.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
@@ -39,6 +42,42 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
   Future<void> _open(WorkoutCard card) =>
       showWorkoutDetail(context, card, loader: ref.read(workoutsServiceProvider).detail);
 
+  bool _walkthroughChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Already on this tab when it is built (a shortcut, a restored session).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && ref.read(shellTabProvider) == ShellTab.workouts) _maybeWalkthrough();
+    });
+  }
+
+  /// The first time the tab is opened: a quick, fun walk through it. Never
+  /// over another page or sheet, and only once (the ? button replays it).
+  Future<void> _maybeWalkthrough() async {
+    if (_walkthroughChecked) return;
+    _walkthroughChecked = true;
+    try {
+      if (await TourService.hasSeen(TourService.workouts)) return;
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (!mounted || ref.read(shellTabProvider) != ShellTab.workouts) {
+        _walkthroughChecked = false; // try again next time the tab is opened
+        return;
+      }
+      final route = ModalRoute.of(context);
+      if (route != null && !route.isCurrent) {
+        _walkthroughChecked = false;
+        return;
+      }
+      await TourService.markSeen(TourService.workouts);
+      if (!mounted) return;
+      await showWorkoutsWalkthrough(context);
+    } catch (_) {
+      // A walkthrough is a nicety; never let it break the tab.
+    }
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(workoutLibraryProvider);
     await ref.read(moveProvider.notifier).load();
@@ -49,6 +88,9 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
     final move = ref.watch(moveProvider);
     final library = ref.watch(workoutLibraryProvider);
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    ref.listen<ShellTab>(shellTabProvider, (_, tab) {
+      if (tab == ShellTab.workouts) _maybeWalkthrough();
+    });
 
     return CupertinoPageScaffold(
       child: DecoratedBox(
@@ -59,6 +101,16 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               title: tr('Workouts'),
               subtitle: tr('Move your way'),
               actions: [
+                Pressable(
+                  key: const ValueKey('workouts_help'),
+                  onTap: () => showWorkoutsWalkthrough(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(color: TrackerColors.glassFill, shape: BoxShape.circle),
+                    child: Icon(CupertinoIcons.question, size: 20, color: TrackerColors.textPrimary),
+                  ),
+                ),
                 Pressable(
                   key: const ValueKey('log_other'),
                   onTap: () => showLogMovementSheet(context),
