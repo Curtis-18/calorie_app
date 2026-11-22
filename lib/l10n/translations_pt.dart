@@ -1092,7 +1092,6 @@ const Map<String, String> portuguese = {
   'Insights has a new home': 'O Insights tem um novo lugar',
   'Find it on a slim row under your calorie ring on Today, and in Profile. The Tips card is gone to keep things simple.': 'Encontre numa linha fina abaixo do seu anel de calorias em Hoje, e no Perfil. O cartão de Dicas saiu para simplificar.',
   'Add movement to my calorie plan': 'Adicionar o movimento ao meu plano de calorias',
-  'Off by default. Your plan already allows for your activity level. If you turn this on, a share of the rough estimate for what you log is added to today’s calories. Estimates are rough, so a smaller share is the safer choice. At most 500 kcal a day.': 'Desligado por padrão. Seu plano já considera seu nível de atividade. Se você ligar, uma parte da estimativa aproximada do que você registra é somada às calorias de hoje. As estimativas são aproximadas, então uma parte menor é mais segura. No máximo 500 kcal por dia.',
   '+{n} kcal added to today’s plan': '+{n} kcal adicionadas ao plano de hoje',
   'Part of this is added to today’s plan, as you chose.': 'Uma parte é somada ao plano de hoje, como você escolheu.',
   'Fill your move plate': 'Preencha seu prato de movimento',
@@ -1111,4 +1110,7 @@ const Map<String, String> portuguese = {
   'A walk, a swim, a kickabout. Tap + and log it. Anything counts.': 'Uma caminhada, um nado, uma pelada. Toque em + e registre. Tudo conta.',
   'Need a recap?': 'Quer uma revisão?',
   'Tap ? any time to see this tour again. Now go and move!': 'Toque em ? quando quiser para ver este tour de novo. Agora é só se mover!',
+  'Count some of your movement toward today’s calories. Off by default. The numbers are only rough guesses, so a smaller share is the safer choice.': 'Conte parte do seu movimento nas calorias de hoje. Desligado por padrão. Os números são apenas estimativas aproximadas, então uma parte menor é a escolha mais segura.',
+  'Your daily calories stay exactly the same, whatever you do.': 'Suas calorias diárias ficam exatamente iguais, não importa o que você faça.',
+  'Example: a 30-minute walk is roughly 90 kcal, so about {n} kcal would be added to that day. Never more than 500 kcal a day.': 'Exemplo: uma caminhada de 30 minutos são cerca de 90 kcal, então cerca de {n} kcal seriam somadas àquele dia. Nunca mais de 500 kcal por dia.',
 };

@@ -310,18 +310,32 @@ void main() {
       await settle(tester);
       expect(find.byKey(const ValueKey('plan_choice')), findsOneWidget);
       expect(find.textContaining('Off by default'), findsOneWidget);
-      expect(find.textContaining('At most 500 kcal a day'), findsOneWidget);
+      expect(find.text('Your daily calories stay exactly the same, whatever you do.'), findsOneWidget);
       expect(find.byKey(const ValueKey('plan_added')), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('eat_back_25')));
       await settle(tester);
       expect(s.eatBackPercent, 25);
+      // The card shows what choosing it would mean, in a worked example.
+      expect(find.textContaining('a 30-minute walk is roughly 90 kcal, so about 25 kcal'), findsOneWidget);
+      expect(find.textContaining('Never more than 500 kcal a day'), findsOneWidget);
       expect(find.text('+30 kcal added to today’s plan'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('eat_back_50')));
+      await settle(tester);
+      expect(find.textContaining('so about 45 kcal'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('eat_back_0')));
       await settle(tester);
       expect(s.eatBackPercent, 0);
       expect(find.byKey(const ValueKey('plan_added')), findsNothing);
+      expect(find.text('Your daily calories stay exactly the same, whatever you do.'), findsOneWidget);
+    });
+
+    test('the example rounds to the nearest 5, half up, like the server', () {
+      expect(exampleAddedKcal(0), 0);
+      expect(exampleAddedKcal(25), 25); // 22.5 rounds up
+      expect(exampleAddedKcal(50), 45);
     });
 
     testWidgets('a choice that cannot be saved says so', (tester) async {

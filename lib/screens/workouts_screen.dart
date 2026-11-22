@@ -607,6 +607,11 @@ class _Skeleton extends StatelessWidget {
   }
 }
 
+/// What a 30-minute walk (about 90 kcal) would add at [percent], to the nearest 5
+/// and rounding half up, the same rule the server uses.
+@visibleForTesting
+int exampleAddedKcal(int percent) => ((90 * percent / 100) / 5 + 0.5).floor() * 5;
+
 /// "Add movement to my calorie plan": off until the person turns it on. Plainly
 /// worded, because the numbers behind it are rough (roadmap D11).
 class _PlanChoice extends ConsumerStatefulWidget {
@@ -654,7 +659,7 @@ class _PlanChoiceState extends ConsumerState<_PlanChoice> {
           const SizedBox(height: 4),
           Text(
             tr(
-              'Off by default. Your plan already allows for your activity level. If you turn this on, a share of the rough estimate for what you log is added to today’s calories. Estimates are rough, so a smaller share is the safer choice. At most 500 kcal a day.',
+              'Count some of your movement toward today’s calories. Off by default. The numbers are only rough guesses, so a smaller share is the safer choice.',
             ),
             key: const ValueKey('plan_choice_text'),
             style: AppType.caption(size: 12.5),
@@ -674,6 +679,17 @@ class _PlanChoiceState extends ConsumerState<_PlanChoice> {
                 if (p != options.last) const SizedBox(width: 8),
               ],
             ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            widget.percent == 0
+                ? tr('Your daily calories stay exactly the same, whatever you do.')
+                : tr(
+                    'Example: a 30-minute walk is roughly 90 kcal, so about {n} kcal would be added to that day. Never more than 500 kcal a day.',
+                    {'n': '${exampleAddedKcal(widget.percent)}'},
+                  ),
+            key: const ValueKey('plan_example'),
+            style: AppType.caption(size: 12.5, color: TrackerColors.textSecondary),
           ),
           if (widget.addedKcal > 0) ...[
             const SizedBox(height: 10),
