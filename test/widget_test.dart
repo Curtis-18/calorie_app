@@ -167,6 +167,11 @@ void main() {
     await tester.pumpWidget(host(const SaveToast(state: SaveToastState.success)));
     await tester.pumpAndSettle();
     expect(find.text('Saved'), findsOneWidget);
+
+    await tester.pumpWidget(host(const SaveToast(state: SaveToastState.success, successLabel: 'Saved to your log. Only you can see this.')));
+    await tester.pumpAndSettle();
+    expect(find.text('Saved to your log. Only you can see this.'), findsOneWidget);
+    expect(find.text('Saved'), findsNothing);
   });
 }
 

@@ -15,11 +15,16 @@ class SaveToast extends StatelessWidget {
     required this.state,
     this.onReset,
     this.onSave,
+    this.successLabel,
   });
 
   final SaveToastState state;
   final VoidCallback? onReset;
   final VoidCallback? onSave;
+
+  /// What the success state says instead of "Saved" (a log entry adds that
+  /// only the person can see it).
+  final String? successLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -62,13 +67,17 @@ class SaveToast extends StatelessWidget {
                       ),
               ),
               const SizedBox(width: 10),
-              Text(
-                isLoading
-                    ? tr('Saving…')
-                    : isSuccess
-                        ? tr('Saved')
-                        : tr('Unsaved changes'),
-                style: AppType.caption(color: TrackerColors.textPrimary, size: 13),
+              Flexible(
+                child: Text(
+                  isLoading
+                      ? tr('Saving…')
+                      : isSuccess
+                          ? (successLabel ?? tr('Saved'))
+                          : tr('Unsaved changes'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.caption(color: TrackerColors.textPrimary, size: 13),
+                ),
               ),
               if (state == SaveToastState.initial) ...[
                 const SizedBox(width: AppSpacing.md),

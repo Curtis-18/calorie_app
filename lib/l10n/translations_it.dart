@@ -976,4 +976,5 @@ const Map<String, String> italian = {
   'Privacy Policy': 'Informativa sulla privacy',
   'About': 'Informazioni',
   'Some barcode data comes from Open Food Facts, available under the Open Database Licence.': 'Alcuni dati dei codici a barre provengono da Open Food Facts, disponibili con la Open Database License.',
+  'Saved to your log. Only you can see this.': 'Salvato nel tuo diario. Solo tu puoi vederlo.',
 };

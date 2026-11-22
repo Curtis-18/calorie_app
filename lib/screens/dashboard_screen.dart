@@ -355,7 +355,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Center(
             child: ValueListenableBuilder<SaveToastState>(
               valueListenable: saveState,
-              builder: (context, state, child) => SaveToast(state: state),
+              builder: (context, state, child) => SaveToast(
+                state: state,
+                // Logging is private; sharing is a separate step (roadmap R2.8).
+                successLabel: context.tr('Saved to your log. Only you can see this.'),
+              ),
             ),
           ),
         ),
@@ -375,7 +379,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (failed.length < entries.length) _refreshStreak();
     if (failed.isEmpty) {
       saveState.value = SaveToastState.success;
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      await Future<void>.delayed(const Duration(milliseconds: 1800));
       dismissSaveToast();
       return;
     }
