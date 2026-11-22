@@ -977,4 +977,5 @@ const Map<String, String> portuguese = {
   'About': 'Sobre',
   'Some barcode data comes from Open Food Facts, available under the Open Database Licence.': 'Alguns dados de códigos de barras vêm do Open Food Facts, disponíveis sob a Open Database License.',
   'Saved to your log. Only you can see this.': 'Salvo no seu registro. Só você pode ver.',
+  'Bite back': 'Responder com uma mordida',
 };

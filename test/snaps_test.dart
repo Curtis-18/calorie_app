@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:calorie_app/models/snaps.dart';
+import 'package:calorie_app/screens/snap_viewer_screen.dart';
 import 'package:calorie_app/providers/friends_provider.dart';
 import 'package:calorie_app/providers/snaps_provider.dart';
 import 'package:calorie_app/screens/friends_screen.dart';
@@ -294,6 +295,80 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       expect(sends.single, 'u-sam,u-bea');
       expect(find.text('Sent to 2 friends.'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('"Bite back" in the viewer opens the camera, then the compose screen with the sender ticked', (tester) async {
+      tester.view.physicalSize = const Size(1179, 2556);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final sends = <String>[];
+      final client = backend(sends: sends, inbox: [_inbox('a', 'sam')]);
+      final file = XFile.fromData(Uint8List.fromList(_png), name: 'a.png');
+      var cameraOpened = 0;
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          friendsProvider.overrideWith((ref) => FriendsNotifier(
+                service: FriendsService(client: client, tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+          snapInboxProvider.overrideWith((ref) => SnapInboxNotifier(
+                service: SnapsService(client: client, tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+        ],
+        child: CupertinoApp(
+          theme: AppTheme.cupertino,
+          home: SnapViewerScreen(
+            snaps: [InboxSnap.fromJson(_inbox('a', 'sam'))],
+            pickPhoto: () async {
+              cameraOpened++;
+              return file;
+            },
+          ),
+        ),
+      ));
+      await settle(tester);
+
+      expect(find.text('Bite back'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('bite_back')));
+      await settle(tester);
+      expect(cameraOpened, 1);
+      expect(find.text('Send a bite'), findsOneWidget);
+      expect(find.text('Send to 1 friend'), findsOneWidget, reason: 'the sender is already ticked');
+
+      await tester.tap(find.text('Send to 1 friend'));
+      await settle(tester);
+      await tester.pump(const Duration(seconds: 3));
+      expect(sends.single, 'u-sam');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('backing out of the camera after "Bite back" sends nothing', (tester) async {
+      tester.view.physicalSize = const Size(1179, 2556);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final sends = <String>[];
+      final client = backend(sends: sends, inbox: [_inbox('a', 'sam')]);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          snapInboxProvider.overrideWith((ref) => SnapInboxNotifier(
+                service: SnapsService(client: client, tokenProvider: () => 't'),
+                currentUserId: () => 'me',
+                userIdChanges: const Stream.empty(),
+              )),
+        ],
+        child: CupertinoApp(
+          theme: AppTheme.cupertino,
+          home: SnapViewerScreen(snaps: [InboxSnap.fromJson(_inbox('a', 'sam'))], pickPhoto: () async => null),
+        ),
+      ));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('bite_back')));
+      await settle(tester);
+      expect(find.text('Send a bite'), findsNothing);
+      expect(find.text('Bite back'), findsOneWidget, reason: 'still on the viewer');
+      expect(sends, isEmpty);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('cancelling the camera sends nothing', (tester) async {

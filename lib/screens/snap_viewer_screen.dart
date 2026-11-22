@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/snaps.dart';
@@ -8,16 +9,20 @@ import '../services/snaps_service.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_typography.dart';
 import '../widgets/app_dialog.dart';
+import 'bite_flow.dart';
 import '../widgets/pressable.dart';
 import '../l10n/app_strings.dart';
 
 /// Full-screen viewer for today's snaps from friends. Tap to move on, swipe
 /// down to close, react with an emoji, or report from the corner menu.
 class SnapViewerScreen extends ConsumerStatefulWidget {
-  const SnapViewerScreen({super.key, required this.snaps, this.startAt = 0});
+  const SnapViewerScreen({super.key, required this.snaps, this.startAt = 0, this.pickPhoto});
 
   final List<InboxSnap> snaps;
   final int startAt;
+
+  /// Replaces the camera for "Bite back"; for tests.
+  final Future<XFile?> Function()? pickPhoto;
 
   @override
   ConsumerState<SnapViewerScreen> createState() => _SnapViewerScreenState();
@@ -69,6 +74,15 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
     } on SnapsException catch (e) {
       if (mounted) await showAppDialog(context: context, title: tr('Something went wrong'), message: e.message);
     }
+  }
+
+  /// One tap from a bite you were sent to the camera, already addressed to the
+  /// person who sent it (the shortest way to keep a pair streak going).
+  Future<void> _biteBack() async {
+    final snap = _snap;
+    final shared = await runBiteFlow(context, to: snap.senderId, pickPhoto: widget.pickPhoto);
+    if (shared == null || !mounted) return;
+    await afterBiteShared(context, ref, shared, say: (text) => showBiteToast(context, text));
   }
 
   Future<void> _menu() async {
@@ -232,6 +246,32 @@ class _SnapViewerScreenState extends ConsumerState<SnapViewerScreen> {
                         style: AppType.body(color: const Color(0xFFFFFFFF)),
                       ),
                     ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Pressable(
+                      key: const ValueKey('bite_back'),
+                      onTap: _biteBack,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0x33FFFFFF),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: const Color(0x66FFFFFF)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(CupertinoIcons.camera_fill, size: 16, color: Color(0xFFFFFFFF)),
+                            const SizedBox(width: 8),
+                            Text(
+                              tr('Bite back'),
+                              style: AppType.body(color: const Color(0xFFFFFFFF)).copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
