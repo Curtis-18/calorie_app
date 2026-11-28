@@ -124,4 +124,74 @@ void main() {
     expect(posts, hasLength(1));
     expect(posts.single.headers['Authorization'], 'Bearer token-user-a');
   });
+
+  group('deleting a food (retried like a save, 28 Nov 2026)', () {
+    Future<FoodLogNotifier> withEntry() async {
+      final n = build();
+      addTearDown(n.dispose);
+      await _settle();
+      await n.addEntry(_entry());
+      posts.clear();
+      return n;
+    }
+
+    test('a 5xx, a timeout and a dropped connection are retried, and the food stays deleted', () async {
+      final n = await withEntry();
+      script = [
+        (_) async => http.Response('boom', 503),
+        (_) async => throw http.ClientException('offline'),
+        (_) async => http.Response('', 204),
+      ];
+      await n.removeEntry('entry-1');
+      expect(posts.map((p) => p.method), ['DELETE', 'DELETE', 'DELETE']);
+      expect(posts.map((p) => p.url).toSet(), hasLength(1), reason: 'the same entry each time');
+      expect(n.state, isEmpty);
+
+      final m = await withEntry();
+      script = [(_) => Completer<http.Response>().future, (_) async => http.Response('', 204)];
+      await m.removeEntry('entry-1');
+      expect(posts, hasLength(2), reason: 'a timeout is retried');
+      expect(m.state, isEmpty);
+    });
+
+    test('a retry that finds it already gone (404) counts as deleted', () async {
+      final n = await withEntry();
+      script = [(_) async => http.Response('boom', 502), (_) async => http.Response('{"detail":"Log not found"}', 404)];
+      await n.removeEntry('entry-1');
+      expect(posts, hasLength(2));
+      expect(n.state, isEmpty);
+    });
+
+    test('a 4xx other than 404 is not retried and the food comes back', () async {
+      final n = await withEntry();
+      script = [(_) async => http.Response('{"detail":"no"}', 403)];
+      await expectLater(n.removeEntry('entry-1'), throwsException);
+      expect(posts, hasLength(1));
+      expect(n.state.map((e) => e.id), ['entry-1']);
+    });
+
+    test('when every attempt fails the food comes back', () async {
+      final n = await withEntry();
+      script = [for (var i = 0; i < 3; i++) (_) async => http.Response('boom', 500)];
+      await expectLater(n.removeEntry('entry-1'), throwsException);
+      expect(posts, hasLength(3), reason: 'first try plus two retries');
+      expect(n.state.map((e) => e.id), ['entry-1']);
+    });
+
+    test('retries stop if another user signs in', () async {
+      final n = build(delays: const [Duration(milliseconds: 40), Duration(milliseconds: 40)]);
+      addTearDown(n.dispose);
+      await _settle();
+      await n.addEntry(_entry());
+      posts.clear();
+      script = [(_) async => http.Response('boom', 500)];
+      final deleting = n.removeEntry('entry-1');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      userId = 'user-b';
+      auth.add('user-b');
+      await expectLater(deleting, throwsException);
+      expect(posts, hasLength(1));
+      expect(posts.single.headers['Authorization'], 'Bearer token-user-a');
+    });
+  });
 }

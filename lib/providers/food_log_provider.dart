@@ -239,11 +239,13 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
   }
 
   /// Run a save that is safe to repeat (the server treats a repeat as already
-  /// done), retrying timeouts, dropped connections and 5xx answers.
+  /// done), retrying timeouts, dropped connections and 5xx answers, never a
+  /// 4xx. [done] are the statuses that mean it worked.
   Future<void> _sendWithRetry(
     Future<http.Response> Function(String token) send, {
     required String? userId,
     required String failure,
+    Set<int> done = const {200, 201},
   }) async {
     for (var attempt = 0;; attempt++) {
       final retriesLeft = attempt < saveRetryDelays.length;
@@ -254,7 +256,7 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
       try {
         final response = await send(token).timeout(saveTimeout);
 
-        if (response.statusCode == 201 || response.statusCode == 200) return;
+        if (done.contains(response.statusCode)) return;
         final transient = response.statusCode >= 500;
         if (!transient || !retriesLeft) {
           throw Exception('$failure: ${response.body}');
@@ -327,29 +329,32 @@ class FoodLogNotifier extends StateNotifier<List<FoodEntry>> {
     final previous = state;
     state = state.where((e) => e.id != id).toList();
 
-    final token = _authToken();
-    if (token == null) {
+    if (_authToken() == null) {
       _rollback(previous, logDate);
       throw Exception('Not logged in');
     }
 
+    final userId = _userId;
     final generation = _generation;
     _pendingDeletes.add(id);
     try {
-      final response = await _http.delete(
-        // Encoded: older entries have the food's name in their id, and a
-        // "/", "?" or "#" there sent the request to the wrong address.
-        Uri.parse('${ApiConfig.baseUrl}/logs/${Uri.encodeComponent(id)}'),
-        headers: {'Authorization': 'Bearer $token'},
-      ).timeout(const Duration(seconds: 15));
-
-      // 404: it is already gone on the server (an earlier attempt got through
-      // but its answer was lost), which is what was asked for.
-      if (response.statusCode != 204 && response.statusCode != 404) {
-        throw Exception('Failed to remove entry: ${response.body}');
-      }
+      // Retried like a save (timeouts, dropped connections, 5xx; never a
+      // 4xx), because deleting twice is harmless: 404 means it is already
+      // gone on the server (an earlier attempt got through but its answer was
+      // lost), which is what was asked for.
+      await _sendWithRetry(
+        (token) => _http.delete(
+          // Encoded: older entries have the food's name in their id, and a
+          // "/", "?" or "#" there sent the request to the wrong address.
+          Uri.parse('${ApiConfig.baseUrl}/logs/${Uri.encodeComponent(id)}'),
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+        userId: userId,
+        failure: 'Failed to remove entry',
+        done: const {204, 404},
+      );
       _settle(generation, () => _pendingDeletes.remove(id));
-      await _persistCache(_userId);
+      await _persistCache(userId);
     } catch (e) {
       _settle(generation, () => _pendingDeletes.remove(id));
       // Put back only this entry, where it was, so other changes made
