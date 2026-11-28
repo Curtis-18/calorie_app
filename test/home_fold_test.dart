@@ -323,6 +323,22 @@ void main() {
       expect(c.state.mealsOpen, isTrue);
     });
 
+    test('the Bites and Messages tiles show by default; hiding them is remembered and touches nothing else', () async {
+      expect(const DisplayPrefs().showHomeTiles, isTrue);
+      final a = DisplayPrefsNotifier();
+      await Future<void>.delayed(Duration.zero);
+      await a.setShowHomeTiles(false);
+      expect(a.state.showHomeTiles, isFalse);
+      expect((a.state.showMacros, a.state.showNutrients, a.state.mealsOpen), (true, true, true));
+      final b = DisplayPrefsNotifier();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(b.state.showHomeTiles, isFalse, reason: 'survives a restart');
+      await b.setShowHomeTiles(true);
+      final c = DisplayPrefsNotifier();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(c.state.showHomeTiles, isTrue);
+    });
+
     test('the other choices are untouched by it', () async {
       final a = DisplayPrefsNotifier();
       await Future<void>.delayed(Duration.zero);

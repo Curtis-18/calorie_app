@@ -560,9 +560,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                             ),
                             // The sharing half of the app, one glance from the ring.
-                            if (_isToday) ...[
+                            if (_isToday && display.showHomeTiles) ...[
                               const SizedBox(height: 14),
                               const HomeSocialTiles(),
+                            ],
+                            if (_isToday) ...[
                               // Once there is something logged (never before the first meal), one
                               // gentle question: notifications, then the Home Screen. Hidden where neither can work.
                               if (entries.isNotEmpty) const HomePrompt(),

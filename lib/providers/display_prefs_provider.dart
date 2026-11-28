@@ -4,7 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Which optional cards the Today screen shows. Chosen in Settings and
 /// remembered on this device, like the appearance.
 class DisplayPrefs {
-  const DisplayPrefs({this.showMacros = true, this.showNutrients = true, this.launchToCamera = false, this.mealsOpen = true});
+  const DisplayPrefs({
+    this.showMacros = true,
+    this.showNutrients = true,
+    this.launchToCamera = false,
+    this.mealsOpen = true,
+    this.showHomeTiles = true,
+  });
 
   final bool showMacros;
   final bool showNutrients;
@@ -18,11 +24,18 @@ class DisplayPrefs {
   /// chips. Remembered on this device; open for someone new.
   final bool mealsOpen;
 
-  DisplayPrefs copyWith({bool? showMacros, bool? showNutrients, bool? launchToCamera, bool? mealsOpen}) => DisplayPrefs(
+  /// The Bites and Messages tiles under the calorie ring. On by default (the
+  /// sharing half of the app, one glance away); someone who only logs can
+  /// hide them. Bites and messages are still on the Friends tab.
+  final bool showHomeTiles;
+
+  DisplayPrefs copyWith({bool? showMacros, bool? showNutrients, bool? launchToCamera, bool? mealsOpen, bool? showHomeTiles}) =>
+      DisplayPrefs(
         showMacros: showMacros ?? this.showMacros,
         showNutrients: showNutrients ?? this.showNutrients,
         launchToCamera: launchToCamera ?? this.launchToCamera,
         mealsOpen: mealsOpen ?? this.mealsOpen,
+        showHomeTiles: showHomeTiles ?? this.showHomeTiles,
       );
 }
 
@@ -35,6 +48,7 @@ class DisplayPrefsNotifier extends StateNotifier<DisplayPrefs> {
   static const nutrientsKey = 'today_show_nutrients';
   static const launchToCameraKey = 'launch_to_camera';
   static const mealsOpenKey = 'today_meals_open';
+  static const homeTilesKey = 'today_show_home_tiles';
 
   Future<void> _load() async {
     try {
@@ -45,6 +59,7 @@ class DisplayPrefsNotifier extends StateNotifier<DisplayPrefs> {
         showNutrients: prefs.getBool(nutrientsKey) ?? true,
         launchToCamera: prefs.getBool(launchToCameraKey) ?? false,
         mealsOpen: prefs.getBool(mealsOpenKey) ?? true,
+        showHomeTiles: prefs.getBool(homeTilesKey) ?? true,
       );
     } catch (_) {
       // Storage unavailable: everything stays visible.
@@ -58,6 +73,8 @@ class DisplayPrefsNotifier extends StateNotifier<DisplayPrefs> {
   Future<void> setLaunchToCamera(bool value) => _save(state.copyWith(launchToCamera: value), launchToCameraKey, value);
 
   Future<void> setMealsOpen(bool value) => _save(state.copyWith(mealsOpen: value), mealsOpenKey, value);
+
+  Future<void> setShowHomeTiles(bool value) => _save(state.copyWith(showHomeTiles: value), homeTilesKey, value);
 
   Future<void> _save(DisplayPrefs next, String key, bool value) async {
     state = next;

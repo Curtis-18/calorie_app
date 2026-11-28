@@ -70,6 +70,8 @@ const Map<String, String> italian = {
   'Protein, carbs and fat': 'Proteine, carboidrati e grassi',
   'Nutrients': 'Nutrienti',
   'A "View nutrients" row under macros': 'Una riga «Vedi nutrienti» sotto i macro',
+  'Bites and messages': 'Bocconi e messaggi',
+  'Two shortcuts under the calorie ring': 'Due scorciatoie sotto l\'anello delle calorie',
   'Open the camera at launch': 'Apri la fotocamera all’avvio',
   'Start a meal photo as soon as the app opens': 'Avvia subito una foto del pasto all’apertura dell’app',
   'Food': 'Cibo',

@@ -303,6 +303,15 @@ class SettingsView extends ConsumerWidget {
                           onChanged: displayNotifier.setShowNutrients,
                         ),
                         SettingsSwitchRow(
+                          key: const ValueKey('toggle_home_tiles'),
+                          icon: CupertinoIcons.chat_bubble_2_fill,
+                          color: TrackerColors.accentEnd,
+                          title: context.tr('Bites and messages'),
+                          subtitle: context.tr('Two shortcuts under the calorie ring'),
+                          value: display.showHomeTiles,
+                          onChanged: displayNotifier.setShowHomeTiles,
+                        ),
+                        SettingsSwitchRow(
                           key: const ValueKey('toggle_launch_camera'),
                           icon: CupertinoIcons.camera_fill,
                           color: TrackerColors.accentStart,
