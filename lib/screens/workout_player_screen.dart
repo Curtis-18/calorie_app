@@ -251,6 +251,7 @@ class _Playing extends StatelessWidget {
                 engine.extendRest();
                 onChanged(PlayerEvent.none);
               },
+              onEase: () => onChanged(engine.toggleEasier()),
             ),
           const Spacer(),
           if (!ready && next != null && !engine.isRest)
@@ -330,12 +331,22 @@ class _GetReady extends StatelessWidget {
 }
 
 class _StepView extends StatelessWidget {
-  const _StepView({required this.engine, required this.step, required this.onDone, required this.onMoreRest});
+  const _StepView({
+    required this.engine,
+    required this.step,
+    required this.onDone,
+    required this.onMoreRest,
+    required this.onEase,
+  });
 
   final PlayerEngine engine;
   final PlayStep step;
   final VoidCallback onDone;
   final VoidCallback onMoreRest;
+
+  /// Swap to the easier version of this move, or back (only shown when the
+  /// server sent one: NEXT_STEPS 9a).
+  final VoidCallback onEase;
 
   String? get _sideLabel => switch (step.side) {
         1 => tr('First side'),
@@ -396,6 +407,16 @@ class _StepView extends StatelessWidget {
         if (step.cue.isNotEmpty) ...[
           const SizedBox(height: 18),
           Text(step.cue, key: const ValueKey('player_cue'), style: AppType.body(size: 14.5, color: TrackerColors.textSecondary), textAlign: TextAlign.center),
+        ],
+        if (engine.canEase) ...[
+          const SizedBox(height: 14),
+          AppButton.glass(
+            key: const ValueKey('player_easier'),
+            label: engine.isEased ? tr('Usual version') : tr('Easier version'),
+            expand: false,
+            height: 40,
+            onPressed: onEase,
+          ),
         ],
       ],
     );

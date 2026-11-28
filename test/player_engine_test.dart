@@ -134,4 +134,64 @@ void main() {
     runTicks(e, 5);
     expect(e.stepProgress, 0.5);
   });
+
+  group('easier version (NEXT_STEPS 9a)', () {
+    PlayStep withEasier(PlayStep s, PlayStep gentler) => PlayStep(
+        mode: s.mode, name: s.name, cue: s.cue, amount: s.amount, section: s.section,
+        seconds: s.seconds, reps: s.reps, side: s.side, round: s.round, easier: gentler);
+    final kneePushup = withEasier(
+      PlayStep(mode: StepMode.reps, name: 'Knee push-up', cue: '', amount: '10 reps', section: 'main', reps: 10, round: 1),
+      PlayStep(mode: StepMode.reps, name: 'Wall push-up', cue: '', amount: '10 reps', section: 'main', reps: 10, round: 1),
+    );
+    final plank = withEasier(timed(30, name: 'Plank'), timed(15, name: 'Plank'));
+
+    test('a step with an easier version can be swapped and swapped back', () {
+      final e = PlayerEngine([kneePushup, reps(8)], getReadySeconds: 0);
+      expect((e.canEase, e.isEased, e.current.name), (true, false, 'Knee push-up'));
+      expect(e.toggleEasier(), PlayerEvent.stepChanged);
+      expect((e.isEased, e.current.name, e.current.reps), (true, 'Wall push-up', 10));
+      e.toggleEasier();
+      expect((e.isEased, e.current.name), (false, 'Knee push-up'));
+    });
+
+    test('a timed move starts its countdown again at the easier length', () {
+      final e = PlayerEngine([plank], getReadySeconds: 0);
+      runTicks(e, 5);
+      expect(e.remaining, 25);
+      e.toggleEasier();
+      expect(e.remaining, 15);
+      expect(e.elapsedSeconds, 5, reason: 'time already moved still counts');
+      runTicks(e, 15);
+      expect(e.finished, isTrue);
+    });
+
+    test('the same move in a later round starts easier too', () {
+      final round2 = withEasier(
+        PlayStep(mode: StepMode.reps, name: 'Knee push-up', cue: '', amount: '10 reps', section: 'main', reps: 10, round: 2),
+        PlayStep(mode: StepMode.reps, name: 'Wall push-up', cue: '', amount: '10 reps', section: 'main', reps: 10, round: 2),
+      );
+      final e = PlayerEngine([kneePushup, rest(20), round2], getReadySeconds: 0);
+      e.toggleEasier();
+      e.done();
+      e.skip();
+      expect((e.index, e.current.name, e.current.round), (2, 'Wall push-up', 2));
+    });
+
+    test('nothing to swap on a move without one, on a rest, while getting ready or when finished', () {
+      expect(PlayerEngine([reps(8)], getReadySeconds: 0).canEase, isFalse);
+      expect(PlayerEngine([reps(8)], getReadySeconds: 0).toggleEasier(), PlayerEvent.none);
+      expect(PlayerEngine([rest(20)], getReadySeconds: 0).canEase, isFalse);
+      expect(PlayerEngine([kneePushup]).canEase, isFalse, reason: 'still counting 3, 2, 1');
+      final done = PlayerEngine([kneePushup], getReadySeconds: 0)..done();
+      expect(done.canEase, isFalse);
+    });
+
+    test('going back lands on the version that was chosen', () {
+      final e = PlayerEngine([plank, timed(10)], getReadySeconds: 0);
+      e.toggleEasier();
+      e.skip();
+      e.back();
+      expect((e.current.name, e.remaining), ('Plank', 15));
+    });
+  });
 }

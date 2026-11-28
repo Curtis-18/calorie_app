@@ -99,6 +99,7 @@ class PlayStep {
     this.reps,
     this.side,
     this.round,
+    this.easier,
   });
 
   final StepMode mode;
@@ -115,7 +116,16 @@ class PlayStep {
   final int? side;
   final int? round;
 
-  static PlayStep? fromJson(Object? raw) {
+  /// A gentler version of this move (a wall push-up for a knee push-up), for
+  /// the player's "Easier version" button. Null when there is none, and from
+  /// a backend older than 28 Nov 2026 (the button then just doesn't show).
+  final PlayStep? easier;
+
+  static PlayStep? fromJson(Object? raw) => _parse(raw, null);
+
+  /// [parent] is set when [raw] is a step's "easier" version: it takes the
+  /// parent's section, round and side, and has no easier version of its own.
+  static PlayStep? _parse(Object? raw, PlayStep? parent) {
     if (raw is! Map<String, dynamic>) return null;
     final mode = switch (raw['mode']) {
       'timed' => StepMode.timed,
@@ -128,18 +138,36 @@ class PlayStep {
     final reps = raw['reps'] is num ? (raw['reps'] as num).toInt() : null;
     if (mode != StepMode.reps && (seconds == null || seconds <= 0)) return null;
     if (mode == StepMode.reps && (reps == null || reps <= 0)) return null;
-    return PlayStep(
+    // An easier version is a move: never a rest.
+    if (parent != null && mode == StepMode.rest) return null;
+    final step = PlayStep(
       mode: mode,
       name: _str(raw['name']),
       cue: _str(raw['cue']),
       amount: _str(raw['amount']),
-      section: _str(raw['section']),
+      section: parent?.section ?? _str(raw['section']),
       seconds: seconds,
       reps: reps,
-      side: raw['side'] is num ? (raw['side'] as num).toInt() : null,
-      round: raw['round'] is num ? (raw['round'] as num).toInt() : null,
+      side: parent != null ? parent.side : (raw['side'] is num ? (raw['side'] as num).toInt() : null),
+      round: parent != null ? parent.round : (raw['round'] is num ? (raw['round'] as num).toInt() : null),
     );
+    if (parent != null || mode == StepMode.rest) return step;
+    final gentler = _parse(raw['easier'], step);
+    return gentler == null ? step : step._withEasier(gentler);
   }
+
+  PlayStep _withEasier(PlayStep gentler) => PlayStep(
+        mode: mode,
+        name: name,
+        cue: cue,
+        amount: amount,
+        section: section,
+        seconds: seconds,
+        reps: reps,
+        side: side,
+        round: round,
+        easier: gentler,
+      );
 }
 
 /// A routine opened: its reading sections and the flat list the player walks.

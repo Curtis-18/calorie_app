@@ -1048,6 +1048,8 @@ const Map<String, String> french = {
   'First side': 'Premier côté',
   'Other side': 'Autre côté',
   '+20 s': '+20 s',
+  'Easier version': 'Version plus facile',
+  'Usual version': 'Version normale',
   'Nice moving': 'Beau mouvement',
   '{n} min': '{n} min',
   'About {n} kcal (a rough estimate)': 'Environ {n} kcal (une estimation approximative)',

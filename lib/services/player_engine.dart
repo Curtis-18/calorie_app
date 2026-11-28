@@ -32,7 +32,35 @@ class PlayerEngine {
   bool finished = false;
   int elapsedSeconds = 0;
 
-  PlayStep get current => steps[index.clamp(0, steps.length - 1)];
+  /// Names of the moves switched to their easier version, for this workout
+  /// only (never saved). By name, so the same move in a later round starts
+  /// easier too; the person can switch back on any step.
+  final Set<String> _easier = {};
+
+  PlayStep get _plain => steps[index.clamp(0, steps.length - 1)];
+
+  /// What to show and time now: the step, or its easier version if chosen.
+  PlayStep get current {
+    final step = _plain;
+    final gentler = step.easier;
+    return gentler != null && _easier.contains(step.name) ? gentler : step;
+  }
+
+  /// Whether this step has an easier version to switch to (or back from).
+  bool get canEase => !finished && !isGettingReady && _plain.easier != null;
+
+  /// Whether the easier version is the one showing.
+  bool get isEased => canEase && _easier.contains(_plain.name);
+
+  /// "Easier version" / "Usual version": swap this move (and the same move in
+  /// later rounds). A timed move starts its countdown again at the new length.
+  PlayerEvent toggleEasier() {
+    if (!canEase) return PlayerEvent.none;
+    final name = _plain.name;
+    if (!_easier.remove(name)) _easier.add(name);
+    remaining = current.seconds ?? 0;
+    return PlayerEvent.stepChanged;
+  }
 
   /// The next move to do, skipping rests ("Next up").
   PlayStep? get nextMove {
@@ -93,7 +121,7 @@ class PlayerEngine {
     index--;
     // Going back over a rest would only be a wait; land on the move before it.
     if (steps[index].mode == StepMode.rest && index > 0) index--;
-    remaining = steps[index].seconds ?? 0;
+    remaining = current.seconds ?? 0;
     return PlayerEvent.stepChanged;
   }
 
@@ -113,7 +141,7 @@ class PlayerEngine {
       remaining = 0;
       return PlayerEvent.finished;
     }
-    remaining = steps[index].seconds ?? 0;
+    remaining = current.seconds ?? 0;
     return PlayerEvent.stepChanged;
   }
 }

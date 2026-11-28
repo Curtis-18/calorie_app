@@ -484,6 +484,28 @@ void main() {
       expect(find.text('Other side'), findsOneWidget);
     });
 
+    testWidgets('"Easier version" swaps a move, and "Usual version" swaps it back', (tester) async {
+      ignoreOverflow();
+      await tester.pumpWidget(app(containerFor(Server()), WorkoutPlayerScreen(workout: detail([
+        {...step('reps', 'Knee push-up', reps: 10), 'easier': {'mode': 'reps', 'name': 'Wall push-up', 'cue': 'Hands on a wall', 'amount': '10 reps', 'reps': 10}},
+        step('reps', 'Squat', reps: 8),
+      ]))));
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Knee push-up'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('player_easier')));
+      await tester.pump();
+      expect(find.text('Wall push-up'), findsOneWidget);
+      expect(find.text('Hands on a wall'), findsOneWidget);
+      expect(find.text('Usual version'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('player_easier')));
+      await tester.pump();
+      expect(find.text('Knee push-up'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('player_done')));
+      await tester.pump();
+      expect(find.text('Squat'), findsOneWidget);
+      expect(find.byKey(const ValueKey('player_easier')), findsNothing, reason: 'no easier version: no button');
+    });
+
     testWidgets('a rest counts down, can be made longer and skipped', (tester) async {
       ignoreOverflow();
       await tester.pumpWidget(app(containerFor(Server()), WorkoutPlayerScreen(workout: detail([
@@ -637,6 +659,23 @@ void main() {
     expect(WorkoutDetail.fromJson({'id': 'a', 'slice': 'fun', 'minutes': 3, 'play': []}), isNull);
     expect(PlayStep.fromJson({'mode': 'timed', 'seconds': 0}), isNull);
     expect(PlayStep.fromJson({'mode': 'reps', 'reps': 8, 'name': 'x', 'amount': '8 reps'})?.reps, 8);
+    expect(PlayStep.fromJson({'mode': 'reps', 'reps': 8, 'name': 'x', 'amount': '8 reps'})?.easier, isNull, reason: 'an older backend');
+  });
+
+  test('a step reads its easier version, which takes the step\'s place in the routine', () {
+    final s = PlayStep.fromJson({
+      ...step('reps', 'Knee push-up', reps: 10, side: null), 'round': 2,
+      'easier': {'mode': 'reps', 'name': 'Wall push-up', 'cue': 'Hands on a wall', 'amount': '10 reps', 'reps': 10, 'seconds': null,
+        'easier': {'mode': 'reps', 'name': 'Nested', 'reps': 1}},
+    })!;
+    expect((s.easier!.name, s.easier!.reps, s.easier!.section, s.easier!.round), ('Wall push-up', 10, 'main', 2));
+    expect(s.easier!.easier, isNull, reason: 'an easier version has no easier version of its own');
+    final side = PlayStep.fromJson({...step('timed', 'Hip stretch', seconds: 30, side: 2), 'easier': {'mode': 'timed', 'name': 'Hip stretch', 'seconds': 15}})!;
+    expect((side.easier!.side, side.easier!.seconds), (2, 15));
+    expect(PlayStep.fromJson({...step('reps', 'Squat', reps: 8), 'easier': {'mode': 'rest', 'seconds': 20}})!.easier, isNull);
+    expect(PlayStep.fromJson({...step('reps', 'Squat', reps: 8), 'easier': {'mode': 'reps', 'reps': 0}})!.easier, isNull);
+    expect(PlayStep.fromJson({...step('reps', 'Squat', reps: 8), 'easier': 'junk'})!.easier, isNull);
+    expect(PlayStep.fromJson({...step('rest', 'Rest', seconds: 20), 'easier': {'mode': 'timed', 'name': 'x', 'seconds': 5}})!.easier, isNull);
     expect(MoveWeek.fromJson({'moved_days': [true]}).movedDays, List.filled(7, false));
     expect(MoveWeek.fromJson({'minutes': 200}).progress, 1);
   });
