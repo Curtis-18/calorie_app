@@ -144,7 +144,7 @@ class _Settings extends ConsumerWidget {
               keyName: 'milestones',
               emoji: '🏅',
               title: tr('Badges and levels'),
-              subtitle: tr('When you earn something new'),
+              subtitle: tr('When you get a new badge or level'),
               value: prefs.milestones,
               onChanged: (v) => _set(prefs.copyWith(milestones: v), {'milestones': v}),
             ),

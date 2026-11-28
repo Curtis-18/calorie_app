@@ -178,6 +178,18 @@ void main() {
       expect(find.textContaining('between 10 PM and 8 AM'), findsOneWidget);
     }, variant: ios);
 
+    testWidgets('no banned words on the screen (it once said "When you earn something new")', (tester) async {
+      await pump(tester);
+      final banned = RegExp(r'\bearn|burn|cheat|guilt|punish|reward|treat|detox|cleanse|\bdiet\b', caseSensitive: false);
+      final words = [
+        for (final t in tester.widgetList<Text>(find.byType(Text))) t.data ?? t.textSpan?.toPlainText() ?? '',
+      ];
+      expect(words, contains('When you get a new badge or level'));
+      for (final line in words) {
+        expect(banned.hasMatch(line), isFalse, reason: line);
+      }
+    }, variant: ios);
+
     testWidgets('a switch changes at once and is saved', (tester) async {
       final saved = await pump(tester);
       await tester.tap(find.byKey(const ValueKey('switch_reactions')));

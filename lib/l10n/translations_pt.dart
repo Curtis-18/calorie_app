@@ -715,7 +715,7 @@ const Map<String, String> portuguese = {
   'Logging and streak reminders': 'Lembretes de registro e sequência',
   'If you haven\'t logged today, or your streak is about to end': 'Se você não registrou nada hoje, ou sua sequência está prestes a acabar',
   'Badges and levels': 'Conquistas e níveis',
-  'When you earn something new': 'Quando você conquista algo novo',
+  'When you get a new badge or level': 'Quando você recebe uma nova conquista ou nível',
   'A daily meal reminder': 'Um lembrete diário de refeição',
   'Every day at {v1}': 'Todos os dias às {v1}',
   'Reminder time': 'Hora do lembrete',
