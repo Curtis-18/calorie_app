@@ -5,6 +5,7 @@ import '../models/house_recipe.dart';
 import '../models/recipe_goal.dart';
 import '../models/recipe_tags.dart';
 import '../providers/house_recipes_provider.dart';
+import '../providers/user_provider.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_typography.dart';
 import '../theme/tracker_colors.dart';
@@ -19,6 +20,18 @@ import '../widgets/shimmer.dart';
 import 'new_recipe_screen.dart';
 import '../l10n/app_strings.dart';
 
+/// The goal chip the Mine tab starts on: the one matching the person's own
+/// goal, or null (All) when the profile isn't known. The profile provider
+/// needs Supabase; if it can't start, the chips simply start on All rather
+/// than the Recipes tab failing.
+final ownRecipeGoalProvider = Provider<RecipeGoal?>((ref) {
+  try {
+    return recipeGoalFor(ref.watch(userProfileProvider)?.goal);
+  } catch (_) {
+    return null;
+  }
+});
+
 /// "Mine": the person's own recipes. Private; log one in a tap.
 class MyRecipesView extends ConsumerStatefulWidget {
   const MyRecipesView({super.key});
@@ -28,8 +41,9 @@ class MyRecipesView extends ConsumerStatefulWidget {
 }
 
 class _MyRecipesViewState extends ConsumerState<MyRecipesView> {
-  /// The goal filter. Not saved: it only narrows the list while you look.
-  RecipeGoal? _goal;
+  /// The goal filter. Starts on the person's own goal each time the tab is
+  /// opened; not saved: it only narrows the list while you look.
+  late RecipeGoal? _goal = ref.read(ownRecipeGoalProvider);
 
   /// The quick filters (all of the chosen ones must fit). Not saved either.
   final Set<RecipeTag> _tags = {};

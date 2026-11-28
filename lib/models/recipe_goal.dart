@@ -1,5 +1,6 @@
 import '../l10n/app_strings.dart';
 import 'house_recipe.dart';
+import 'user_profile.dart';
 
 /// Which goal a recipe suits, worked out from its own numbers per serving.
 /// Nothing is typed in by an author and nothing is stored: the same recipe
@@ -26,6 +27,15 @@ enum RecipeGoal {
         RecipeGoal.gain => tr('600 kcal or more a serving.'),
       };
 }
+
+/// The chip that matches the goal the person chose in their profile, so the
+/// Mine tab can start on it ("All" stays one tap away). Null: start on All.
+RecipeGoal? recipeGoalFor(Goal? goal) => switch (goal) {
+      Goal.lose => RecipeGoal.loss,
+      Goal.maintain => RecipeGoal.maintain,
+      Goal.gain => RecipeGoal.gain,
+      null => null,
+    };
 
 /// The thresholds, written down once and covered by tests.
 const int lossMaxKcal = 500;

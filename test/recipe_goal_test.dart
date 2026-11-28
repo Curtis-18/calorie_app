@@ -1,6 +1,7 @@
 import 'package:calorie_app/l10n/app_strings.dart';
 import 'package:calorie_app/models/house_recipe.dart';
 import 'package:calorie_app/models/recipe_goal.dart';
+import 'package:calorie_app/models/user_profile.dart';
 import 'package:calorie_app/providers/house_recipes_provider.dart';
 import 'package:calorie_app/screens/my_recipes_view.dart';
 import 'package:calorie_app/theme/app_theme.dart';
@@ -68,6 +69,13 @@ void main() {
     });
   });
 
+  test('each profile goal has its chip; no profile means All', () {
+    expect(recipeGoalFor(Goal.lose), RecipeGoal.loss);
+    expect(recipeGoalFor(Goal.maintain), RecipeGoal.maintain);
+    expect(recipeGoalFor(Goal.gain), RecipeGoal.gain);
+    expect(recipeGoalFor(null), isNull);
+  });
+
   group('the words', () {
     final banned = RegExp(r'diet|burn|cheat|clean|detox|\bbad\b|\bgood\b|treat|reward|earn|guilt|punish|should|must|healthy|unhealthy', caseSensitive: false);
     List<String> copy() => [
@@ -103,7 +111,7 @@ void main() {
       recipe('d', 'Friend soup', 300, 5, mine: false), // none
     ];
 
-    Future<void> show(WidgetTester tester, List<HouseRecipe> recipes) async {
+    Future<void> show(WidgetTester tester, List<HouseRecipe> recipes, {RecipeGoal? own}) async {
       tester.view.physicalSize = const Size(750, 2600);
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
@@ -114,7 +122,11 @@ void main() {
       };
       addTearDown(() => FlutterError.onError = original);
       await tester.pumpWidget(ProviderScope(
-        overrides: [houseRecipesProvider.overrideWith((ref) => _Recipes(recipes))],
+        overrides: [
+          houseRecipesProvider.overrideWith((ref) => _Recipes(recipes)),
+          // No override: the real provider, which can't read a profile here and so starts on All.
+          if (own != null) ownRecipeGoalProvider.overrideWithValue(own),
+        ],
         child: CupertinoApp(theme: AppTheme.cupertino, home: const CupertinoPageScaffold(child: MyRecipesView())),
       ));
       for (var i = 0; i < 6; i++) {
@@ -129,7 +141,7 @@ void main() {
 
     Finder row(String id) => find.byKey(ValueKey('house_$id'), skipOffstage: false);
 
-    testWidgets('starts on All, with all four chips', (tester) async {
+    testWidgets('starts on All, with all four chips, when the profile is not known', (tester) async {
       await show(tester, mine);
       for (final k in ['goal_all', 'goal_loss', 'goal_maintain', 'goal_gain']) {
         expect(find.byKey(ValueKey(k)), findsOneWidget, reason: k);
@@ -175,6 +187,22 @@ void main() {
       await pick(tester, 'goal_gain');
       expect(find.byKey(const ValueKey('goal_none')), findsOneWidget);
       expect(find.text('None of your recipes match this yet.'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('starts on the chip that matches the person\'s own goal, and All is one tap away', (tester) async {
+      await show(tester, mine, own: RecipeGoal.gain);
+      expect([row('a'), row('b'), row('c'), row('d')].map((f) => f.evaluate().length), [0, 1, 0, 0]);
+      expect(find.text('600 kcal or more a serving.'), findsOneWidget);
+      await pick(tester, 'goal_all');
+      expect([row('a'), row('b'), row('c'), row('d')].map((f) => f.evaluate().length), [1, 1, 1, 1]);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a chosen chip is not remembered: the tab starts on the person\'s goal again', (tester) async {
+      await show(tester, mine, own: RecipeGoal.maintain);
+      await pick(tester, 'goal_gain');
+      await tester.pumpWidget(const SizedBox());
+      await show(tester, mine, own: RecipeGoal.maintain);
+      expect([row('a'), row('b'), row('c')].map((f) => f.evaluate().length), [1, 0, 1]);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the filter is not remembered when the tab is opened again', (tester) async {
