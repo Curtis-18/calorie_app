@@ -13,7 +13,13 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          
+          # Pinned: an unpinned "stable" once pulled in a new Dart overnight that broke
+          # camera_web, and the deploy failed (14 Nov 2026). 3.50.1 built every deploy since
+          # 20 Nov, including the live one. Upgrade on purpose: change this, run
+          # `flutter analyze`, `flutter test` and `flutter build web --release` locally on the
+          # same version, push, and check the workflow result.
+          flutter-version: '3.50.1'
+
       - name: Build Web
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
