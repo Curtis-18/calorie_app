@@ -19,6 +19,12 @@ import '../widgets/shimmer.dart';
 import 'barcode_scanner_screen.dart';
 import '../l10n/app_strings.dart';
 
+/// The saved name of [amount] of [item]: "Rice, white, cooked (150g)", or
+/// "Orange juice (250ml)" for a drink. The edit sheet reads the amount and its
+/// unit back from this ending (`gramsInName`, `mlInName`).
+String entryNameFor(FoodItem item, double amount) =>
+    '${item.description} (${amount.round()}${item.perMl ? 'ml' : 'g'})';
+
 class FoodSearchScreen extends StatefulWidget {
   final MealType mealType;
 
@@ -136,7 +142,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       context,
       FoodEntry(
         id: '${DateTime.now().microsecondsSinceEpoch}_${item.fdcId}',
-        name: '${item.description} (${grams.round()}g)',
+        name: entryNameFor(item, grams),
         calories: calories,
         proteinG: protein,
         carbsG: carbs,
@@ -318,10 +324,14 @@ class _QuantityDialogState extends State<QuantityDialog> {
                   onChanged: (value) => setState(() => _grams = parseGrams(value)),
                   suffix: Padding(
                     padding: EdgeInsets.only(right: 14),
-                    child: Text('g', style: TextStyle(color: TrackerColors.textTertiary, fontSize: 15)),
+                    child: Text(
+                      widget.food.perMl ? 'ml' : 'g',
+                      key: const ValueKey('quantity_unit'),
+                      style: TextStyle(color: TrackerColors.textTertiary, fontSize: 15),
+                    ),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  placeholder: tr('Quantity (grams)'),
+                  placeholder: widget.food.perMl ? tr('Quantity (ml)') : tr('Quantity (grams)'),
                   placeholderStyle: AppType.body(size: 15, color: TrackerColors.textTertiary),
                   style: AppType.body(size: 15),
                   cursorColor: TrackerColors.accentStart,
@@ -337,7 +347,9 @@ class _QuantityDialogState extends State<QuantityDialog> {
                 // before it lands in the day's total.
                 Text(
                   _grams == null
-                      ? tr('Enter an amount between 1 and {v1} g', {'v1': maxPortionGrams.round()})
+                      ? (widget.food.perMl
+                          ? tr('Enter an amount between 1 and {v1} ml', {'v1': maxPortionGrams.round()})
+                          : tr('Enter an amount between 1 and {v1} g', {'v1': maxPortionGrams.round()}))
                       : '≈ ${caloriesFor(widget.food.caloriesPer100g, _grams!)} kcal',
                   textAlign: TextAlign.center,
                   style: AppType.caption(

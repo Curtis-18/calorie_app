@@ -56,6 +56,15 @@ void main() {
       expect(gramsInName('Chicken curry'), isNull);
       expect(gramsInName('Bar (2 pack)'), isNull);
       expect(nameWithGrams('Rice, white, cooked (150g)', 220), 'Rice, white, cooked (220g)');
+      expect(mlInName('Rice, white, cooked (150g)'), isFalse);
+    });
+
+    test('a drink keeps its millilitres', () {
+      expect(gramsInName('ORANGE JUICE (250ml)'), 250);
+      expect(mlInName('ORANGE JUICE (250ml)'), isTrue);
+      expect(mlInName('Oat drink (200 ml)'), isTrue);
+      expect(nameWithGrams('ORANGE JUICE (250ml)', 330), 'ORANGE JUICE (330ml)');
+      expect(mlInName('Chicken curry'), isFalse);
     });
   });
 
@@ -188,6 +197,23 @@ void main() {
       expect((saved.id, saved.name, saved.calories), ('entry-1', 'Rice, white, cooked (300g)', 390));
       expect(saved.nutrients!.amounts, {'fiber_g': 1.2, 'iron_mg': 3.6});
       expect((saved.source, saved.timestamp), (FoodSource.manual, DateTime(2026, 11, 14, 12)));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a drink logged in ml is edited in ml', (tester) async {
+      final juice = _rice().copyWith(name: 'ORANGE JUICE (250ml)', calories: 115, proteinG: 2, carbsG: 27, fatG: 0);
+      final results = await open(tester, juice);
+      expect(find.descendant(of: find.byKey(const ValueKey('edit_grams')), matching: find.text('ml')), findsOneWidget);
+      await tester.enterText(find.byKey(const ValueKey('edit_grams')), '500');
+      await tester.pump();
+      expect(preview(tester), startsWith('230 kcal'));
+      await tester.enterText(find.byKey(const ValueKey('edit_grams')), '0');
+      await tester.pump();
+      expect(preview(tester), 'Enter an amount between 1 and 5000 ml');
+      await tester.enterText(find.byKey(const ValueKey('edit_grams')), '500');
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('edit_save')));
+      await settle(tester);
+      expect(results.single!.name, 'ORANGE JUICE (500ml)');
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a bad amount cannot be saved', (tester) async {

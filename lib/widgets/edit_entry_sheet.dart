@@ -14,18 +14,22 @@ import 'onboarding/choice_card.dart';
 import 'pressable.dart';
 import '../l10n/app_strings.dart';
 
-/// The grams a search entry was logged with, read from its name
-/// ("Rice, white, cooked (150g)"). Null for photo entries, which have none.
-final _gramsSuffix = RegExp(r'\s*\((\d+(?:[.,]\d+)?)\s*g\)$');
+/// The amount a search entry was logged with, read from its name
+/// ("Rice, white, cooked (150g)", or "Orange juice (250ml)" for a drink).
+/// Null for photo entries, which have none.
+final _gramsSuffix = RegExp(r'\s*\((\d+(?:[.,]\d+)?)\s*(g|ml)\)$');
 
 double? gramsInName(String name) {
   final match = _gramsSuffix.firstMatch(name);
   return match == null ? null : parseGrams(match.group(1)!);
 }
 
-/// [name] with its "(150g)" ending replaced for [grams].
+/// Whether the amount in [name] is in millilitres ("(250ml)").
+bool mlInName(String name) => _gramsSuffix.firstMatch(name)?.group(2) == 'ml';
+
+/// [name] with its "(150g)" or "(250ml)" ending replaced for [grams], same unit.
 String nameWithGrams(String name, double grams) =>
-    '${name.replaceFirst(_gramsSuffix, '')} (${grams.round()}g)';
+    '${name.replaceFirst(_gramsSuffix, '')} (${grams.round()}${mlInName(name) ? 'ml' : 'g'})';
 
 /// Correct a saved entry: its name, its meal, how much was eaten, or the food
 /// itself. Returns the corrected entry (same id), or null if cancelled.
@@ -59,6 +63,7 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
   /// stepping the amount up and back down can't drift through rounding.
   late FoodEntry _base = widget.entry;
   late double? _baseGrams = gramsInName(widget.entry.name);
+  late bool _ml = mlInName(widget.entry.name);
   late MealType _meal = widget.entry.mealType;
   late final _name = TextEditingController(text: widget.entry.name);
   late final _grams = TextEditingController(text: _baseGrams?.round().toString() ?? '');
@@ -107,6 +112,7 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
         clearEstimate: true,
       );
       _baseGrams = gramsInName(picked.name);
+      _ml = mlInName(picked.name);
       _factor = 1;
       _gramsValid = true;
       _name.text = picked.name;
@@ -155,7 +161,7 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
             placeholder: tr('Amount'),
             controller: _grams,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            suffix: Text('g', style: AppType.body(color: TrackerColors.textTertiary)),
+            suffix: Text(_ml ? 'ml' : 'g', style: AppType.body(color: TrackerColors.textTertiary)),
             onChanged: _onGrams,
           )
         else
@@ -171,7 +177,9 @@ class _EditEntrySheetState extends State<EditEntrySheet> {
         Text(
           _gramsValid
               ? tr('{kcal} kcal · {p}g protein · {c}g carbs · {f}g fat', {'kcal': preview.calories, 'p': preview.proteinG.round(), 'c': preview.carbsG.round(), 'f': preview.fatG.round()})
-              : tr('Enter an amount between 1 and {v1} g', {'v1': maxPortionGrams.round()}),
+              : (_ml
+                  ? tr('Enter an amount between 1 and {v1} ml', {'v1': maxPortionGrams.round()})
+                  : tr('Enter an amount between 1 and {v1} g', {'v1': maxPortionGrams.round()})),
           key: const ValueKey('edit_preview'),
           style: AppType.caption(
             color: _gramsValid ? TrackerColors.accentEndText : TrackerColors.error,

@@ -15,6 +15,8 @@ void main() {
       expect(parseGrams('12,5'), 12.5, reason: 'comma decimals were silently ignored');
       expect(parseGrams('150 g'), 150);
       expect(parseGrams('150g'), 150);
+      expect(parseGrams('250 ml'), 250, reason: 'drinks are asked in ml');
+      expect(parseGrams('250ml'), 250);
     });
 
     test('rejects empty, zero, negative and absurd amounts instead of guessing', () {

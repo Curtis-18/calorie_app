@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import 'package:calorie_app/models/barcode.dart';
 import 'package:calorie_app/models/food_item.dart';
-import 'package:calorie_app/screens/food_search_screen.dart' show QuantityDialog;
+import 'package:calorie_app/models/portion.dart';
+import 'package:calorie_app/screens/food_search_screen.dart' show QuantityDialog, entryNameFor;
 import 'package:calorie_app/providers/display_prefs_provider.dart';
 import 'package:calorie_app/screens/barcode_scanner_screen.dart';
 import 'package:calorie_app/services/food_search_service.dart';
@@ -108,6 +109,48 @@ void main() {
     testWidgets('and says nothing extra for a USDA product', (tester) async {
       await showDialogFor(tester, item('Branded'));
       expect(find.byKey(const ValueKey('off_credit')), findsNothing);
+    });
+  });
+
+  group('drinks are asked in millilitres', () {
+    FoodItem juice({String perUnit = 'ml'}) =>
+        FoodItem(fdcId: 7, description: 'ORANGE JUICE', dataType: 'Branded', caloriesPer100g: 46, perUnit: perUnit);
+
+    test('per_unit is read, and anything else or nothing means grams (an older backend)', () {
+      Map<String, dynamic> api([Object? unit]) =>
+          {'fdc_id': 7, 'description': 'ORANGE JUICE', 'calories_per_100g': 46, 'per_unit': ?unit};
+      expect(FoodItem.fromApiJson(api('ml')).perMl, isTrue);
+      expect(FoodItem.fromApiJson(api('g')).perMl, isFalse);
+      expect(FoodItem.fromApiJson(api()).perUnit, 'g');
+      expect(FoodItem.fromApiJson(api('litres')).perUnit, 'g');
+      expect(FoodItem.fromApiJson(api(5)).perUnit, 'g');
+    });
+
+    test('250 ml of a drink is 2.5 times its per-100 ml values, and the name says ml', () {
+      expect(caloriesFor(juice().caloriesPer100g, 250), 115);
+      expect(entryNameFor(juice(), 250), 'ORANGE JUICE (250ml)');
+      expect(entryNameFor(juice(perUnit: 'g'), 150), 'ORANGE JUICE (150g)');
+    });
+
+    Future<void> showDialogFor(WidgetTester tester, FoodItem food) async {
+      await tester.pumpWidget(CupertinoApp(home: Center(child: QuantityDialog(food: food))));
+      await tester.pump();
+    }
+
+    testWidgets('the amount dialog shows ml for a drink', (tester) async {
+      await showDialogFor(tester, juice());
+      expect(tester.widget<Text>(find.byKey(const ValueKey('quantity_unit'))).data, 'ml');
+      await tester.enterText(find.byType(CupertinoTextField), '250');
+      await tester.pump();
+      expect(find.text('≈ 115 kcal'), findsOneWidget);
+      await tester.enterText(find.byType(CupertinoTextField), '0');
+      await tester.pump();
+      expect(find.text('Enter an amount between 1 and 5000 ml'), findsOneWidget);
+    });
+
+    testWidgets('and g for everything else', (tester) async {
+      await showDialogFor(tester, juice(perUnit: 'g'));
+      expect(tester.widget<Text>(find.byKey(const ValueKey('quantity_unit'))).data, 'g');
     });
   });
 

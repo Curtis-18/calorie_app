@@ -3,10 +3,10 @@
 const maxPortionGrams = 5000.0;
 
 /// Parse a user-typed portion. Accepts "150", "12.5", "12,5" (comma
-/// decimals) and "150 g". Returns null for empty, zero, negative or absurd
+/// decimals), "150 g" and "250 ml" (drinks). Returns null for empty, zero, negative or absurd
 /// amounts rather than guessing: the old code silently used 100 g.
 double? parseGrams(String input) {
-  final cleaned = input.trim().toLowerCase().replaceAll(RegExp(r'\s*g$'), '').replaceAll(',', '.');
+  final cleaned = input.trim().toLowerCase().replaceAll(RegExp(r'\s*(ml|g)$'), '').replaceAll(',', '.');
   final value = double.tryParse(cleaned);
   if (value == null || value.isNaN || value <= 0 || value > maxPortionGrams) return null;
   return value;
