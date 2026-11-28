@@ -37,6 +37,17 @@ class PlayerEngine {
   /// easier too; the person can switch back on any step.
   final Set<String> _easier = {};
 
+  /// Reps the person set with minus / plus on a rep step, by step index (the
+  /// prescribed number until they change it).
+  final Map<int, int> _repsAt = {};
+
+  /// Rep moves of the main part finished with "Done": (move id, reps), by
+  /// step index. Sent with the session so next time can say "Last time: 12".
+  final Map<int, ({String move, int reps})> _done = {};
+
+  /// Most reps one set can record (the server accepts 1 to 500).
+  static const int maxReps = 500;
+
   PlayStep get _plain => steps[index.clamp(0, steps.length - 1)];
 
   /// What to show and time now: the step, or its easier version if chosen.
@@ -59,8 +70,21 @@ class PlayerEngine {
     final name = _plain.name;
     if (!_easier.remove(name)) _easier.add(name);
     remaining = current.seconds ?? 0;
+    _repsAt.remove(index); // a different move: back to its own number
     return PlayerEvent.stepChanged;
   }
+
+  /// The reps shown on a rep step: what the person set, else the plan.
+  int get currentReps => _repsAt[index] ?? current.reps ?? 0;
+
+  /// Minus / plus on a rep step: how many they actually did (1 to [maxReps]).
+  void adjustReps(int delta) {
+    if (finished || isGettingReady || current.mode != StepMode.reps) return;
+    _repsAt[index] = (currentReps + delta).clamp(1, maxReps);
+  }
+
+  /// The main part's rep sets finished so far, in order.
+  List<({String move, int reps})> get sets => [for (final i in _done.keys.toList()..sort()) _done[i]!];
 
   /// The next move to do, skipping rests ("Next up").
   PlayStep? get nextMove {
@@ -102,6 +126,8 @@ class PlayerEngine {
   /// "Done" on a rep move.
   PlayerEvent done() {
     if (finished || isGettingReady || current.mode != StepMode.reps) return PlayerEvent.none;
+    final move = current.move;
+    if (move != null && current.section == 'main') _done[index] = (move: move, reps: currentReps);
     return _advance();
   }
 

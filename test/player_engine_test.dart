@@ -194,4 +194,57 @@ void main() {
       expect((e.current.name, e.remaining), ('Plank', 15));
     });
   });
+
+  group('reps actually done, for "Last time" (NEXT_STEPS 9b)', () {
+    PlayStep repsOf(String move, int n, {String section = 'main', PlayStep? easier}) => PlayStep(
+        mode: StepMode.reps, name: move, cue: '', amount: '$n reps', section: section, reps: n, move: move, easier: easier);
+
+    test('minus and plus change the count between 1 and 500, and only on a rep step', () {
+      final e = PlayerEngine([repsOf('squat', 10), timed(10)], getReadySeconds: 0);
+      e.adjustReps(1);
+      e.adjustReps(1);
+      expect(e.currentReps, 12);
+      e.adjustReps(-20);
+      expect(e.currentReps, 1);
+      e.adjustReps(PlayerEngine.maxReps + 10);
+      expect(e.currentReps, PlayerEngine.maxReps);
+      e.done();
+      e.adjustReps(5);
+      expect(e.remaining, 10, reason: 'a timed step is untouched');
+    });
+
+    test('"Done" keeps the main part\'s sets in order; skipped moves and the warm-up are not kept', () {
+      final e = PlayerEngine([
+        repsOf('shoulder_rolls', 10, section: 'warm'),
+        repsOf('squat', 10),
+        repsOf('glute_bridge', 12),
+        repsOf('squat', 10),
+        timed(5),
+      ], getReadySeconds: 0);
+      e.done(); // warm-up
+      e.adjustReps(2);
+      e.done(); // squat 12
+      e.skip(); // glute bridge skipped
+      e.adjustReps(-1);
+      e.done(); // squat 9
+      expect(e.sets, [(move: 'squat', reps: 12), (move: 'squat', reps: 9)]);
+    });
+
+    test('the easier version is kept under its own move, and swapping resets the count', () {
+      final knee = repsOf('knee_pushup', 10, easier: repsOf('wall_pushup', 10));
+      final e = PlayerEngine([knee, timed(5)], getReadySeconds: 0);
+      e.adjustReps(3);
+      e.toggleEasier();
+      expect(e.currentReps, 10, reason: 'a different move starts at its own number');
+      e.adjustReps(-2);
+      e.done();
+      expect(e.sets, [(move: 'wall_pushup', reps: 8)]);
+    });
+
+    test('a step without a move id (an older server) keeps nothing', () {
+      final e = PlayerEngine([reps(8), timed(5)], getReadySeconds: 0);
+      e.done();
+      expect(e.sets, isEmpty);
+    });
+  });
 }

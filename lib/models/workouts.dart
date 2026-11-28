@@ -100,6 +100,7 @@ class PlayStep {
     this.side,
     this.round,
     this.easier,
+    this.move,
   });
 
   final StepMode mode;
@@ -120,6 +121,10 @@ class PlayStep {
   /// the player's "Easier version" button. Null when there is none, and from
   /// a backend older than 28 Nov 2026 (the button then just doesn't show).
   final PlayStep? easier;
+
+  /// The move's id in the server's library ("squat"), for "Last time". Null
+  /// for rests and from a backend older than 28 Nov 2026.
+  final String? move;
 
   static PlayStep? fromJson(Object? raw) => _parse(raw, null);
 
@@ -150,6 +155,7 @@ class PlayStep {
       reps: reps,
       side: parent != null ? parent.side : (raw['side'] is num ? (raw['side'] as num).toInt() : null),
       round: parent != null ? parent.round : (raw['round'] is num ? (raw['round'] as num).toInt() : null),
+      move: raw['move'] is String && (raw['move'] as String).isNotEmpty ? raw['move'] as String : null,
     );
     if (parent != null || mode == StepMode.rest) return step;
     final gentler = _parse(raw['easier'], step);
@@ -167,6 +173,7 @@ class PlayStep {
         side: side,
         round: round,
         easier: gentler,
+        move: move,
       );
 }
 
@@ -178,12 +185,18 @@ class WorkoutDetail {
     required this.rounds,
     required this.play,
     required this.sections,
+    this.lastReps = const {},
   });
 
   final WorkoutCard card;
   final String safety;
   final int rounds;
   final List<PlayStep> play;
+
+  /// Reps of each move (by id) the last time it was done, for "Last time: 12"
+  /// in the player. Empty with no history, before the owner runs the
+  /// movement_sets migration, and from an older backend.
+  final Map<String, int> lastReps;
 
   /// (title, lines) for reading before starting.
   final List<({String title, String? repeat, List<({String name, String amount, String cue})> steps})> sections;
@@ -229,6 +242,11 @@ class WorkoutDetail {
       rounds: _int(raw['rounds'], 1),
       play: play,
       sections: sections,
+      lastReps: {
+        if (raw['last_reps'] is Map)
+          for (final e in (raw['last_reps'] as Map).entries)
+            if (e.key is String && e.value is num && (e.value as num) > 0 && (e.value as num) <= 500) e.key as String: (e.value as num).toInt(),
+      },
     );
   }
 }

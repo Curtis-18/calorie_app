@@ -86,6 +86,7 @@ class WorkoutsService {
     String? routineId,
     String? activity,
     String? intensity,
+    List<({String move, int reps})> sets = const [],
   }) async {
     final body = jsonEncode({
       'id': id,
@@ -94,6 +95,8 @@ class WorkoutsService {
       'routine_id': ?routineId,
       'activity': ?activity,
       'intensity': ?intensity,
+      // Reps per move, for "Last time" next time. An older server ignores it.
+      if (sets.isNotEmpty) 'sets': [for (final s in sets) {'move': s.move, 'reps': s.reps}],
     });
     final r = await _send((c, h) => c.post(_uri('/movement'), headers: h, body: body));
     if (r.statusCode != 200) throw StateError('log ${r.statusCode}');

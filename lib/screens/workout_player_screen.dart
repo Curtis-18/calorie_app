@@ -97,7 +97,9 @@ class _WorkoutPlayerScreenState extends ConsumerState<WorkoutPlayerScreen> {
     final minutes = _engine.minutesDone;
     if (minutes < 1 || _saving == _Saving.saving || _saving == _Saving.saved) return;
     setState(() => _saving = _Saving.saving);
-    final entry = await ref.read(moveProvider.notifier).log(minutes: minutes, routineId: widget.workout.card.id);
+    final entry = await ref
+        .read(moveProvider.notifier)
+        .log(minutes: minutes, routineId: widget.workout.card.id, sets: _engine.sets);
     if (!mounted) return;
     setState(() {
       _saved = entry;
@@ -246,6 +248,11 @@ class _Playing extends StatelessWidget {
             _StepView(
               engine: engine,
               step: step,
+              lastReps: step.mode == StepMode.reps && step.section == 'main' ? workout.lastReps[step.move] : null,
+              onReps: (delta) {
+                engine.adjustReps(delta);
+                onChanged(PlayerEvent.none);
+              },
               onDone: () => onChanged(engine.done()),
               onMoreRest: () {
                 engine.extendRest();
@@ -337,10 +344,18 @@ class _StepView extends StatelessWidget {
     required this.onDone,
     required this.onMoreRest,
     required this.onEase,
+    required this.onReps,
+    this.lastReps,
   });
 
   final PlayerEngine engine;
   final PlayStep step;
+
+  /// Reps of this move last time (NEXT_STEPS 9b), or null.
+  final int? lastReps;
+
+  /// Minus / plus on a rep step.
+  final void Function(int delta) onReps;
   final VoidCallback onDone;
   final VoidCallback onMoreRest;
 
@@ -367,8 +382,29 @@ class _StepView extends StatelessWidget {
         ],
         const SizedBox(height: 22),
         if (step.mode == StepMode.reps) ...[
-          Text('${step.reps}', key: const ValueKey('player_reps'), style: AppType.display(size: 110)),
+          // Minus / plus let the person record how many they actually did; saved with
+          // the session so next time can show "Last time".
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _RepButton(key: const ValueKey('player_reps_minus'), icon: CupertinoIcons.minus, label: tr('One rep fewer'), onTap: () => onReps(-1)),
+              const SizedBox(width: 14),
+              // Shrinks rather than overflowing a small phone at 100+ reps.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('${engine.currentReps}', key: const ValueKey('player_reps'), style: AppType.display(size: 110)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              _RepButton(key: const ValueKey('player_reps_plus'), icon: CupertinoIcons.plus, label: tr('One rep more'), onTap: () => onReps(1)),
+            ],
+          ),
           Text(step.amount.replaceFirst(RegExp(r'^\d+\s*'), ''), style: AppType.body(size: 16, color: TrackerColors.textSecondary)),
+          if (lastReps != null) ...[
+            const SizedBox(height: 6),
+            Text(tr('Last time: {n}', {'n': '$lastReps'}), key: const ValueKey('player_last'), style: AppType.caption(size: 13)),
+          ],
           const SizedBox(height: 22),
           AppButton(key: const ValueKey('player_done'), label: tr('Done'), expand: false, onPressed: onDone),
         ] else ...[
@@ -425,6 +461,32 @@ class _StepView extends StatelessWidget {
   static String _clock(int seconds) {
     final s = seconds < 0 ? 0 : seconds;
     return s >= 60 ? '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}' : '$s';
+  }
+}
+
+/// A small round minus or plus beside the rep count: quiet, so "Done" stays the main button.
+class _RepButton extends StatelessWidget {
+  const _RepButton({super.key, required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: Pressable(
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(color: TrackerColors.glassFill, shape: BoxShape.circle),
+          child: Icon(icon, size: 20, color: TrackerColors.textPrimary),
+        ),
+      ),
+    );
   }
 }
 

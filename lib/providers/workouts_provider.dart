@@ -80,7 +80,13 @@ class MoveNotifier extends StateNotifier<MoveState> {
   }
 
   /// Log something. Returns the saved entry, or null when it couldn't be saved.
-  Future<MovementEntry?> log({required int minutes, String? routineId, String? activity, String? intensity}) async {
+  Future<MovementEntry?> log({
+    required int minutes,
+    String? routineId,
+    String? activity,
+    String? intensity,
+    List<({String move, int reps})> sets = const [],
+  }) async {
     if (_userId == null) return null;
     try {
       final entry = await _service.log(
@@ -89,6 +95,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
         routineId: routineId,
         activity: activity,
         intensity: intensity,
+        sets: sets,
       );
       await load();
       return entry;

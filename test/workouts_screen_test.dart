@@ -506,6 +506,54 @@ void main() {
       expect(find.byKey(const ValueKey('player_easier')), findsNothing, reason: 'no easier version: no button');
     });
 
+    testWidgets('minus and plus set the reps done, "Last time" shows, and the sets are saved with the session', (tester) async {
+      ignoreOverflow();
+      final s = Server();
+      final workout = WorkoutDetail.fromJson({
+        ...detailFor(card('strength_20', '20-minute strength', 20, 'strength'), [
+          {...step('reps', 'Bodyweight squat', reps: 10), 'move': 'squat'},
+          {...step('reps', 'Glute bridge', reps: 12), 'move': 'glute_bridge'},
+          step('timed', 'Hamstring stretch', seconds: 60, section: 'cool'),
+        ]),
+        'last_reps': {'squat': 11},
+      })!;
+      await tester.pumpWidget(app(containerFor(s), WorkoutPlayerScreen(workout: workout)));
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Last time: 11'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('player_reps_plus')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('player_reps_plus')));
+      await tester.pump();
+      expect(find.text('12'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('player_done')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('player_last')), findsNothing, reason: 'no history for the glute bridge');
+      await tester.tap(find.byKey(const ValueKey('player_reps_minus')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('player_done')));
+      await tester.pump(const Duration(seconds: 60));
+      await settle(tester, 5);
+      expect(s.posts, hasLength(1));
+      expect(s.posts.single['sets'], [
+        {'move': 'squat', 'reps': 12},
+        {'move': 'glute_bridge', 'reps': 11},
+      ]);
+    });
+
+    testWidgets('with an older server (no move ids) nothing extra is sent and no "Last time" shows', (tester) async {
+      ignoreOverflow();
+      final s = Server();
+      await tester.pumpWidget(app(containerFor(s), WorkoutPlayerScreen(workout: detail([
+        step('reps', 'Squat', reps: 10), step('timed', 'Walk', seconds: 60),
+      ]))));
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.byKey(const ValueKey('player_last')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('player_done')));
+      await tester.pump(const Duration(seconds: 60));
+      await settle(tester, 5);
+      expect(s.posts.single.containsKey('sets'), isFalse);
+    });
+
     testWidgets('a rest counts down, can be made longer and skipped', (tester) async {
       ignoreOverflow();
       await tester.pumpWidget(app(containerFor(Server()), WorkoutPlayerScreen(workout: detail([
@@ -660,6 +708,19 @@ void main() {
     expect(PlayStep.fromJson({'mode': 'timed', 'seconds': 0}), isNull);
     expect(PlayStep.fromJson({'mode': 'reps', 'reps': 8, 'name': 'x', 'amount': '8 reps'})?.reps, 8);
     expect(PlayStep.fromJson({'mode': 'reps', 'reps': 8, 'name': 'x', 'amount': '8 reps'})?.easier, isNull, reason: 'an older backend');
+  });
+
+  test('steps read their move id, and a workout reads last time\'s reps tolerantly', () {
+    final s = PlayStep.fromJson({...step('reps', 'Knee push-up', reps: 10), 'move': 'knee_pushup',
+      'easier': {'mode': 'reps', 'name': 'Wall push-up', 'reps': 10, 'move': 'wall_pushup'}})!;
+    expect((s.move, s.easier!.move), ('knee_pushup', 'wall_pushup'), reason: 'the copy with its easier version keeps the move');
+    expect(PlayStep.fromJson(step('reps', 'Squat', reps: 8))!.move, isNull, reason: 'an older server');
+    final d = WorkoutDetail.fromJson({
+      ...detailFor(card('strength_20', '20-minute strength', 20, 'strength'), [step('reps', 'Squat', reps: 8)]),
+      'last_reps': {'squat': 12, 'odd': 'x', 'zero': 0, 'huge': 9999, 'plank': 30.0},
+    })!;
+    expect(d.lastReps, {'squat': 12, 'plank': 30});
+    expect(WorkoutDetail.fromJson(detailFor(card('a', 'A', 3, 'fun'), [step('timed', 'x', seconds: 5)]))!.lastReps, isEmpty);
   });
 
   test('a step reads its easier version, which takes the step\'s place in the routine', () {
