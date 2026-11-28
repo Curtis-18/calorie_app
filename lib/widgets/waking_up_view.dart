@@ -12,6 +12,7 @@ import 'app_field.dart' show AppBackdrop;
 import 'animated_logo.dart';
 import 'glass.dart';
 import '../l10n/app_strings.dart';
+import '../services/server_handshake.dart' show LastProblem;
 
 /// Shown while the backend boots after a cold start.
 ///
@@ -306,10 +307,19 @@ class _TipCard extends StatelessWidget {
 
 /// Shown when the server still hasn't answered after the full wait.
 class ServerUnreachableView extends StatelessWidget {
-  const ServerUnreachableView({super.key, required this.onRetry, required this.onSignOut});
+  const ServerUnreachableView({
+    super.key,
+    required this.onRetry,
+    required this.onSignOut,
+    this.problem = LastProblem.noAnswer,
+  });
 
   final VoidCallback onRetry;
   final VoidCallback onSignOut;
+
+  /// What the last attempt saw: no answer (connection or still starting up),
+  /// or an error answer from the server (nothing the person can fix).
+  final LastProblem problem;
 
   @override
   Widget build(BuildContext context) {
@@ -342,7 +352,10 @@ class ServerUnreachableView extends StatelessWidget {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 320),
                   child: Text(
-                    '${tr("It may still be starting up, or your connection dropped.")} ${tr('Check your connection, then try again.')}',
+                    problem == LastProblem.serverError
+                        ? tr('Our server is having a problem right now. Please try again in a few minutes.')
+                        : '${tr("It may still be starting up, or your connection dropped.")} ${tr('Check your connection, then try again.')}',
+                    key: const ValueKey('unreachable_message'),
                     textAlign: TextAlign.center,
                     style: AppType.body(color: TrackerColors.textSecondary).copyWith(height: 1.45),
                   ),

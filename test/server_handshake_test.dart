@@ -173,6 +173,72 @@ void main() {
     expect(h.phase.value, HandshakePhase.ready);
   });
 
+  group('what the "couldn\'t reach" screen says', () {
+    test('a server that keeps answering with an error is a server problem', () async {
+      final h = _handshake(MockClient((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        return http.Response('Bad gateway', 502);
+      }));
+      await h.start();
+      expect(h.phase.value, HandshakePhase.unreachable);
+      expect(h.lastProblem, LastProblem.serverError);
+    });
+
+    test('the attempt the deadline cuts short does not hide a server that kept answering errors', () async {
+      // A 503 at once, then a wait that only the 400 ms deadline ends (each
+      // attempt may take a whole second, so the deadline is what cuts it off).
+      var calls = 0;
+      final h = ServerHandshake(
+        client: MockClient((_) async {
+          calls++;
+          if (calls == 1) return http.Response('Service unavailable', 503);
+          return Completer<http.Response>().future;
+        }),
+        tokenProvider: ({bool forceRefresh = false}) async => 'token',
+        deadline: const Duration(milliseconds: 400),
+        attemptTimeout: const Duration(seconds: 1),
+        retryDelay: const Duration(milliseconds: 10),
+        wakingAfter: const Duration(milliseconds: 40),
+        currentUserId: () => 'user-a',
+      );
+      await h.start();
+      expect(calls, 2);
+      expect((h.phase.value, h.lastProblem), (HandshakePhase.unreachable, LastProblem.serverError));
+    });
+
+    test('no answer at all (a timeout, or an address that cannot be looked up) is a connection problem', () async {
+      final hangs = _handshake(MockClient((_) => Completer<http.Response>().future));
+      await hangs.start();
+      expect(hangs.lastProblem, LastProblem.noAnswer);
+
+      final offline = _handshake(MockClient((_) async => throw http.ClientException('Failed host lookup')));
+      await offline.start();
+      expect((offline.phase.value, offline.lastProblem), (HandshakePhase.unreachable, LastProblem.noAnswer));
+    });
+
+    test('it is what the last attempt saw, and Retry starts afresh', () async {
+      var serverUp = false;
+      var calls = 0;
+      final h = _handshake(MockClient((_) async {
+        calls++;
+        if (serverUp) return http.Response('{}', 200);
+        if (calls == 1) return http.Response('booting', 503);
+        return Completer<http.Response>().future; // then no answer at all
+      }));
+      await h.start();
+      expect(h.lastProblem, LastProblem.noAnswer, reason: 'the 503 came first, the silence last');
+
+      final broken = _handshake(MockClient((_) async => http.Response('down', 503)));
+      await broken.start();
+      expect(broken.lastProblem, LastProblem.serverError);
+      serverUp = true;
+      final retry = h.start();
+      expect(h.lastProblem, LastProblem.noAnswer);
+      await retry;
+      expect(h.phase.value, HandshakePhase.ready);
+    });
+  });
+
   test('every attempt asks for a token; a 401 retries once with a forced refresh', () async {
     final tokenCalls = <bool>[];
     var calls = 0;
@@ -277,6 +343,28 @@ void main() {
       await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
       expect((retries, signOuts), (1, 1));
+    });
+
+    String message(WidgetTester tester) => tester.widget<Text>(find.byKey(const ValueKey('unreachable_message'))).data!;
+
+    testWidgets('with no answer it suggests the connection or a slow start', (tester) async {
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: ServerUnreachableView(onRetry: () {}, onSignOut: () {}),
+      ));
+      expect(message(tester), contains('your connection dropped'));
+      expect(message(tester), contains('Check your connection'));
+    });
+
+    testWidgets('with an error answer it says the problem is ours, not their connection', (tester) async {
+      await tester.pumpWidget(CupertinoApp(
+        theme: AppTheme.cupertino,
+        home: ServerUnreachableView(onRetry: () {}, onSignOut: () {}, problem: LastProblem.serverError),
+      ));
+      expect(message(tester), 'Our server is having a problem right now. Please try again in a few minutes.');
+      expect(message(tester), isNot(contains('connection')));
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Sign out'), findsOneWidget);
     });
   });
 }

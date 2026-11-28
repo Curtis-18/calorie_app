@@ -385,6 +385,7 @@ const Map<String, String> spanish = {
   'Couldn\'t reach the server': 'No se pudo conectar con el servidor',
   'It may still be starting up, or your connection dropped.': 'Puede que aún esté arrancando, o se cayó tu conexión.',
   'Check your connection, then try again.': 'Revisa tu conexión e inténtalo de nuevo.',
+  'Our server is having a problem right now. Please try again in a few minutes.': 'Nuestro servidor tiene un problema ahora mismo. Inténtalo de nuevo en unos minutos.',
   'Try again': 'Reintentar',
   'Sign out': 'Cerrar sesión',
   'Looking at your meal…': 'Mirando tu comida…',

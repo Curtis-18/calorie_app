@@ -159,6 +159,7 @@ class _AuthGateState extends State<AuthGate> {
             return ServerUnreachableView(
               onRetry: handshake.start,
               onSignOut: _signOut,
+              problem: handshake.lastProblem,
             );
     }
   }

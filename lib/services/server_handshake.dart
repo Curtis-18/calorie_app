@@ -37,6 +37,19 @@ enum HandshakePhase {
   unreachable,
 }
 
+/// What the last attempt of a run saw, for the message on the "couldn't reach
+/// the server" screen.
+enum LastProblem {
+  /// No answer at all: a timeout, no connection, or an address the network
+  /// can't look up (the 26 Nov 2026 outage).
+  noAnswer,
+
+  /// The server, or Vercel in front of it, answered, but with an error (a 5xx
+  /// or another unexpected status). Telling people to check their connection
+  /// was wrong for this.
+  serverError,
+}
+
 /// Signature for fetching an access token. [forceRefresh] asks for a new one
 /// even if the current one looks valid (used after a 401).
 typedef TokenProvider = Future<String?> Function({bool forceRefresh});
@@ -76,6 +89,10 @@ class ServerHandshake {
   /// When the current run started, for the elapsed-time display.
   DateTime startedAt = DateTime.now();
 
+  /// What the latest attempt saw; read when the run ends in
+  /// [HandshakePhase.unreachable].
+  LastProblem lastProblem = LastProblem.noAnswer;
+
   int _run = 0;
 
   /// The person's username once known (from the server, or just chosen), so
@@ -94,6 +111,7 @@ class ServerHandshake {
     bool current() => !_disposed && run == _run;
 
     startedAt = DateTime.now();
+    lastProblem = LastProblem.noAnswer;
     phase.value = HandshakePhase.checking;
     _wakingTimer?.cancel();
     _wakingTimer = Timer(wakingAfter, () {
@@ -119,18 +137,28 @@ class ServerHandshake {
 
         int? status;
         String? body;
+        final remaining = deadline - stopwatch.elapsed;
+        final shortened = remaining < attemptTimeout;
+        var cutOffByDeadline = false;
         try {
-          final remaining = deadline - stopwatch.elapsed;
           final response = await client
               .get(Uri.parse('${ApiConfig.baseUrl}/targets'),
                   headers: {'Authorization': 'Bearer $token'})
-              .timeout(remaining < attemptTimeout ? remaining : attemptTimeout);
+              .timeout(shortened ? remaining : attemptTimeout);
           status = response.statusCode;
           body = response.body;
+        } on TimeoutException {
+          // Likely still booting. Retry below.
+          cutOffByDeadline = shortened;
         } catch (_) {
-          // Timeout or no connection: likely still booting. Retry below.
+          // No connection, or the address can't be looked up. Retry below.
         }
         if (!current()) return;
+        // An attempt the deadline cut short says nothing new: keep what the
+        // attempt before it saw (a server answering errors stays an error).
+        if (!cutOffByDeadline) {
+          lastProblem = status == null ? LastProblem.noAnswer : LastProblem.serverError;
+        }
 
         if (status == 200 || status == 404) {
           if (status == 200) _handOffTargets(body);
