@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,6 +63,15 @@ class _CoachScreenState extends State<CoachScreen> {
   bool _hasMore = false;
   bool _loadingMore = false;
   bool _waiting = false; // the coach is writing
+
+  /// The answer as far as it has arrived (null: still thinking), how much of
+  /// it is on screen, and the finished answer, added to the thread once it is
+  /// fully typed out. The typing is what makes it read letter by letter: the
+  /// server sends checked text a sentence at a time.
+  String? _typing;
+  int _typed = 0;
+  ChatMessage? _answer;
+  Timer? _ticker;
   bool _micAvailable = false;
   bool _listening = false;
   String? _loadError;
@@ -75,6 +87,7 @@ class _CoachScreenState extends State<CoachScreen> {
 
   @override
   void dispose() {
+    _ticker?.cancel();
     _voice.stop();
     _input.dispose();
     super.dispose();
@@ -143,23 +156,92 @@ class _CoachScreenState extends State<CoachScreen> {
   Future<void> _deliver(ChatMessage message) async {
     setState(() {
       _waiting = true;
+      _resetTyping();
       _replace(message.copyWith(state: SendState.sending, clearError: true));
     });
     try {
-      final reply = await _service.ask(id: message.id, text: message.body);
-      if (!mounted) return;
-      setState(() {
-        _waiting = false;
-        _replace(message.copyWith(state: SendState.sent, clearError: true));
-        _messages = [..._messages, reply];
-      });
+      await for (final event in _service.askStream(id: message.id, text: message.body)) {
+        if (!mounted) return;
+        setState(() {
+          _replace(message.copyWith(state: SendState.sent, clearError: true));
+          switch (event) {
+            case CoachTextArrived(:final text):
+              _typing = (_typing ?? '') + text;
+            case CoachStartOver():
+              _typing = null;
+              _typed = 0;
+            case CoachAnswered(message: final answer):
+              // The stored answer is the one to keep. Whatever is already on
+              // screen and matches it stays; the rest is typed out.
+              final shown = (_typing ?? '').substring(0, _typed);
+              _typed = _sharedStart(shown, answer.body);
+              _typing = answer.body;
+              _answer = answer;
+          }
+        });
+        _keepTyping();
+      }
     } on MessagesException catch (e) {
       if (!mounted) return;
       setState(() {
         _waiting = false;
+        _resetTyping();
         _replace(message.copyWith(state: SendState.failed, error: e.message));
       });
     }
+  }
+
+  void _resetTyping() {
+    _ticker?.cancel();
+    _ticker = null;
+    _typing = null;
+    _typed = 0;
+    _answer = null;
+  }
+
+  static int _sharedStart(String a, String b) {
+    final n = math.min(a.length, b.length);
+    var i = 0;
+    while (i < n && a.codeUnitAt(i) == b.codeUnitAt(i)) {
+      i++;
+    }
+    return i;
+  }
+
+  /// Types what has arrived, a letter or two every frame, faster when it is
+  /// far behind (a whole answer at once from an older server still takes
+  /// about two seconds at most). With reduced motion it appears at once.
+  void _keepTyping() {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      setState(() => _typed = _typing?.length ?? 0);
+      _finishIfTyped();
+      return;
+    }
+    _ticker ??= Timer.periodic(const Duration(milliseconds: 16), (_) => _tick());
+  }
+
+  void _tick() {
+    if (!mounted) return;
+    final target = _typing ?? '';
+    if (_typed < target.length) {
+      var next = math.min<int>(target.length, _typed + math.max<int>(1, (target.length - _typed) ~/ 16));
+      // Never stop between the two halves of an emoji.
+      if (next < target.length && next > 0 && _isHighSurrogate(target.codeUnitAt(next - 1))) next++;
+      setState(() => _typed = next);
+    }
+    _finishIfTyped();
+  }
+
+  static bool _isHighSurrogate(int unit) => unit >= 0xD800 && unit <= 0xDBFF;
+
+  void _finishIfTyped() {
+    final answer = _answer;
+    if (answer == null || _typed < (_typing?.length ?? 0)) return;
+    setState(() {
+      _messages = [..._messages, answer];
+      _waiting = false;
+      _resetTyping();
+    });
   }
 
   Future<void> _openRecipe(String id) {
@@ -306,7 +388,11 @@ class _CoachScreenState extends State<CoachScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       itemCount: n + extra + (_hasMore ? 1 : 0),
       itemBuilder: (context, i) {
-        if (_waiting && i == 0) return const _Typing(key: ValueKey('coach_typing'));
+        if (_waiting && i == 0) {
+          final typing = _typing;
+          if (typing == null || _typed == 0) return const _Thinking(key: ValueKey('coach_typing'));
+          return _Writing(key: const ValueKey('coach_writing'), text: typing.substring(0, _typed));
+        }
         final j = i - extra;
         if (j == n) {
           return Center(
@@ -610,20 +696,179 @@ class _WorkoutCard extends StatelessWidget {
   }
 }
 
-class _Typing extends StatelessWidget {
-  const _Typing({super.key});
+/// While the coach works on an answer: its badge, three bouncing dots and a
+/// line that changes every couple of seconds, coach style ("Looking at your day
+/// so far…"). The lines describe what the server really does before it answers.
+class _Thinking extends StatefulWidget {
+  const _Thinking({super.key});
+
+  @override
+  State<_Thinking> createState() => _ThinkingState();
+}
+
+class _ThinkingState extends State<_Thinking> with SingleTickerProviderStateMixin {
+  late final AnimationController _dots = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
+  Timer? _lines;
+  int _line = 0;
+
+  static List<String> _texts() => [
+        tr('Thinking about your answer…'),
+        tr('Looking at your day so far…'),
+        tr("Checking what's left for today…"),
+        tr('Lacing up my thinking shoes…'),
+        tr('Flipping through your recipes…'),
+        tr('Putting your game plan together…'),
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    _lines = Timer.periodic(const Duration(milliseconds: 1800), (_) {
+      if (mounted) setState(() => _line++);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _dots.stop();
+    } else if (!_dots.isAnimating) {
+      _dots.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _lines?.cancel();
+    _dots.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final texts = _texts();
+    final text = texts[_line % texts.length];
+    final still = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       label: tr('The coach is writing'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            const CoachBadge(size: 28),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                decoration: BoxDecoration(
+                  color: TrackerColors.surface,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(6),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  border: TrackerColors.isDark ? Border.all(color: TrackerColors.border) : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _dots,
+                      builder: (context, _) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [for (var i = 0; i < 3; i++) _dot(i, still)],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: AnimatedSwitcher(
+                        duration: still ? Duration.zero : const Duration(milliseconds: 250),
+                        child: Text(
+                          text,
+                          key: ValueKey('coach_thinking_${_line % texts.length}'),
+                          style: AppType.caption(size: 13.5, color: TrackerColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dot(int i, bool still) {
+    // Each dot hops in turn: up during the first 40% of its cycle, then rests.
+    final t = (_dots.value + 1 - i * 0.18) % 1.0;
+    final lift = still || t >= 0.4 ? 0.0 : math.sin(t / 0.4 * math.pi);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Transform.translate(
+        offset: Offset(0, -4 * lift),
+        child: Opacity(
+          opacity: 0.45 + 0.55 * (still ? 1 : lift),
+          child: Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: TrackerColors.accentEndText, shape: BoxShape.circle),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The coach's answer while it is being typed out, with a cursor at the end.
+class _Writing extends StatelessWidget {
+  const _Writing({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(color: TrackerColors.surface, borderRadius: BorderRadius.circular(20)),
-          child: const CupertinoActivityIndicator(radius: 8),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: TrackerColors.surface,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(6),
+                bottomRight: Radius.circular(20),
+              ),
+              border: TrackerColors.isDark ? Border.all(color: TrackerColors.border) : null,
+            ),
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(text: text),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Container(
+                    width: 2,
+                    height: 17,
+                    margin: const EdgeInsets.only(left: 2),
+                    decoration: BoxDecoration(
+                      color: TrackerColors.accentEndText,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ),
+              ]),
+              style: AppType.body(size: 15.5, color: TrackerColors.textPrimary),
+            ),
+          ),
         ),
       ),
     );

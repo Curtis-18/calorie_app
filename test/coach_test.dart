@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:calorie_app/l10n/app_strings.dart';
@@ -49,7 +50,54 @@ class _Server {
   final headers = <Map<String, String>>[];
   int cleared = 0;
 
-  MockClient get client => MockClient((r) async {
+  /// What the stream route plays, in order: a Map is one event, a Duration a
+  /// pause, a String a raw line, 'drop' a broken connection, 'hang' silence.
+  /// Null: an older server without the route (404).
+  List<Object>? streamEvents;
+  int streamStatus = 200;
+  final streamAsked = <Map<String, dynamic>>[];
+
+  MockClient get client => MockClient.streaming((request, bodyStream) async {
+        final r = http.Request(request.method, request.url)
+          ..headers.addAll(request.headers)
+          ..bodyBytes = await bodyStream.toBytes();
+        if (r.url.path == '/coach/messages/stream') return _stream(r);
+        final response = await _handle(r);
+        return http.StreamedResponse(Stream.value(response.bodyBytes), response.statusCode,
+            headers: response.headers, request: request);
+      });
+
+  Future<http.StreamedResponse> _stream(http.Request r) async {
+    final events = streamEvents;
+    if (events == null) return http.StreamedResponse(const Stream.empty(), 404);
+    streamAsked.add({
+      ...jsonDecode(r.body) as Map<String, dynamic>,
+      'date': r.url.queryParameters['date'],
+      'accept': r.headers['Accept'],
+      'language': r.headers['Accept-Language'],
+    });
+    if (streamStatus != 200) return http.StreamedResponse(Stream.value(utf8.encode('{"detail":"x"}')), streamStatus);
+    final out = StreamController<List<int>>();
+    () async {
+      for (final e in events) {
+        if (e is Duration) {
+          await Future<void>.delayed(e);
+        } else if (e == 'drop') {
+          out.addError(http.ClientException('dropped'));
+          await out.close();
+          return;
+        } else if (e == 'hang') {
+          return;
+        } else {
+          out.add(utf8.encode(e is String ? '$e\n' : 'data: ${jsonEncode(e)}\n\n'));
+        }
+      }
+      await out.close();
+    }();
+    return http.StreamedResponse(out.stream, 200, headers: {'content-type': 'text/event-stream'});
+  }
+
+  Future<http.Response> _handle(http.Request r) async {
         headers.add(r.headers);
         if (r.url.path != '/coach/messages') return http.Response('', 404);
         if (r.method == 'GET') {
@@ -77,8 +125,14 @@ class _Server {
           if (suggestions.isNotEmpty) 'suggestions': suggestions,
           if (workouts.isNotEmpty) 'workouts': workouts,
         });
-      });
+  }
 }
+
+Map<String, dynamic> _delta(String text) => {'type': 'delta', 'text': text};
+Map<String, dynamic> _done(String body, {List<Object> suggestions = const []}) => {
+      'type': 'done',
+      'message': {..._turn('c-s', 'coach', body, minutesAgo: 0), if (suggestions.isNotEmpty) 'suggestions': suggestions},
+    };
 
 CoachService _service(_Server s) =>
     CoachService(client: languageClient(s.client), tokenProvider: () => 't', now: () => DateTime(2026, 11, 20, 9));
@@ -211,6 +265,87 @@ void main() {
     });
   });
 
+  group('streaming', () {
+    Future<List<CoachEvent>> collect(_Server server, {Duration quietLimit = const Duration(seconds: 45)}) =>
+        _service(server).askStream(id: 'm-1', text: 'dinner?', quietLimit: quietLimit).toList();
+
+    String describe(CoachEvent e) => switch (e) {
+          CoachTextArrived(:final text) => 'text:$text',
+          CoachStartOver() => 'start over',
+          CoachAnswered(:final message) => 'answer:${message.body}',
+        };
+
+    test('the answer arrives piece by piece and ends with the stored answer; nothing else is asked', () async {
+      AppStrings.active = 'fr';
+      final server = _Server()
+        ..streamEvents = [
+          ': a comment', 'event: message', 'data: not json', {'type': 'something new'},
+          _delta('Your lentil stew fits tonight.'), _delta(' Add a side salad.'),
+          _done('Your lentil stew fits tonight. Add a side salad.', suggestions: [
+            {'recipe_id': 'r-1', 'title': 'Lentil stew', 'calories': 420},
+          ]),
+        ];
+      final events = await collect(server);
+      expect(events.map(describe), [
+        'text:Your lentil stew fits tonight.',
+        'text: Add a side salad.',
+        'answer:Your lentil stew fits tonight. Add a side salad.',
+      ]);
+      expect((events.last as CoachAnswered).message.suggestions.single.recipeId, 'r-1');
+      expect(server.streamAsked.single,
+          {'id': 'm-1', 'text': 'dinner?', 'date': '2026-11-20', 'accept': 'text/event-stream', 'language': 'fr'});
+      expect(server.asked, isEmpty);
+    });
+
+    test('an older server without the stream is asked the plain way, with the same id', () async {
+      final server = _Server(); // streamEvents null: 404
+      final events = await collect(server);
+      expect(events.map(describe), ['answer:Your lentil stew fits well tonight.']);
+      expect(server.asked.single['id'], 'm-1');
+    });
+
+    test('when the server reports a problem after some text, it starts over and asks the plain way', () async {
+      final server = _Server()..streamEvents = [_delta('Your lentil stew fits tonight.'), {'type': 'error'}];
+      final events = await collect(server);
+      expect(events.map(describe),
+          ['text:Your lentil stew fits tonight.', 'start over', 'answer:Your lentil stew fits well tonight.']);
+      expect(server.asked.single['id'], 'm-1');
+    });
+
+    test('a connection that breaks, or a stream that goes quiet, is asked the plain way too', () async {
+      final broken = _Server()..streamEvents = [_delta('Half.'), 'drop'];
+      expect((await collect(broken)).map(describe), ['text:Half.', 'start over', 'answer:Your lentil stew fits well tonight.']);
+      final quiet = _Server()..streamEvents = ['hang'];
+      expect((await collect(quiet, quietLimit: const Duration(milliseconds: 50))).map(describe),
+          ['answer:Your lentil stew fits well tonight.']);
+      final noDone = _Server()..streamEvents = [_delta('Only this.')];
+      expect((await collect(noDone)).map(describe), ['text:Only this.', 'start over', 'answer:Your lentil stew fits well tonight.']);
+    });
+
+    test('a server reset is passed on, and a refusal is said in the app\'s language', () async {
+      final server = _Server()..streamEvents = [_delta('Pizza is fine.'), {'type': 'reset'}, _done('A day over is just a day.')];
+      expect((await collect(server)).map(describe), ['text:Pizza is fine.', 'start over', 'answer:A day over is just a day.']);
+      AppStrings.active = 'es';
+      final busy = _Server()
+        ..streamEvents = []
+        ..streamStatus = 429
+        ..askStatus = 429;
+      await expectLater(
+        collect(busy),
+        throwsA(isA<MessagesException>().having((e) => e.statusCode, 'status', 429).having((e) => e.message, 'm', isNot(contains('Give it')))),
+      );
+    });
+
+    test('signed out says so before anything is sent', () async {
+      final server = _Server()..streamEvents = [];
+      await expectLater(
+        CoachService(client: server.client, tokenProvider: () => null).askStream(id: 'a', text: 'b').toList(),
+        throwsA(isA<MessagesException>().having((e) => e.message, 'm', contains('signed out'))),
+      );
+      expect(server.streamAsked, isEmpty);
+    });
+  });
+
   group('the coach screen', () {
     Future<void> open(WidgetTester tester, _Server server,
         {VoiceRecognizer? voice, Future<void> Function(BuildContext, String)? openRecipe, WorkoutsService? workoutsService}) async {
@@ -248,11 +383,99 @@ void main() {
       expect(find.text('What should I eat for dinner?'), findsOneWidget);
       expect(find.byKey(const ValueKey('coach_typing')), findsOneWidget);
       expect(find.byKey(const ValueKey('coach_send')), findsOneWidget);
-      await _settle(tester);
+      await _settle(tester, 6); // the answer arrives (400 ms) and starts to type out
       expect(find.byKey(const ValueKey('coach_typing')), findsNothing);
+      expect(find.byKey(const ValueKey('coach_writing')), findsOneWidget);
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('coach_writing')), findsNothing);
       expect(find.text('Your lentil stew fits well tonight.'), findsOneWidget);
       expect(server.asked.single['text'], 'What should I eat for dinner?');
       expect((server.asked.single['id'] as String).length, 36);
+    }, variant: ios);
+
+    testWidgets('a streamed answer: a fun thinking line first, then it types out letter by letter, then the cards', (tester) async {
+      final server = _Server()
+        ..streamEvents = [
+          const Duration(milliseconds: 300),
+          _delta('Your lentil stew fits tonight.'),
+          const Duration(milliseconds: 600),
+          _delta(' Add a side salad.'),
+          _done('Your lentil stew fits tonight. Add a side salad.', suggestions: [
+            {'recipe_id': 'r-1', 'title': 'Lentil stew', 'calories': 420},
+          ]),
+        ];
+      await open(tester, server);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('coach_typing')), findsOneWidget);
+      expect(find.text('Thinking about your answer…'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 100));
+      final writing = find.byKey(const ValueKey('coach_writing'));
+      expect(writing, findsOneWidget);
+      String shown() => tester.widget<Text>(find.descendant(of: writing, matching: find.byType(Text))).textSpan!.toPlainText();
+      final early = shown();
+      expect(early.length, inInclusiveRange(1, 'Your lentil stew fits tonight.'.length));
+      expect('Your lentil stew fits tonight.'.startsWith(early.replaceAll('\uFFFC', '')), isTrue);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(shown().length, greaterThan(early.length));
+      expect(find.byKey(const ValueKey('coach_recipe_r-1')), findsNothing, reason: 'cards wait for the full answer');
+      await _settle(tester, 15);
+      expect(writing, findsNothing);
+      expect(find.text('Your lentil stew fits tonight. Add a side salad.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('coach_recipe_r-1')), findsOneWidget);
+      expect(server.asked, isEmpty);
+      expect(server.streamAsked.single['text'], 'What should I eat for dinner?');
+    }, variant: ios);
+
+    testWidgets('while it thinks, the line changes every couple of seconds', (tester) async {
+      final server = _Server()..streamEvents = [const Duration(seconds: 5), _done('Hi there.')];
+      await open(tester, server);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await tester.pump();
+      expect(find.text('Thinking about your answer…'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1900));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Looking at your day so far…'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1800));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text("Checking what's left for today…"), findsOneWidget);
+      await _settle(tester, 20);
+      expect(find.text('Hi there.'), findsOneWidget);
+    }, variant: ios);
+
+    testWidgets('with reduced motion the answer appears at once', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      final server = _Server()..streamEvents = [_done('Your lentil stew fits tonight. Add a side salad.')];
+      await open(tester, server);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Your lentil stew fits tonight. Add a side salad.'), findsOneWidget);
+    }, variant: ios);
+
+    testWidgets('when the server starts over, the words already shown are replaced', (tester) async {
+      final server = _Server()
+        ..streamEvents = [
+          _delta('Pizza is fine.'),
+          const Duration(milliseconds: 700),
+          {'type': 'reset'},
+          const Duration(milliseconds: 200),
+          _done('A day over is just a day.'),
+        ];
+      await open(tester, server);
+      await tester.tap(find.byKey(const ValueKey('coach_idea_0')));
+      await _settle(tester, 5);
+      expect(find.byKey(const ValueKey('coach_writing')), findsOneWidget);
+      // The reset comes at 700 ms and the new answer at 900 ms: at 800 ms it is thinking again.
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byKey(const ValueKey('coach_typing')), findsOneWidget, reason: 'thinking again until the new answer');
+      await _settle(tester, 15);
+      expect(find.text('A day over is just a day.'), findsOneWidget);
+      expect(find.textContaining('Pizza'), findsNothing);
     }, variant: ios);
 
     testWidgets('a recipe the coach names shows as a card that opens that recipe; a reload has no cards', (tester) async {
