@@ -2,8 +2,11 @@ import 'dart:convert';
 
 import 'package:calorie_app/l10n/app_strings.dart';
 import 'package:calorie_app/models/activity.dart';
+import 'package:calorie_app/models/snaps.dart';
 import 'package:calorie_app/providers/activity_provider.dart';
 import 'package:calorie_app/providers/shell_provider.dart';
+import 'package:calorie_app/providers/snaps_provider.dart';
+import 'package:calorie_app/screens/snap_viewer_screen.dart';
 import 'package:calorie_app/providers/whats_new_provider.dart';
 import 'package:calorie_app/screens/notifications_screen.dart';
 import 'package:calorie_app/services/activity_service.dart';
@@ -14,14 +17,47 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-Map<String, dynamic> line(String id, String kind, {String name = 'sam', String? emoji, bool seen = false, int minutesAgo = 3}) => {
+Map<String, dynamic> line(String id, String kind, {String name = 'sam', String? emoji, bool seen = false, int minutesAgo = 3, String? snapId}) => {
       'id': id,
       'kind': kind,
       'username': name,
       'emoji': emoji,
       'created_at': DateTime.now().toUtc().subtract(Duration(minutes: minutesAgo)).toIso8601String(),
       'seen': seen,
+      'snap_id': ?snapId,
     };
+
+/// A bite in the inbox, [hoursLeft] before it expires (relative to now, so
+/// the test never depends on today's date).
+InboxSnap bite(String id, {String from = 'sam', int hoursLeft = 5}) => InboxSnap(
+      id: id,
+      senderId: 'u_$from',
+      senderUsername: from,
+      caption: null,
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      expiresAt: DateTime.now().add(Duration(hours: hoursLeft)),
+      viewed: false,
+      reaction: null,
+      imageUrl: null,
+    );
+
+/// An inbox with no network: [onLoad] is what a refresh finds.
+class FakeInbox extends SnapInboxNotifier {
+  FakeInbox(List<InboxSnap>? snaps, {this.onLoad}) : super(currentUserId: () => null, userIdChanges: const Stream.empty()) {
+    if (snaps != null) state = AsyncValue.data(snaps);
+  }
+  final List<InboxSnap>? onLoad;
+  int loads = 0;
+
+  @override
+  Future<void> load() async {
+    loads++;
+    if (onLoad != null) state = AsyncValue.data(onLoad!);
+  }
+
+  @override
+  Future<void> markViewed(InboxSnap snap) async {}
+}
 
 class Server {
   Server(this.items, {this.unread});
@@ -73,6 +109,15 @@ void main() {
       expect(data.items.map((i) => i.id), ['1', '2']);
       expect(data.items[1].emoji, '🔥');
       expect(data.unread, 2);
+    });
+
+    test('a bite line may name its bite; an older server, or an odd value, names none', () {
+      expect(ActivityItem.fromJson(line('1', 'bite', snapId: 's1'))!.snapId, 's1');
+      expect(ActivityItem.fromJson(line('1', 'bite'))!.snapId, isNull);
+      expect(ActivityItem.fromJson({...line('1', 'bite'), 'snap_id': 7})!.snapId, isNull);
+      expect(ActivityItem.fromJson({...line('1', 'bite'), 'snap_id': ''})!.snapId, isNull);
+      // Opening the list marks lines seen; the copy must keep its bite.
+      expect(ActivityItem.fromJson(line('1', 'bite', snapId: 's1'))!.asSeen().snapId, 's1');
     });
 
     test('a strange unread count is zero', () {
@@ -156,13 +201,14 @@ void main() {
   });
 
   group('Notifications screen', () {
-    Future<(ProviderContainer, Server)> show(WidgetTester tester, Server s, {bool whatsNewUnread = false}) async {
+    Future<(ProviderContainer, Server)> show(WidgetTester tester, Server s, {bool whatsNewUnread = false, FakeInbox? inbox}) async {
       tester.view.physicalSize = const Size(750, 2600);
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
       final c = ProviderContainer(overrides: [
         whatsNewProvider.overrideWith((ref) => WhatsNewNotifier(currentUserId: () => null, userIdChanges: const Stream.empty())..state = whatsNewUnread),
         activityProvider.overrideWith((ref) => notifier(s)),
+        snapInboxProvider.overrideWith((ref) => inbox ?? FakeInbox(const [])),
       ]);
       addTearDown(c.dispose);
       c.read(activityProvider);
@@ -223,6 +269,47 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
       expect(c.read(shellTabProvider), ShellTab.friends);
       expect(find.byType(NotificationsScreen), findsNothing);
+    });
+
+    Future<void> tapLine(WidgetTester tester, String id) async {
+      await tester.tap(find.byKey(ValueKey('activity_$id')));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    testWidgets('tapping a bite line opens that exact bite while it is still in the inbox', (tester) async {
+      final inbox = FakeInbox([bite('s0', from: 'bea'), bite('s1', from: 'sam'), bite('s2', from: 'kim')]);
+      final (c, _) = await show(tester, Server([line('a', 'bite', snapId: 's1')]), inbox: inbox);
+      await tapLine(tester, 'a');
+      final viewer = tester.widget<SnapViewerScreen>(find.byType(SnapViewerScreen));
+      expect(viewer.snaps[viewer.startAt].id, 's1');
+      expect(c.read(shellTabProvider), ShellTab.today, reason: 'stayed put; Friends was not opened');
+      expect(inbox.loads, 0, reason: 'the inbox was already loaded');
+    });
+
+    testWidgets('an inbox not loaded yet is loaded first, then the bite opens', (tester) async {
+      final inbox = FakeInbox(null, onLoad: [bite('s1')]);
+      await show(tester, Server([line('a', 'bite', snapId: 's1')]), inbox: inbox);
+      await tapLine(tester, 'a');
+      expect(inbox.loads, 1);
+      expect(find.byType(SnapViewerScreen), findsOneWidget);
+    });
+
+    testWidgets('a bite that has gone, a reaction, or an older server: Friends, as before', (tester) async {
+      for (final (item, snaps) in [
+        (line('a', 'bite', snapId: 'gone'), [bite('s1')]),
+        (line('a', 'bite', snapId: 's1'), [bite('s1', hoursLeft: -1)]),
+        (line('a', 'reaction', emoji: '🔥', snapId: 's1'), [bite('s1')]),
+        (line('a', 'bite'), [bite('s1')]),
+      ]) {
+        final (c, _) = await show(tester, Server([item]), inbox: FakeInbox(snaps));
+        await tester.tap(find.byKey(const ValueKey('activity_a')));
+        await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
+        expect(find.byType(SnapViewerScreen), findsNothing, reason: '$item');
+        expect(c.read(shellTabProvider), ShellTab.friends, reason: '$item');
+        c.dispose();
+      }
     });
 
     testWidgets('What\'s new is still there below', (tester) async {

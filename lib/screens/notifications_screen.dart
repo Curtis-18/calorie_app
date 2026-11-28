@@ -1,8 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/snaps.dart';
 import '../models/whats_new.dart';
 import '../providers/shell_provider.dart';
+import '../providers/snaps_provider.dart';
+import '../theme/app_motion.dart';
+import 'snap_viewer_screen.dart';
 import '../models/activity.dart';
 import '../providers/activity_provider.dart';
 import '../providers/whats_new_provider.dart';
@@ -52,6 +56,30 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     ref.read(shellTabProvider.notifier).state = ShellTab.friends;
   }
 
+  /// A bite line opens that exact bite while it is still in the inbox (bites
+  /// last 24 hours). Anything else, or a bite that has gone, opens Friends.
+  Future<void> _open(ActivityItem item) async {
+    final id = item.snapId;
+    if (item.kind != ActivityKind.bite || id == null) return _openFriends();
+    final inbox = ref.read(snapInboxProvider.notifier);
+    if (!ref.read(snapInboxProvider).hasValue) await inbox.load(); // not loaded yet this session
+    if (!mounted) return;
+    final snaps = ref.read(snapInboxProvider).valueOrNull ?? const <InboxSnap>[];
+    final index = snaps.indexWhere((s) => s.id == id && s.expiresAt.isAfter(DateTime.now()));
+    if (index < 0) return _openFriends();
+    await Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: true,
+        transitionDuration: AppMotion.medium,
+        pageBuilder: (_, _, _) => SnapViewerScreen(snaps: snaps, startAt: index),
+        transitionsBuilder: (_, animation, _, child) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(scale: Tween(begin: 0.94, end: 1.0).animate(animation), child: child),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -71,7 +99,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           children: [
-            _FromFriends(items: ref.watch(activityProvider).items, newIds: _newIds, onOpen: _openFriends),
+            _FromFriends(items: ref.watch(activityProvider).items, newIds: _newIds, onOpen: _open),
             for (final release in whatsNewReleases) ...[
               _ReleaseCard(release: release, isNew: _wasUnread && release.id == latestWhatsNew.id),
               const SizedBox(height: AppSpacing.lg),
@@ -91,7 +119,7 @@ class _FromFriends extends StatelessWidget {
 
   final List<ActivityItem> items;
   final Set<String> newIds;
-  final VoidCallback onOpen;
+  final void Function(ActivityItem) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +147,7 @@ class _FromFriends extends StatelessWidget {
                 key: ValueKey('activity_${item.id}'),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 minimumSize: const Size(0, 44),
-                onPressed: onOpen,
+                onPressed: () => onOpen(item),
                 child: Row(
                   children: [
                     Text(item.kind == ActivityKind.bite ? '🍜' : (item.emoji ?? '🔥'), style: const TextStyle(fontSize: 22)),

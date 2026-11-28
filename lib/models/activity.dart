@@ -10,6 +10,7 @@ class ActivityItem {
     required this.createdAt,
     required this.seen,
     this.emoji,
+    this.snapId,
   });
 
   final String id;
@@ -20,6 +21,11 @@ class ActivityItem {
 
   /// The reaction, for a reaction.
   final String? emoji;
+
+  /// The bite a "bite" line is about, so tapping it can open that bite. Null
+  /// for reactions, and from a backend older than 28 Nov 2026 (tapping then
+  /// opens Friends, as before).
+  final String? snapId;
 
   /// Null for a kind this version doesn't know, so a newer server never breaks the list.
   static ActivityItem? fromJson(Object? raw) {
@@ -40,10 +46,11 @@ class ActivityItem {
       createdAt: at.toLocal(),
       seen: raw['seen'] == true,
       emoji: raw['emoji'] is String ? raw['emoji'] as String : null,
+      snapId: raw['snap_id'] is String && (raw['snap_id'] as String).isNotEmpty ? raw['snap_id'] as String : null,
     );
   }
 
-  ActivityItem asSeen() => ActivityItem(id: id, kind: kind, username: username, createdAt: createdAt, seen: true, emoji: emoji);
+  ActivityItem asSeen() => ActivityItem(id: id, kind: kind, username: username, createdAt: createdAt, seen: true, emoji: emoji, snapId: snapId);
 }
 
 class ActivityData {
